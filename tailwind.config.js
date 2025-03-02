@@ -8,11 +8,11 @@ export default {
       },
     },
     colors: {
-      primary: "#e3b23c", // Xanthous(Yellow)
-      secondary: "#EEEEFF", // Lavender(White)
-      accent: "#bd52a5", // Mulberry(Violet)
-      background: "#14102f", // Dark Purple(Blue)
-      gradientEnd: "#157f1f", // Office Green
+      primary: "#3d2466", // Russian Violet
+      secondary: "#010400", // Black
+      background: "#E9EBF8", // Lavender(White)
+      accent: "#fcb44b", // Hunyadi yellow
+      gradientEnd: "#4e598c", // YinMn Blue
     },
   },
   plugins: [],

@@ -1,12 +1,11 @@
 import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-slider',
   standalone: true,
-  imports: [],
+  imports: [CommonModule],
   templateUrl: './slider.component.html',
-  styleUrl: './slider.component.css'
+  styleUrls: ['./slider.component.css'],
 })
-export class SliderComponent {
-
-}
+export class SliderComponent {}

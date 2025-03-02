@@ -1,22 +1,55 @@
 <nav
-  class="bg-[#14102f] text-[#ada1ae] text-lg py-4 shadow-md shadow-secondary"
+  class="bg-primary text-[#ada1ae] rounded-b-md text-lg py-4 shadow-md shadow-secondary fixed top-0 w-full z-50"
 >
   <div class="container mx-auto flex justify-between items-center px-4">
-    <a href="#" class="text-4xl font-bold text-[#e3b23c]"
-      >Pi <span class="text-accent">Blog </span
-      ><span class="text-secondary">Ads</span>
+    <a href="#" class="text-4xl font-title text-accent">
+      Pi <span class="text-background font-title">Blogs </span>
     </a>
+
+    <!-- Botón de menú hamburguesa (solo visible en móviles) -->
+    <button class="md:hidden text-background" (click)="toggleMenu()">☰</button>
+
+    <!-- Menú principal (versión escritorio) -->
     <ul class="hidden md:flex space-x-6">
-      <li><a href="#" class="hover:text-accent">Home</a></li>
-      <li><a href="#" class="hover:text-accent">Articles</a></li>
-      <li><a href="#" class="hover:text-accent">Featured Apps</a></li>
+      <li><a href="#" class="text-background hover:text-accent">Home</a></li>
       <li>
-        <a routerLink="/advertise" class="hover:text-accent"
+        <a href="#" class="text-background hover:text-accent">Articles</a>
+      </li>
+      <li>
+        <a href="#" class="text-background hover:text-accent">Featured Apps</a>
+      </li>
+      <li>
+        <a routerLink="/advertise" class="text-background hover:text-accent"
           >Advertise with Us</a
         >
       </li>
-
-      <li><a href="#" class="hover:text-accent">Contact</a></li>
+      <li><a href="#" class="text-background hover:text-accent">Contact</a></li>
     </ul>
   </div>
+
+  <!-- Menú desplegable en móviles -->
+  <ul
+    *ngIf="isMenuOpen"
+    class="absolute top-full left-0 w-full bg-primary text-center py-4 space-y-4 md:hidden"
+  >
+    <li>
+      <a href="#" class="text-background hover:text-accent block">Home</a>
+    </li>
+    <li>
+      <a href="#" class="text-background hover:text-accent block">Articles</a>
+    </li>
+    <li>
+      <a href="#" class="text-background hover:text-accent block"
+        >Featured Apps</a
+      >
+    </li>
+    <li>
+      <a routerLink="/advertise" class="text-background hover:text-accent block"
+        >Advertise with Us</a
+      >
+    </li>
+    <li>
+      <a href="#" class="text-background hover:text-accent block">Contact</a>
+    </li>
+  </ul>
 </nav>
