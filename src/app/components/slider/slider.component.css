@@ -1,0 +1,60 @@
+.swiper-container {
+  width: 100%;
+  max-width: 1080px; /* Ajusta según el diseño */
+  margin: 0 auto; /* Centra el contenedor */
+  overflow: hidden; /* Evita que el contenido se desborde */
+  position: relative; /* Necesario para los botones de navegación */
+}
+
+.swiper-slide {
+  flex-shrink: 0; /* Evita que los slides se reduzcan */
+  width: 100%; /* Asegura que cada slide ocupe el 100% del contenedor */
+  height: auto; /* Permite que el slide se ajuste al contenido */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.swiper-slide video {
+  width: 100%; /* Asegura que el video ocupe todo el ancho del slide */
+  height: auto; /* Mantiene la proporción del video */
+  max-height: 500px; /* Evita que el video sea demasiado alto */
+  object-fit: cover; /* Ajusta el video para cubrir el espacio sin distorsionar */
+}
+
+.swiper-wrapper {
+  display: flex; /* Asegura que los slides estén en una línea */
+  transition-timing-function: linear; /* Suaviza la transición */
+}
+
+.swiper-pagination {
+  position: absolute;
+  bottom: 10px; /* Posición de la paginación */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+}
+
+.swiper-button-next,
+.swiper-button-prev {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  background-color: rgba(255, 255, 255, 0.7); /* Fondo semitransparente */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.swiper-button-next {
+  right: 10px; /* Posición del botón siguiente */
+}
+
+.swiper-button-prev {
+  left: 10px; /* Posición del botón anterior */
+}

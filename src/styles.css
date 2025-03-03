@@ -1,3 +1,16 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.fixed-slider {
+  position: fixed;
+  top: var(--navbar-height, 60px);
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 500px; /* Ajusta este valor para hacerlo más pequeño si lo deseas */
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 6px; /* Agrega bordes redondeados en modo fixed */
+  z-index: 10; /* Mantiene el slider debajo del menú desplegable */
+}
