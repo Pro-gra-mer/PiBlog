@@ -23,14 +23,33 @@
           >Advertise with Us</a
         >
       </li>
-      <li><a href="#" class="text-background hover:text-accent">Contact</a></li>
+      <li>
+        <a routerLink="/contact" class="text-background hover:text-accent"
+          >Contact</a
+        >
+      </li>
+
+      <li>
+        <a
+          href="#"
+          (click)="loginWithPi()"
+          class="text-background hover:text-accent"
+        >
+          {{ user ? "Hello, " + user.username : "Sign in with Pi" }}
+        </a>
+      </li>
+      <li>
+        <a routerLink="/dashboard" class="text-background hover:text-accent"
+          >Dashboard</a
+        >
+      </li>
     </ul>
   </div>
 
   <!-- Menú desplegable en móviles -->
   <ul
     *ngIf="isMenuOpen"
-    class="absolute top-full left-0 w-full bg-primary text-center py-4 space-y-4 md:hidden"
+    class="absolute top-full left-0 w-full bg-primary text-center py-7 space-y-4 md:hidden"
   >
     <li>
       <a href="#" class="text-background hover:text-accent block">Home</a>
@@ -50,6 +69,21 @@
     </li>
     <li>
       <a href="#" class="text-background hover:text-accent block">Contact</a>
+    </li>
+
+    <li>
+      <a
+        href="#"
+        (click)="loginWithPi()"
+        class="text-background hover:text-accent"
+      >
+        {{ user ? "Hello, " + user.username : "Sign in with Pi" }}
+      </a>
+    </li>
+    <li>
+      <a routerLink="/dashboard" class="text-background hover:text-accent"
+        >Dashboard</a
+      >
     </li>
   </ul>
 </nav>

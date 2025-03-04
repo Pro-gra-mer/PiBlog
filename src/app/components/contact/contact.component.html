@@ -1,0 +1,57 @@
+<div
+  class="flex justify-center items-center min-h-screen bg-white p-6 mt-20 sm:mt-2"
+>
+  <div
+    class="p-8 bg-white rounded-2xl shadow-lg shadow-gradientEnd max-w-lg w-full relative"
+  >
+    <h3 class="text-3xl font-bold text-accent text-center">Contact Us</h3>
+    <p class="text-secondary mt-2 text-sm text-gray-500 text-center">
+      We’d love to hear from you! Fill out the form below and let’s connect.
+    </p>
+
+    <form class="mt-6 space-y-4">
+      <div>
+        <label class="text-secondary font-medium block" for="name"
+          >Full Name</label
+        >
+        <input
+          id="name"
+          type="text"
+          placeholder="Your Name"
+          class="w-full mt-1 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+        />
+      </div>
+
+      <div>
+        <label class="text-secondary font-medium block" for="email"
+          >Email</label
+        >
+        <input
+          id="email"
+          type="email"
+          placeholder="Your Email"
+          class="w-full mt-1 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+        />
+      </div>
+
+      <div>
+        <label class="text-secondary font-medium block" for="message"
+          >Message</label
+        >
+        <textarea
+          id="message"
+          rows="4"
+          placeholder="Type your message..."
+          class="w-full mt-1 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+        ></textarea>
+      </div>
+
+      <button
+        type="submit"
+        class="w-full py-3 bg-primary text-background font-bold rounded-xl hover:bg-opacity-90 transition-all duration-300"
+      >
+        Send Message
+      </button>
+    </form>
+  </div>
+</div>
