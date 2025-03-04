@@ -2,25 +2,25 @@
 <app-slider appStickyHeader></app-slider>
 
 <div
-  class="container mx-auto px-4 lg:px-12 py-8 grid grid-cols-1 lg:grid-cols-4 gap-8"
+  class="container mx-auto px-4 lg:px-12 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8"
 >
-  <!-- Contenido principal -->
-  <div class="lg:col-span-3">
+  <!-- Contenido principal: Artículos en 2 columnas -->
+  <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-2">
+    <app-article-list></app-article-list>
+    <app-article-list></app-article-list>
+    <app-article-list></app-article-list>
+    <app-article-list></app-article-list>
+    <app-article-list></app-article-list>
+    <app-article-list></app-article-list>
+    <app-article-list></app-article-list>
+    <app-article-list></app-article-list>
+    <app-article-list></app-article-list>
+    <app-article-list></app-article-list>
+    <app-article-list></app-article-list>
     <app-article-list></app-article-list>
   </div>
-  <div class="lg:col-span-3">
-    <app-article-list></app-article-list>
-  </div>
-  <div class="lg:col-span-3">
-    <app-article-list></app-article-list>
-  </div>
-  <div class="lg:col-span-3">
-    <app-article-list></app-article-list>
-  </div>
-  <div class="lg:col-span-3">
-    <app-article-list></app-article-list>
-  </div>
-  <!-- Sidebar opcional -->
+
+  <!-- Sidebar a la derecha en la parte superior -->
   <div class="hidden lg:block">
     <app-sidebar></app-sidebar>
   </div>

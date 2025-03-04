@@ -1,90 +1,66 @@
 import {
-  AfterViewInit,
   Component,
-  ElementRef,
-  HostListener,
-  Inject,
-  Renderer2,
+  AfterViewInit,
   ViewChild,
+  ElementRef,
+  Inject,
+  PLATFORM_ID,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import Swiper from 'swiper';
-import { Navigation, Pagination, Autoplay } from 'swiper/modules';
-import { DOCUMENT } from '@angular/common';
+import { Autoplay, Navigation } from 'swiper/modules';
+import { StickyHeaderDirective } from '../../directives/sticky-header.directive';
 
 @Component({
   selector: 'app-slider',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, StickyHeaderDirective],
   templateUrl: './slider.component.html',
   styleUrls: ['./slider.component.css'],
 })
 export class SliderComponent implements AfterViewInit {
-  @ViewChild('swiperContainer') swiperContainer!: ElementRef;
-  @ViewChild('sliderWrapper') sliderWrapper!: ElementRef; // Elemento principal del slider
-  private navbarHeight = 0; // Almacena la altura de la navbar
-  private offsetTop = 0; // Posición inicial del slider
+  @ViewChild('swiperContainer', { static: false }) swiperContainer!: ElementRef;
+
+  videos: SafeResourceUrl[] = [];
+
+  private isBrowser: boolean;
 
   constructor(
-    private renderer: Renderer2,
-    @Inject(DOCUMENT) private document: Document
-  ) {}
+    @Inject(PLATFORM_ID) private platformId: object,
+    private sanitizer: DomSanitizer
+  ) {
+    this.isBrowser = isPlatformBrowser(this.platformId);
+
+    // Sanitiza las URLs para que sean seguras en Angular
+    this.videos = [
+      this.sanitizer.bypassSecurityTrustResourceUrl(
+        'https://res.cloudinary.com/dl7on9tjj/video/upload/v1741015277/20250303_1538_Digital_Pi_Coin_simple_compose_01jne73zyeff99qx8rxm8mp5r8_azlgto.mp4'
+      ),
+      this.sanitizer.bypassSecurityTrustResourceUrl(
+        'https://res.cloudinary.com/dl7on9tjj/video/upload/v1740946770/202368-918049003_azmu9u.mp4'
+      ),
+      this.sanitizer.bypassSecurityTrustResourceUrl(
+        'https://res.cloudinary.com/dl7on9tjj/video/upload/v1741097504/20250304_1451_Blockchain_Animation_Unveiled_simple_compose_01jngpte8gfppb5mad5e56vpwe_sqt9gf.mp4'
+      ),
+    ];
+  }
 
   ngAfterViewInit(): void {
-    // Inicializar Swiper
-    this.initSwiper();
-
-    // Obtener la altura de la navbar
-    const navbar = this.document.querySelector('nav'); // Asegúrate de que la navbar tenga la etiqueta <nav>
-    this.navbarHeight = navbar ? navbar.clientHeight : 60; // Usa 60px como valor por defecto si no encuentra la navbar
-
-    // Obtener la posición inicial del slider y ajustar con la navbar
-    this.offsetTop =
-      this.sliderWrapper.nativeElement.offsetTop - this.navbarHeight;
-  }
-
-  private initSwiper(): void {
-    new Swiper(this.swiperContainer.nativeElement, {
-      modules: [Navigation, Pagination, Autoplay],
-      loop: true,
-      slidesPerView: 1,
-      spaceBetween: 0,
-      pagination: {
-        el: '.swiper-pagination',
-        clickable: true,
-      },
-      navigation: {
-        nextEl: '.swiper-button-next',
-        prevEl: '.swiper-button-prev',
-      },
-      autoplay: {
-        delay: 5000,
-        disableOnInteraction: false,
-      },
-    });
-  }
-
-  @HostListener('window:scroll', ['$event'])
-  onWindowScroll(): void {
-    const scrollTop = window.scrollY || this.document.documentElement.scrollTop;
-
-    if (scrollTop > this.offsetTop) {
-      // Si el usuario baja, fijar el slider y reducir su tamaño
-      this.renderer.addClass(this.sliderWrapper.nativeElement, 'fixed-slider');
-      this.renderer.addClass(this.sliderWrapper.nativeElement, 'small'); // Aplica la reducción de tamaño
-      this.renderer.setStyle(
-        this.sliderWrapper.nativeElement,
-        'top',
-        `${this.navbarHeight}px`
-      );
-    } else {
-      // Si el usuario sube, quitar la clase fija y restaurar el tamaño
-      this.renderer.removeClass(this.sliderWrapper.nativeElement, 'small');
-      this.renderer.removeClass(
-        this.sliderWrapper.nativeElement,
-        'fixed-slider'
-      );
-      this.renderer.removeStyle(this.sliderWrapper.nativeElement, 'top');
+    if (this.isBrowser) {
+      new Swiper(this.swiperContainer.nativeElement, {
+        modules: [Autoplay, Navigation],
+        loop: true,
+        slidesPerView: 1, // ✅ Muestra solo un video a la vez
+        autoplay: {
+          delay: 5000, // ✅ Cambia de video cada 5 segundos
+          disableOnInteraction: false, // ✅ No se detiene al interactuar con el slider
+        },
+        navigation: {
+          nextEl: '.swiper-button-next',
+          prevEl: '.swiper-button-prev',
+        },
+      });
     }
   }
 }

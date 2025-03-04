@@ -1,25 +1,45 @@
-import { Directive, ElementRef, HostListener, Renderer2 } from '@angular/core';
+import {
+  Directive,
+  ElementRef,
+  HostListener,
+  Renderer2,
+  Inject,
+  PLATFORM_ID,
+  OnInit,
+} from '@angular/core';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 
 @Directive({
   selector: '[appStickyHeader]',
+  standalone: true,
 })
-export class StickyHeaderDirective {
-  private lastScrollTop = 0;
+export class StickyHeaderDirective implements OnInit {
+  private scrollThreshold = 650; // ✅ Retrasar el cambio con más scroll
+  private isBrowser: boolean;
 
-  constructor(private el: ElementRef, private renderer: Renderer2) {}
+  constructor(
+    private el: ElementRef,
+    private renderer: Renderer2,
+    @Inject(DOCUMENT) private document: Document,
+    @Inject(PLATFORM_ID) private platformId: object
+  ) {
+    this.isBrowser = isPlatformBrowser(this.platformId);
+  }
+
+  ngOnInit(): void {
+    if (!this.isBrowser) return;
+  }
 
   @HostListener('window:scroll', ['$event'])
-  onWindowScroll() {
-    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+  onWindowScroll(): void {
+    if (!this.isBrowser) return;
 
-    if (scrollTop > this.lastScrollTop && scrollTop > 100) {
-      // Usuario baja el scroll, fijar el slider
+    const scrollTop = window.scrollY || this.document.documentElement.scrollTop;
+
+    if (scrollTop > this.scrollThreshold) {
       this.renderer.addClass(this.el.nativeElement, 'fixed-slider');
-    } else if (scrollTop < this.lastScrollTop) {
-      // Usuario sube el scroll, restaurar
+    } else {
       this.renderer.removeClass(this.el.nativeElement, 'fixed-slider');
     }
-
-    this.lastScrollTop = scrollTop;
   }
 }

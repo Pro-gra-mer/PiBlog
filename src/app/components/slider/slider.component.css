@@ -1,6 +1,8 @@
 .swiper-container {
   width: 100%;
   max-width: 1080px; /* Ajusta según el diseño */
+  border-radius: 6px;
+
   margin: 0 auto; /* Centra el contenedor */
   overflow: hidden; /* Evita que el contenido se desborde */
   position: relative; /* Necesario para los botones de navegación */
@@ -18,7 +20,7 @@
 .swiper-slide video {
   width: 100%; /* Asegura que el video ocupe todo el ancho del slide */
   height: auto; /* Mantiene la proporción del video */
-  max-height: 500px; /* Evita que el video sea demasiado alto */
+  max-height: auto; /* Evita que el video sea demasiado alto */
   object-fit: cover; /* Ajusta el video para cubrir el espacio sin distorsionar */
 }
 
@@ -57,4 +59,30 @@
 
 .swiper-button-prev {
   left: 10px; /* Posición del botón anterior */
+}
+
+/* Estilos cuando el slider se fija */
+.fixed-slider {
+  position: fixed !important;
+  max-width: 30%;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  transition: all 0.3s ease-in-out;
+}
+
+/* Escritorio: Abajo a la derecha */
+@media (min-width: 769px) {
+  .fixed-slider {
+    bottom: 20px;
+    right: 20px;
+  }
+}
+
+/* Móviles: Arriba y centrado */
+@media (max-width: 768px) {
+  .fixed-slider {
+    max-width: 100%;
+    top: 73px;
+    transform: translateY(-0%);
+  }
 }
