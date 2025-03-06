@@ -1,0 +1,109 @@
+<!-- Main Content -->
+<main class="flex-1 p-6">
+  <h1 class="text-3xl font-bold text-primary">Welcome to Your Dashboard</h1>
+  <p class="text-gray-600 mt-2">Create and manage your articles here.</p>
+
+  <!-- Section for Article Creation -->
+  <div class="mt-6 bg-white p-6 rounded-lg shadow-lg shadow-gradientEnd">
+    <h2 class="text-2xl font-bold text-primary">Create a New Article</h2>
+    <form
+      [formGroup]="articleForm"
+      (ngSubmit)="onSubmit()"
+      class="mt-4 space-y-4"
+    >
+      <!-- Nombre de la Empresa -->
+      <div>
+        <label class="text-secondary font-medium block" for="company"
+          >Company Name</label
+        >
+        <input
+          id="company"
+          type="text"
+          formControlName="company"
+          placeholder="Enter company name"
+          class="w-full max-w-md mt-1 p-3 border border-gradientEnd rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
+        />
+      </div>
+
+      <!-- Categoría -->
+      <div>
+        <label class="text-secondary font-medium block" for="category">
+          Category
+        </label>
+        <select
+          id="category"
+          formControlName="category"
+          class="w-full max-w-md mt-1 p-3 border border-gradientEnd rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
+        >
+          <option value="" disabled selected>Select a category</option>
+          <option *ngFor="let cat of categories" [value]="cat">
+            {{ cat }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Título -->
+      <div>
+        <label class="text-secondary font-medium block" for="title"
+          >Title</label
+        >
+        <input
+          id="title"
+          type="text"
+          formControlName="title"
+          placeholder="Enter article title"
+          class="w-full max-w-md mt-1 p-3 border border-gradientEnd rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
+        />
+      </div>
+
+      <!-- Contenido (Editor Quill) -->
+      <div>
+        <label class="text-secondary font-medium block" for="content"
+          >Content</label
+        >
+        <quill-editor
+          #quillEditor
+          class="form-control w-full lg:w-2/3 border border-gradientEnd"
+          formControlName="content"
+          placeholder="Ingrese el contenido completo del artículo"
+          (onEditorCreated)="onEditorCreated($event)"
+        ></quill-editor>
+      </div>
+
+      <!-- Vídeo promocional -->
+      <div>
+        <label for="video">Upload Promo Video </label>
+        <input type="file" accept="video/*" />
+        <p class="text-red-500 text-sm mt-1">
+          The video must be 30 seconds or less.
+        </p>
+      </div>
+
+      <video controls class="mt-4 w-1/2 rounded-md">
+        <source [src]="" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+
+      <!-- Fecha de Publicación -->
+      <div>
+        <label class="text-secondary font-medium block" for="publishDate"
+          >Publication Date</label
+        >
+        <input
+          id="publishDate"
+          type="date"
+          formControlName="publishDate"
+          class="w-1/2 sm:w-1/2 lg:w-1/3 mt-1 p-3 border border-gradientEnd rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
+        />
+      </div>
+
+      <!-- Botón de Envío -->
+      <button
+        type="submit"
+        class="w-48 py-3 bg-gradientEnd text-background font-bold rounded-md hover:bg-opacity-90 transition-all duration-300"
+      >
+        Submit for Approval
+      </button>
+    </form>
+  </div>
+</main>

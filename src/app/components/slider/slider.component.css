@@ -2,7 +2,6 @@
   width: 100%;
   max-width: 1080px; /* Ajusta según el diseño */
   border-radius: 6px;
-
   margin: 0 auto; /* Centra el contenedor */
   overflow: hidden; /* Evita que el contenido se desborde */
   position: relative; /* Necesario para los botones de navegación */
@@ -39,26 +38,7 @@
 
 .swiper-button-next,
 .swiper-button-prev {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 30px;
-  height: 30px;
-  background-color: rgba(255, 255, 255, 0.7); /* Fondo semitransparente */
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 10;
-}
-
-.swiper-button-next {
-  right: 10px; /* Posición del botón siguiente */
-}
-
-.swiper-button-prev {
-  left: 10px; /* Posición del botón anterior */
+  color: #e9ebf8;
 }
 
 /* Estilos cuando el slider se fija */
