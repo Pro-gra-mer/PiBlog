@@ -1,9 +1,10 @@
 package com.piblogchain.backend.controllers;
 
+import com.piblogchain.backend.dto.PiLoginRequest;
 import com.piblogchain.backend.models.User;
 import com.piblogchain.backend.services.AuthService;
 import com.piblogchain.backend.utils.PiNetworkValidator;
-import com.piblogchain.backend.utils.JwtUtil;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,20 +21,29 @@ public class AuthController {
   }
 
   @PostMapping("/pi-login")
-  public ResponseEntity<?> piLogin(@RequestParam String accessToken, @RequestParam String piId, @RequestParam String username, @RequestParam(required = false) String email) {
-    // Validar el token con Pi Network
-    boolean isValid = piNetworkValidator.validateAccessToken(accessToken, piId);
+  public ResponseEntity<?> piLogin(@RequestBody PiLoginRequest request) {
+    System.out.println("🔍 AccessToken recibido: " + request.getAccessToken());
+    System.out.println("👤 Usuario recibido: " + request.getUsername());
+    System.out.println("🆔 PiId recibido: " + request.getPiId());
 
-    if (!isValid) {
-      return ResponseEntity.status(401).body("Invalid access token");
+    if (request.getAccessToken() == null || request.getUsername() == null) {
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Faltan datos en la autenticación");
     }
 
-    // Autenticar al usuario
-    User authenticatedUser = authService.authenticateUser(piId, username, email);
+    // Validar el token con PiNetworkValidator
+    boolean isValid = piNetworkValidator.validateAccessToken(request.getAccessToken());
 
-    // Generar JWT
-    String jwt = JwtUtil.generateToken(authenticatedUser.getPiId(), authenticatedUser.getRole().name());
+    if (!isValid) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid access token");
+    }
 
-    return ResponseEntity.ok(jwt);
+    // Autenticar al usuario (piId es opcional en sandbox)
+    User authenticatedUser = authService.authenticateUser(
+      request.getPiId() != null ? request.getPiId() : "",
+      request.getUsername(),
+      request.getEmail()
+    );
+
+    return ResponseEntity.ok(authenticatedUser);
   }
 }

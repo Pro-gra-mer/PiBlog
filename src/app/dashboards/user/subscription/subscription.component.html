@@ -1,1 +1,91 @@
-<p>subscription works!</p>
+<section class="container mx-auto py-10">
+  <h2 class="text-3xl font-bold text-primary text-center mb-6">
+    My Subscription
+  </h2>
+
+  <div class="max-w-lg mx-auto bg-white shadow-lg rounded-lg p-6">
+    <!-- Plan actual -->
+    <h3 class="text-xl font-bold text-gray-700">Current Plan:</h3>
+    <div
+      class="flex justify-between items-center mt-3 p-4 border rounded-lg bg-gray-100"
+    >
+      <div>
+        <p class="text-lg font-semibold text-primary">
+          {{ currentSubscription.name }}
+        </p>
+        <p class="text-sm text-gray-600">
+          {{ currentSubscription.price }}€ / month
+        </p>
+      </div>
+      <span class="text-green-500 font-semibold text-sm">Active</span>
+    </div>
+
+    <!-- Opciones de Upgrade -->
+    <h3 class="text-lg font-bold text-gray-700 mt-6">Upgrade Plan:</h3>
+    <div class="mt-3 space-y-4">
+      <div
+        *ngFor="let plan of availableUpgrades"
+        class="flex justify-between items-center p-4 border rounded-lg bg-gray-50"
+      >
+        <div>
+          <p class="text-lg font-semibold text-primary">{{ plan.name }}</p>
+          <p class="text-sm text-gray-600">{{ plan.price }}€ / month</p>
+        </div>
+        <button
+          class="bg-accent text-white py-2 px-4 rounded-lg hover:bg-opacity-80"
+          (click)="upgradeSubscription(plan.id)"
+        >
+          Upgrade
+        </button>
+      </div>
+    </div>
+    <!-- Modal de selección de video -->
+    <div
+      *ngIf="selectVideoModal"
+      class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
+    >
+      <div class="bg-white p-6 rounded-lg max-w-2xl w-full shadow-lg">
+        <h2 class="text-xl font-bold text-primary mb-4">
+          Select a Video to Promote
+        </h2>
+
+        <div *ngIf="userVideos.length > 0; else noVideos">
+          <ul class="space-y-4">
+            <li
+              *ngFor="let video of userVideos"
+              class="flex items-center justify-between border p-4 rounded-lg"
+            >
+              <video
+                class="w-32 h-20 object-cover"
+                [src]="video.url"
+                controls
+              ></video>
+              <button
+                (click)="confirmUpgrade(video)"
+                class="bg-accent text-white py-2 px-4 rounded-lg hover:bg-opacity-80"
+              >
+                Select
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <ng-template #noVideos>
+          <p class="text-gray-500">You haven't uploaded any videos yet.</p>
+        </ng-template>
+
+        <button
+          (click)="closeModal()"
+          class="mt-4 bg-gray-500 text-white py-2 px-4 rounded"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+
+    <!-- Mensaje si ya tiene la mejor suscripción -->
+    <p *ngIf="!availableUpgrades.length" class="text-center text-gray-500 mt-4">
+      You already have the highest subscription plan.
+    </p>
+  </div>
+</section>

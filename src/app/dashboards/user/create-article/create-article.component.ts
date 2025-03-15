@@ -28,6 +28,7 @@ export class CreateArticleComponent {
   constructor(private formBuilder: FormBuilder) {
     this.articleForm = this.formBuilder.group({
       company: ['', [Validators.required]],
+      app: ['', Validators.required], // Añadimos 'app' aquí
       title: ['', [Validators.required, Validators.maxLength(100)]],
       category: ['', [Validators.required]], // Asegúrate de agregarlo aquí
       content: ['', [Validators.required]],

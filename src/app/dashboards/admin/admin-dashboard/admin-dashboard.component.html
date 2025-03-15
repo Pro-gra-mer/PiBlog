@@ -1,0 +1,47 @@
+<div class="flex min-h-screen mt-20 relative">
+  <!-- Botón de menú solo en móviles -->
+  <button
+    class="lg:hidden absolute top-0 left-0 ml-4 p-2 border border-primary rounded bg-background text-primary"
+    (click)="toggleSidebar()"
+  >
+    Menu
+  </button>
+
+  <!-- Sidebar -->
+  <aside
+    [class.hidden]="!sidebarOpen"
+    class="fixed inset-y-0 left-0 w-64 bg-background text-white p-6 transform lg:relative lg:flex lg:flex-col lg:w-64 transition-transform duration-300 z-50 lg:z-auto"
+  >
+    <!-- Botón para cerrar el Sidebar en móviles -->
+    <button
+      class="lg:hidden mb-4 p-2 bg-gray-700 text-white rounded"
+      (click)="toggleSidebar()"
+    >
+      Close
+    </button>
+
+    <!-- Contenedor en columna -->
+    <div class="flex flex-col space-y-6">
+      <h2 class="text-2xl font-bold">Admin Dashboard</h2>
+      <nav class="flex flex-col space-y-4">
+        <a
+          routerLink="/admin-dashboard/create-article"
+          routerLinkActive="active-link"
+          class="hover:text-accent cursor-pointer"
+          >Create Article</a
+        >
+        <a
+          routerLink="/admin-dashboard/my-articles"
+          routerLinkActive="active-link"
+          class="hover:text-accent cursor-pointer"
+          >My Articles</a
+        >
+      </nav>
+    </div>
+  </aside>
+
+  <!-- Contenido principal -->
+  <main class="flex-1 p-6">
+    <router-outlet></router-outlet>
+  </main>
+</div>

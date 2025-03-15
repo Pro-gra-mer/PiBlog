@@ -2,21 +2,27 @@
   class="bg-primary text-[#ada1ae] rounded-b-md text-lg py-4 shadow-md shadow-secondary fixed top-0 w-full z-50"
 >
   <div class="container mx-auto flex justify-between items-center px-4">
-    <a href="#" class="text-4xl font-title text-accent">
-      Pi <span class="text-background font-title">Blog Chain </span>
+    <a routerLink="/" class="text-4xl font-title text-accent">
+      <span class="text-background font-title">Rolling </span>Pi
     </a>
 
-    <!-- Botón de menú hamburguesa (solo visible en móviles) -->
+    <!-- Botón de menú hamburguesa -->
     <button class="md:hidden text-background" (click)="toggleMenu()">☰</button>
 
-    <!-- Menú principal (versión escritorio) -->
+    <!-- Menú principal (escritorio) -->
     <ul class="hidden md:flex space-x-6">
-      <li><a href="#" class="text-background hover:text-accent">Home</a></li>
       <li>
-        <a href="#" class="text-background hover:text-accent">Articles</a>
+        <a routerLink="/" class="text-background hover:text-accent">Home</a>
       </li>
       <li>
-        <a href="#" class="text-background hover:text-accent">Featured Apps</a>
+        <a routerLink="/articles" class="text-background hover:text-accent"
+          >Articles</a
+        >
+      </li>
+      <li>
+        <a routerLink="/featured" class="text-background hover:text-accent"
+          >Featured Apps</a
+        >
       </li>
       <li>
         <a routerLink="/advertise" class="text-background hover:text-accent"
@@ -28,39 +34,52 @@
           >Contact</a
         >
       </li>
-
-      <li>
+      <li *ngIf="!isAuthenticated">
         <a
           href="#"
           (click)="loginWithPi()"
           class="text-background hover:text-accent"
+          >Sign in</a
         >
-          {{ user ? "Hello, " + user.username : "Sign in with Pi" }}
-        </a>
       </li>
-      <li>
+      <li *ngIf="isAuthenticated">
+        <a href="#" class="text-background hover:text-accent"
+          >Hello, {{ username }}</a
+        >
+      </li>
+      <li *ngIf="isAuthenticated">
         <a
-          routerLink="/user-dashboard"
+          [routerLink]="dashboardRoute"
           class="text-background hover:text-accent"
           >Dashboard</a
+        >
+      </li>
+      <li *ngIf="isAuthenticated">
+        <a
+          href="#"
+          (click)="logout()"
+          class="text-background hover:text-red-500"
+          >Logout</a
         >
       </li>
     </ul>
   </div>
 
-  <!-- Menú desplegable en móviles -->
+  <!-- Menú móvil -->
   <ul
     *ngIf="isMenuOpen"
     class="absolute top-full left-0 w-full bg-primary text-center py-7 space-y-4 md:hidden"
   >
     <li>
-      <a href="#" class="text-background hover:text-accent block">Home</a>
+      <a routerLink="/" class="text-background hover:text-accent block">Home</a>
     </li>
     <li>
-      <a href="#" class="text-background hover:text-accent block">Articles</a>
+      <a routerLink="/articles" class="text-background hover:text-accent block"
+        >Articles</a
+      >
     </li>
     <li>
-      <a href="#" class="text-background hover:text-accent block"
+      <a routerLink="/featured" class="text-background hover:text-accent block"
         >Featured Apps</a
       >
     </li>
@@ -70,21 +89,36 @@
       >
     </li>
     <li>
-      <a href="#" class="text-background hover:text-accent block">Contact</a>
+      <a routerLink="/contact" class="text-background hover:text-accent block"
+        >Contact</a
+      >
     </li>
-
-    <li>
+    <li *ngIf="!isAuthenticated">
       <a
         href="#"
         (click)="loginWithPi()"
-        class="text-background hover:text-accent"
+        class="text-background hover:text-accent block"
+        >Sign in with Pi</a
       >
-        {{ user ? "Hello, " + user.username : "Sign in with Pi" }}
-      </a>
     </li>
-    <li>
-      <a routerLink="/dashboard" class="text-background hover:text-accent"
+    <li *ngIf="isAuthenticated">
+      <a href="#" class="text-background hover:text-accent block"
+        >Hello, {{ username }}</a
+      >
+    </li>
+    <li *ngIf="isAuthenticated">
+      <a
+        [routerLink]="dashboardRoute"
+        class="text-background hover:text-accent block"
         >Dashboard</a
+      >
+    </li>
+    <li *ngIf="isAuthenticated">
+      <a
+        href="#"
+        (click)="logout()"
+        class="text-background hover:text-red-500 block"
+        >Logout</a
       >
     </li>
   </ul>
