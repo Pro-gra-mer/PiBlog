@@ -14,7 +14,7 @@ public class SwaggerConfig {
   public OpenAPI customOpenAPI() {
     return new OpenAPI()
       .info(new Info()
-        .title("PiBlogChain API")
+        .title("Rolling Pi API")
         .version("1.0")
         .description("API para la gestión de autenticación, artículos y suscripciones en PiBlogChain"))
       .addSecurityItem(new SecurityRequirement().addList("BearerAuth"))

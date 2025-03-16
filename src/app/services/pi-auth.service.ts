@@ -64,6 +64,7 @@ export class PiAuthService {
       .then(
         (auth: {
           accessToken: string;
+
           user?: { username: string; uid: string };
         }) => {
           this.ngZone.run(() => {
@@ -74,6 +75,10 @@ export class PiAuthService {
               );
               return;
             }
+
+            // Imprimir el access token para pruebas
+            console.log('Access Token:', auth.accessToken);
+
             const username = auth.user?.username || 'Sandbox Pi User';
 
             this.http

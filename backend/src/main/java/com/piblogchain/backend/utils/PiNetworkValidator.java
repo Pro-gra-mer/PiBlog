@@ -22,6 +22,11 @@ public class PiNetworkValidator {
   @Value("${spring.profiles.active:dev}")
   private String activeProfile;
 
+  /**
+   * Valida el access token.
+   * En modo dev/sandbox se acepta sin validación JWT.
+   * En producción se valida utilizando la clave pública de Pi Network.
+   */
   public boolean validateAccessToken(String accessToken) {
     System.out.println("🔍 Validando accessToken: " + accessToken);
     System.out.println("🌐 Perfil activo: " + activeProfile);
@@ -32,7 +37,7 @@ public class PiNetworkValidator {
       return true; // En sandbox, el token no es un JWT firmado
     }
 
-    // Modo producción: validar como JWT
+    // Modo producción: validar como JWT usando la clave pública de Pi Network
     try {
       PublicKey piPublicKey = getPiPublicKey();
       Jws<Claims> claims = Jwts.parserBuilder()
@@ -47,7 +52,11 @@ public class PiNetworkValidator {
     }
   }
 
-  private PublicKey getPiPublicKey() throws Exception {
+  /**
+   * Obtiene la clave pública de Pi Network.
+   * Este método es público para que pueda ser usado desde JwtAuthenticationFilter.
+   */
+  public PublicKey getPiPublicKey() throws Exception {
     String url = "prod".equals(activeProfile) ? PI_PUBLIC_KEY_URL : PI_SANDBOX_PUBLIC_KEY_URL;
     RestTemplate restTemplate = new RestTemplate();
     ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
@@ -59,12 +68,15 @@ public class PiNetworkValidator {
     // Asumimos que la primera clave en "keys" es la correcta
     @SuppressWarnings("unchecked")
     Map<String, Object> key = (Map<String, Object>) ((java.util.List<?>) response.getBody().get("keys")).get(0);
-    String publicKeyPem = (String) key.get("x5c"); // x5c es un array, tomar el primer elemento
+    // "x5c" es un array; se toma el primer elemento
+    String publicKeyPem = ((java.util.List<String>) key.get("x5c")).get(0);
     byte[] decodedKey = Base64.getDecoder().decode(publicKeyPem);
-
     X509EncodedKeySpec keySpec = new X509EncodedKeySpec(decodedKey);
     KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-
     return keyFactory.generatePublic(keySpec);
+  }
+
+  public String getActiveProfile() {
+    return activeProfile;
   }
 }

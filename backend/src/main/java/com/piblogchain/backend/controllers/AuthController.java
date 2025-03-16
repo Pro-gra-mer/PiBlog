@@ -22,9 +22,7 @@ public class AuthController {
 
   @PostMapping("/pi-login")
   public ResponseEntity<?> piLogin(@RequestBody PiLoginRequest request) {
-    System.out.println("🔍 AccessToken recibido: " + request.getAccessToken());
-    System.out.println("👤 Usuario recibido: " + request.getUsername());
-    System.out.println("🆔 PiId recibido: " + request.getPiId());
+
 
     if (request.getAccessToken() == null || request.getUsername() == null) {
       return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Faltan datos en la autenticación");

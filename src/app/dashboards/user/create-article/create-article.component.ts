@@ -7,13 +7,16 @@ import { QuillModule } from 'ngx-quill'; // Editor de texto enriquecido
 @Component({
   selector: 'app-create-article',
   standalone: true,
-  imports: [FormsModule, ReactiveFormsModule, CommonModule, QuillModule], // Configuración del módulo
+  imports: [FormsModule, ReactiveFormsModule, CommonModule, QuillModule],
   templateUrl: './create-article.component.html',
   styleUrls: ['./create-article.component.css'],
 })
 export class CreateArticleComponent {
   articleForm: FormGroup; // Formulario para los datos del artículo
   message: string | null = null; // Mensaje para notificar al usuario
+  // Simulación del estado de suscripción del usuario.
+  // En una aplicación real, este valor provendría de un servicio.
+  userSubscribed: boolean = false;
   @ViewChild('quillEditor', { static: false }) quillEditor: any; // Referencia al editor Quill
 
   categories = [
@@ -26,16 +29,19 @@ export class CreateArticleComponent {
   ];
 
   constructor(private formBuilder: FormBuilder) {
+    // Se agrega el control 'promoteVideo'.
+    // Si el usuario no está suscrito (userSubscribed es false), el control se deshabilita.
     this.articleForm = this.formBuilder.group({
       company: ['', [Validators.required]],
-      app: ['', Validators.required], // Añadimos 'app' aquí
+      app: ['', Validators.required],
       title: ['', [Validators.required, Validators.maxLength(100)]],
-      category: ['', [Validators.required]], // Asegúrate de agregarlo aquí
+      category: ['', [Validators.required]],
       content: ['', [Validators.required]],
       publishDate: [
         new Date().toISOString().split('T')[0],
         Validators.required,
       ],
+      promoteVideo: [{ value: false, disabled: !this.userSubscribed }],
     });
   }
 
@@ -45,9 +51,12 @@ export class CreateArticleComponent {
       return;
     }
     console.log('Artículo enviado:', this.articleForm.value);
+    // Aquí puedes agregar la lógica para enviar el formulario al backend.
   }
 
-  handleImageUpload() {}
+  handleImageUpload() {
+    // Lógica para subir imágenes desde el editor Quill.
+  }
 
   onEditorCreated(quillInstance: any): void {
     import('quill')

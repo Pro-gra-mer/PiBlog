@@ -6,7 +6,7 @@ import {
   Inject,
   PLATFORM_ID,
 } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, NavigationEnd } from '@angular/router';
 import { PiAuthService } from '../../services/pi-auth.service';
 
 @Component({
@@ -46,6 +46,14 @@ export class NavbarComponent implements OnInit {
     if (isPlatformBrowser(this.platformId) && localStorage.getItem('user')) {
       this.updateUserInfo();
     }
+
+    // Suscribirse a los eventos del router para cerrar el menú móvil en cada navegación.
+    this.router.events.subscribe((event) => {
+      if (event instanceof NavigationEnd) {
+        this.isMenuOpen = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   private updateUserInfo(): void {
