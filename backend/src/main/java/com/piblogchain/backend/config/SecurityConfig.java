@@ -32,11 +32,16 @@ public class SecurityConfig {
       .csrf(csrf -> csrf.disable())
       .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
       .authorizeHttpRequests(auth -> auth
-        .requestMatchers("/api/articles/**").hasAnyRole("USER", "ADMIN")
+        // Permitir el acceso a Swagger y autenticación sin token
         .requestMatchers("/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+        // Permitir GET a artículos públicamente
         .requestMatchers(HttpMethod.GET, "/api/articles/**").permitAll()
+        // Restringir endpoints para artículos (y subidas) a roles USER y ADMIN
+        .requestMatchers("/api/articles/**", "/api/upload-image").hasAnyRole("USER", "ADMIN")
+        // Cualquier otra petición requiere autenticación
         .anyRequest().authenticated()
       )
+
       .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class) // Añadido explícitamente
       .formLogin(form -> form.disable())
       .httpBasic(httpBasic -> httpBasic.disable());

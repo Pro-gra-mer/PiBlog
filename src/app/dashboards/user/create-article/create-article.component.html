@@ -6,12 +6,8 @@
   <!-- Section for Article Creation -->
   <div class="mt-6 bg-white p-6 rounded-lg shadow-lg shadow-gradientEnd">
     <h2 class="text-2xl font-bold text-primary">Create a New Article</h2>
-    <form
-      [formGroup]="articleForm"
-      (ngSubmit)="onSubmit()"
-      class="mt-4 space-y-4"
-    >
-      <!-- Nombre de la Empresa -->
+    <form [formGroup]="articleForm" class="mt-4 space-y-4">
+      <!-- Company Name -->
       <div>
         <label class="text-secondary font-medium block" for="company">
           Company Name
@@ -25,7 +21,7 @@
         />
       </div>
 
-      <!-- Nombre de la App -->
+      <!-- App Name -->
       <div>
         <label class="text-secondary font-medium block" for="appName">
           App Name
@@ -39,7 +35,7 @@
         />
       </div>
 
-      <!-- Categoría -->
+      <!-- Category -->
       <div>
         <label class="text-secondary font-medium block" for="category">
           Category
@@ -56,7 +52,7 @@
         </select>
       </div>
 
-      <!-- Título -->
+      <!-- Title -->
       <div>
         <label class="text-secondary font-medium block" for="title">
           Title
@@ -70,7 +66,7 @@
         />
       </div>
 
-      <!-- Contenido (Editor Quill) -->
+      <!-- Content (Quill Editor) -->
       <div>
         <label class="text-secondary font-medium block" for="content">
           Content
@@ -84,7 +80,7 @@
         ></quill-editor>
       </div>
 
-      <!-- Vídeo promocional -->
+      <!-- Promo Video Upload -->
       <div>
         <label for="video">Upload Promo Video</label>
         <input type="file" accept="video/*" />
@@ -93,29 +89,30 @@
         </p>
       </div>
 
-      <!-- Opción de promoción del vídeo -->
+      <!-- Video Promotion Option -->
+
       <div class="flex items-center">
         <input
           type="checkbox"
           id="promoteVideo"
           formControlName="promoteVideo"
-          [disabled]="!userSubscribed"
           class="mr-2"
         />
-        <label for="promoteVideo" class="text-secondary">
-          Promote video in slider
-        </label>
+        <label for="promoteVideo" class="text-secondary"
+          >Promote video in slider</label
+        >
         <span *ngIf="!userSubscribed" class="ml-2 text-xs text-red-500">
           Available only for subscribers
         </span>
       </div>
 
+      <!-- Embedded Video (Preview) -->
       <video controls class="mt-4 w-1/2 rounded-md">
         <source [src]="" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
 
-      <!-- Fecha de Publicación -->
+      <!-- Publication Date -->
       <div>
         <label class="text-secondary font-medium block" for="publishDate">
           Publication Date
@@ -128,20 +125,32 @@
         />
       </div>
 
-      <!-- Botón de Envío -->
-      <button
-        type="submit"
-        class="w-48 py-3 mr-2 bg-accent text-gradientEnd font-bold rounded-md hover:bg-opacity-90 transition-all duration-300"
-      >
-        Preview
-      </button>
+      <!-- Action Buttons -->
+      <div class="flex space-x-4">
+        <!-- Preview button: no submit, llama a onPreview() -->
+        <button
+          type="button"
+          (click)="onPreview()"
+          class="w-48 py-3 mr-2 bg-accent text-gradientEnd font-bold rounded-md hover:bg-opacity-90 transition-all duration-300"
+        >
+          Preview
+        </button>
 
-      <button
-        type="submit"
-        class="w-48 py-3 bg-gradientEnd text-background font-bold rounded-md hover:bg-opacity-90 transition-all duration-300"
-      >
-        Submit for Approval
-      </button>
+        <!-- Submit button: envía el formulario para aprobación -->
+        <button
+          type="button"
+          (click)="onSubmit()"
+          class="w-48 py-3 bg-gradientEnd text-background font-bold rounded-md hover:bg-opacity-90 transition-all duration-300"
+        >
+          Submit for Approval
+        </button>
+      </div>
     </form>
+
+    <!-- Section for Preview -->
+    <div *ngIf="previewHtml" class="mt-6 p-4 border border-gray-300 rounded">
+      <h3 class="text-xl font-bold text-primary mb-2">Preview</h3>
+      <div [innerHTML]="previewHtml"></div>
+    </div>
   </div>
 </main>

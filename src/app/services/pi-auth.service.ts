@@ -64,7 +64,6 @@ export class PiAuthService {
       .then(
         (auth: {
           accessToken: string;
-
           user?: { username: string; uid: string };
         }) => {
           this.ngZone.run(() => {
@@ -76,30 +75,35 @@ export class PiAuthService {
               return;
             }
 
-            // Imprimir el access token para pruebas
-            console.log('Access Token:', auth.accessToken);
-
             const username = auth.user?.username || 'Sandbox Pi User';
+            const piId = auth.user?.uid || 'sandbox-user';
 
             this.http
               .post('http://localhost:8080/auth/pi-login', {
                 accessToken: auth.accessToken,
-                piId: auth.user?.uid || '',
+                piId,
                 username,
               })
               .subscribe({
                 next: (response: any) => {
                   if (isPlatformBrowser(this.platformId)) {
-                    localStorage.setItem('user', JSON.stringify(response));
+                    const userData = {
+                      accessToken: auth.accessToken,
+                      username,
+                      piId,
+                      role: response.role || 'USER',
+                    };
+                    localStorage.setItem('user', JSON.stringify(userData));
                     this.isAuthenticatedSubject.next(true);
-                    this.usernameSubject.next(response.username);
+                    this.usernameSubject.next(username);
+
+                    this.appRef.tick();
+                    const dashboard =
+                      response.role === 'ADMIN'
+                        ? '/admin-dashboard'
+                        : '/user-dashboard';
+                    this.router.navigate([dashboard]);
                   }
-                  this.appRef.tick();
-                  const dashboard =
-                    response.role === 'ADMIN'
-                      ? '/admin-dashboard'
-                      : '/user-dashboard';
-                  this.router.navigate([dashboard]);
                 },
                 error: (err) => {
                   console.error('Error en el backend:', err);

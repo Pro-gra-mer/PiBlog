@@ -30,7 +30,7 @@ public class Article {
   private String category;
 
   @Lob
-  @Column(nullable = false)
+  @Column(nullable = false, columnDefinition = "MEDIUMTEXT")
   @Schema(description = "Content of the article", example = "This article explains...", required = true)
   private String content;
 
