@@ -7,24 +7,31 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { ArticleService } from '../../../services/article.service';
 import { Article } from '../../../models/Article.model';
 import DOMPurify from 'dompurify';
+import { DomSanitizer } from '@angular/platform-browser';
+import { ArticleDetailComponent } from '../../../components/article-detail/article-detail.component';
 
 declare const cloudinary: any;
 
 @Component({
   selector: 'app-create-article',
   standalone: true,
-  imports: [FormsModule, ReactiveFormsModule, CommonModule, QuillModule],
+  imports: [
+    FormsModule,
+    ReactiveFormsModule,
+    CommonModule,
+    QuillModule,
+    ArticleDetailComponent,
+  ],
   templateUrl: './create-article.component.html',
   styleUrls: ['./create-article.component.css'],
 })
 export class CreateArticleComponent implements AfterViewInit {
   articleForm: FormGroup;
   message: string | null = null;
-  previewHtml: string = '';
+  // Propiedad para la previsualización usando el componente de detalle
+  previewArticle: Article | null = null;
   userSubscribed: boolean = false;
   @ViewChild('quillEditor', { static: false }) quillEditor: any;
-
-  private articleIdToLoad: number | null = null;
 
   categories = [
     'Marketplaces',
@@ -38,12 +45,15 @@ export class CreateArticleComponent implements AfterViewInit {
   constructor(
     private formBuilder: FormBuilder,
     private articleService: ArticleService,
-    private http: HttpClient
+    private http: HttpClient,
+    private sanitizer: DomSanitizer
   ) {
     this.articleForm = this.formBuilder.group({
       company: ['', [Validators.required]],
       app: ['', Validators.required],
       title: ['', [Validators.required, Validators.maxLength(100)]],
+      description: ['', [Validators.required, Validators.maxLength(200)]],
+      headerImage: [''],
       category: ['', [Validators.required]],
       content: ['', [Validators.required]],
       publishDate: [
@@ -76,8 +86,11 @@ export class CreateArticleComponent implements AfterViewInit {
   }
 
   onPreview(): void {
-    const rawContent = this.articleForm.get('content')?.value;
-    this.previewHtml = DOMPurify.sanitize(rawContent, {
+    // Extraer los valores del formulario
+    const formValues = this.articleForm.value;
+    const rawContent = formValues.content;
+    // Sanitizamos el contenido del editor
+    const sanitizedContent = DOMPurify.sanitize(rawContent, {
       ALLOWED_TAGS: [
         'p',
         'br',
@@ -93,8 +106,13 @@ export class CreateArticleComponent implements AfterViewInit {
         'h3',
         'img',
       ],
-      ALLOWED_ATTR: ['href', 'target', 'src'],
+      ALLOWED_ATTR: ['href', 'target', 'src', 'style'],
     });
+    // Creamos el objeto para la previsualización
+    this.previewArticle = {
+      ...formValues,
+      content: sanitizedContent,
+    };
   }
 
   onSubmit(): void {
@@ -125,7 +143,7 @@ export class CreateArticleComponent implements AfterViewInit {
         'h3',
         'img',
       ],
-      ALLOWED_ATTR: ['href', 'target', 'src'],
+      ALLOWED_ATTR: ['href', 'target', 'src', 'style'],
     });
 
     if (!sanitizedContent.trim()) {
@@ -147,12 +165,49 @@ export class CreateArticleComponent implements AfterViewInit {
           publishDate: new Date().toISOString().split('T')[0],
           promoteVideo: false,
         });
+        this.previewArticle = null; // Limpiar la previsualización al enviar
       },
       error: (err: HttpErrorResponse) => {
         console.error('Error guardando el artículo:', err);
         this.message = `Error al guardar: ${err.status} - ${
           err.statusText || 'Sin detalles'
         }`;
+      },
+    });
+  }
+
+  openHeaderImageWidget(): void {
+    this.http.get('http://localhost:8080/api/cloudinary-signature').subscribe({
+      next: (config: any) => {
+        const widget = cloudinary.createUploadWidget(
+          {
+            cloudName: config.cloudName,
+            apiKey: config.apiKey,
+            uploadSignature: config.signature,
+            uploadSignatureTimestamp: config.timestamp,
+            uploadPreset: config.uploadPreset,
+            sources: ['local', 'url', 'camera'],
+            multiple: false,
+            resourceType: 'image',
+          },
+          (error: any, result: any) => {
+            if (!error && result && result.event === 'success') {
+              const imageUrl = result.info.secure_url;
+              this.articleForm.get('headerImage')?.setValue(imageUrl);
+            } else if (error) {
+              console.error('Error subiendo header image:', error);
+              this.message =
+                'Error al subir la imagen de cabecera: ' +
+                (error.statusText || 'Desconocido');
+            }
+          }
+        );
+        widget.open();
+      },
+      error: (err) => {
+        console.error('Error obteniendo la firma para header image:', err);
+        this.message =
+          'No se pudo configurar la subida de la imagen de cabecera.';
       },
     });
   }
@@ -172,7 +227,6 @@ export class CreateArticleComponent implements AfterViewInit {
             uploadSignature: config.signature,
             uploadSignatureTimestamp: config.timestamp,
             uploadPreset: config.uploadPreset,
-            source: config.source,
             sources: ['local', 'url', 'camera'],
           },
           (error: any, result: any) => {
@@ -180,7 +234,7 @@ export class CreateArticleComponent implements AfterViewInit {
               const imageUrl = result.info.secure_url;
               this.insertImageInEditor(imageUrl);
             } else if (error) {
-              console.error('Error en el widget:', error);
+              console.error('Error subiendo imagen en editor:', error);
               this.message =
                 'Error al subir la imagen: ' +
                 (error.statusText || 'Desconocido');
@@ -190,7 +244,7 @@ export class CreateArticleComponent implements AfterViewInit {
         widget.open();
       },
       error: (err) => {
-        console.error('Error obteniendo la firma:', err);
+        console.error('Error obteniendo la firma para imagen:', err);
         this.message = 'No se pudo configurar la subida de imágenes.';
       },
     });
@@ -221,10 +275,6 @@ export class CreateArticleComponent implements AfterViewInit {
         const toolbar = quillInstance.getModule('toolbar');
         toolbar.addHandler('image', this.openUploadWidget.bind(this));
         this.quillEditor = { quill: quillInstance };
-        if (this.articleIdToLoad) {
-          this.loadArticle(this.articleIdToLoad, quillInstance);
-          this.articleIdToLoad = null;
-        }
       })
       .catch((error) => {
         console.error('Error loading Quill:', error);

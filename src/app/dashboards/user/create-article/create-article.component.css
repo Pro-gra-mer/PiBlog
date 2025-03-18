@@ -1,26 +1,40 @@
-/* Limitar el ancho del contenedor de previsualización y centrarlo */
+.preview-container {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
 .preview-content {
-  max-width: 800px; /* O el ancho que prefieras */
-  margin: 0 auto;
-  padding: 1rem;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
-/* Asegurar que los encabezados se vean adecuadamente */
-.preview-content h1,
-.preview-content h2,
-.preview-content h3,
-.preview-content h4,
-.preview-content h5,
-.preview-content h6 {
+.preview-content h1 {
+  font-size: 2em;
   font-weight: bold;
-  margin-top: 1rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.5em;
 }
 
-/* Limitar el tamaño de las imágenes dentro del contenido */
+.preview-content h2 {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin-bottom: 0.5em;
+}
+
+.preview-content h3 {
+  font-size: 1.25em;
+  font-weight: bold;
+  margin-bottom: 0.5em;
+}
+
+.preview-content p {
+  margin-bottom: 1em;
+  overflow-wrap: break-word;
+}
+
 .preview-content img {
-  max-width: 100%; /* La imagen no excederá el ancho del contenedor */
+  max-width: 300px;
   height: auto;
   display: block;
-  margin: 0.5rem auto; /* Centrar la imagen, opcional */
+  margin: 0 auto;
 }

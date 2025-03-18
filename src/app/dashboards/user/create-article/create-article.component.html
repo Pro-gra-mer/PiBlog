@@ -1,4 +1,3 @@
-<!-- Main Content -->
 <main class="flex-1 p-6">
   <h1 class="text-3xl font-bold text-primary">Welcome to Your Dashboard</h1>
   <p class="text-gray-600 mt-2">Create and manage your articles here.</p>
@@ -6,12 +5,13 @@
   <!-- Section for Article Creation -->
   <div class="mt-6 bg-white p-6 rounded-lg shadow-lg shadow-gradientEnd">
     <h2 class="text-2xl font-bold text-primary">Create a New Article</h2>
+
     <form [formGroup]="articleForm" class="mt-4 space-y-4">
       <!-- Company Name -->
       <div>
-        <label class="text-secondary font-medium block" for="company">
-          Company Name
-        </label>
+        <label class="text-secondary font-medium block" for="company"
+          >Company Name</label
+        >
         <input
           id="company"
           type="text"
@@ -23,9 +23,9 @@
 
       <!-- App Name -->
       <div>
-        <label class="text-secondary font-medium block" for="appName">
-          App Name
-        </label>
+        <label class="text-secondary font-medium block" for="appName"
+          >App Name</label
+        >
         <input
           id="appName"
           type="text"
@@ -37,9 +37,9 @@
 
       <!-- Category -->
       <div>
-        <label class="text-secondary font-medium block" for="category">
-          Category
-        </label>
+        <label class="text-secondary font-medium block" for="category"
+          >Category</label
+        >
         <select
           id="category"
           formControlName="category"
@@ -54,9 +54,9 @@
 
       <!-- Title -->
       <div>
-        <label class="text-secondary font-medium block" for="title">
-          Title
-        </label>
+        <label class="text-secondary font-medium block" for="title"
+          >Title</label
+        >
         <input
           id="title"
           type="text"
@@ -66,11 +66,47 @@
         />
       </div>
 
+      <!-- Description -->
+      <div>
+        <label class="text-secondary font-medium block" for="description"
+          >Description</label
+        >
+        <textarea
+          id="description"
+          formControlName="description"
+          placeholder="Enter a brief description of the article"
+          class="w-full max-w-md mt-1 p-3 border border-gradientEnd rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
+          rows="3"
+        ></textarea>
+      </div>
+
+      <!-- Header Image Upload -->
+      <div>
+        <label class="text-secondary font-medium block" for="headerImage"
+          >Header Image</label
+        >
+        <div class="flex items-center space-x-2">
+          <img
+            *ngIf="articleForm.get('headerImage')?.value"
+            [src]="articleForm.get('headerImage')?.value"
+            alt="Header Image"
+            class="h-16 w-auto rounded shadow"
+          />
+          <button
+            type="button"
+            (click)="openHeaderImageWidget()"
+            class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Upload Header Image
+          </button>
+        </div>
+      </div>
+
       <!-- Content (Quill Editor) -->
       <div>
-        <label class="text-secondary font-medium block" for="content">
-          Content
-        </label>
+        <label class="text-secondary font-medium block" for="content"
+          >Content</label
+        >
         <quill-editor
           #quillEditor
           class="form-control w-full lg:w-2/3 border border-gradientEnd"
@@ -90,7 +126,6 @@
       </div>
 
       <!-- Video Promotion Option -->
-
       <div class="flex items-center">
         <input
           type="checkbox"
@@ -114,9 +149,9 @@
 
       <!-- Publication Date -->
       <div>
-        <label class="text-secondary font-medium block" for="publishDate">
-          Publication Date
-        </label>
+        <label class="text-secondary font-medium block" for="publishDate"
+          >Publication Date</label
+        >
         <input
           id="publishDate"
           type="date"
@@ -127,7 +162,6 @@
 
       <!-- Action Buttons -->
       <div class="flex space-x-4">
-        <!-- Preview button: no submit, llama a onPreview() -->
         <button
           type="button"
           (click)="onPreview()"
@@ -135,8 +169,6 @@
         >
           Preview
         </button>
-
-        <!-- Submit button: envía el formulario para aprobación -->
         <button
           type="button"
           (click)="onSubmit()"
@@ -149,11 +181,11 @@
 
     <!-- Section for Preview -->
     <div
-      *ngIf="previewHtml"
-      class="mt-6 p-4 border border-gray-300 rounded preview-content"
+      *ngIf="previewArticle"
+      class="mt-6 p-4 border border-gray-300 rounded preview-container"
     >
       <h3 class="text-xl font-bold text-primary mb-2">Preview</h3>
-      <div [innerHTML]="previewHtml"></div>
+      <app-article-detail [article]="previewArticle"></app-article-detail>
     </div>
   </div>
 </main>

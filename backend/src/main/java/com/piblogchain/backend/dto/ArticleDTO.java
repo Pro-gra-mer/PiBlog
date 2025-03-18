@@ -9,35 +9,57 @@ import java.time.LocalDate;
 public class ArticleDTO {
 
   @NotBlank(message = "Company is required")
-  @Schema(description = "Name of the company", example = "TechCorp", required = true)
+  @Schema(description = "Name of the company", example = "TechCorp")
   private String company;
 
   @NotBlank(message = "App name is required")
-  @Schema(description = "Name of the app", example = "AppName", required = true)
+  @Schema(description = "Name of the app", example = "AppName")
   private String app;
 
   @NotBlank(message = "Title is required")
   @Size(max = 100, message = "Title must not exceed 100 characters")
-  @Schema(description = "Title of the article", example = "An Amazing Article", required = true)
+  @Schema(description = "Title of the article", example = "An Amazing Article")
   private String title;
 
+  @NotBlank(message = "Description is required")
+  @Schema(description = "Brief description of the article for SEO and summary", example = "This article explains the benefits of using Cloudinary for media uploads.")
+  private String description;
+
+  @Schema(description = "URL of the header image for the article", example = "https://res.cloudinary.com/dl7on9tjj/image/upload/v1742237037/xdfa4mb0d22ydyxzyvfu.jpg")
+  private String headerImage;
+
   @NotBlank(message = "Category is required")
-  @Schema(description = "Category of the article", example = "Productivity Tools", required = true)
+  @Schema(description = "Category of the article", example = "Productivity Tools")
   private String category;
 
   @NotBlank(message = "Content is required")
-  @Schema(description = "Content of the article", example = "This article explains...", required = true)
+  @Schema(description = "Content of the article", example = "This article explains...")
   private String content;
 
   @NotNull(message = "Publish date is required")
-  @Schema(description = "Publication date of the article", example = "2025-03-16", required = true)
+  @Schema(description = "Publication date of the article", example = "2025-03-16")
   private LocalDate publishDate;
 
   @Schema(description = "Indicates if the video should be promoted", example = "true")
   private boolean promoteVideo;
 
-  // Getters y Setters
+  // Constructor vacío
+  public ArticleDTO() {}
 
+  // Constructor completo (opcional)
+  public ArticleDTO(String company, String app, String title, String description, String headerImage, String category, String content, LocalDate publishDate, boolean promoteVideo) {
+    this.company = company;
+    this.app = app;
+    this.title = title;
+    this.description = description;
+    this.headerImage = headerImage;
+    this.category = category;
+    this.content = content;
+    this.publishDate = publishDate;
+    this.promoteVideo = promoteVideo;
+  }
+
+  // Getters y Setters
   public String getCompany() {
     return company;
   }
@@ -60,6 +82,22 @@ public class ArticleDTO {
 
   public void setTitle(String title) {
     this.title = title;
+  }
+
+  public String getDescription() {
+    return description;
+  }
+
+  public void setDescription(String description) {
+    this.description = description;
+  }
+
+  public String getHeaderImage() {
+    return headerImage;
+  }
+
+  public void setHeaderImage(String headerImage) {
+    this.headerImage = headerImage;
   }
 
   public String getCategory() {

@@ -10,19 +10,28 @@
   >
     <article
       *ngFor="let article of articles"
-      class="bg-white p-4 shadow-md shadow-secondary rounded-lg border-l-4 border-[#e3b23c]"
+      class="bg-white shadow-md shadow-secondary rounded-lg border-l-4 border-[#e3b23c] overflow-hidden"
     >
-      <h3 class="text-xl font-bold text-indigo-900">{{ article.title }}</h3>
-      <p class="mt-2 text-gray-700">
-        <!-- Puedes limitar el tamaño del extracto con un pipe o función -->
-        {{ article.content | slice : 0 : 150 }}...
-      </p>
-      <a
-        (click)="onReadMore(article.id)"
-        class="text-[#bd52a5] mt-4 inline-block hover:text-yellow-400 cursor-pointer"
-      >
-        Read more
-      </a>
+      <!-- Imagen de cabecera -->
+      <img
+        *ngIf="article.headerImage"
+        [src]="article.headerImage"
+        alt="{{ article.title }}"
+        class="w-full h-40 object-cover"
+      />
+
+      <div class="p-4">
+        <h3 class="text-xl font-bold text-indigo-900">{{ article.title }}</h3>
+        <p class="mt-2 text-gray-700">
+          {{ article.description | slice : 0 : 150 }}...
+        </p>
+        <a
+          (click)="onReadMore(article.id)"
+          class="text-[#bd52a5] mt-4 inline-block hover:text-yellow-400 cursor-pointer"
+        >
+          Read more
+        </a>
+      </div>
     </article>
   </div>
 </section>

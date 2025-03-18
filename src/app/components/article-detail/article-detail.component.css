@@ -1,0 +1,10 @@
+/* Ajustes para la imagen de cabecera */
+img {
+  max-width: 50%; /* Asegura que no se desborde del contenedor */
+  height: auto; /* Mantiene proporciones */
+}
+
+/* Opcional: centra la imagen y añade un margen */
+.shadow-md {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}

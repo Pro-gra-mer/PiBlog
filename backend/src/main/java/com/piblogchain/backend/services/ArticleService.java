@@ -29,6 +29,8 @@ public class ArticleService {
     article.setCompany(articleDTO.getCompany());
     article.setApp(articleDTO.getApp());
     article.setTitle(articleDTO.getTitle());
+    article.setDescription(articleDTO.getDescription());
+    article.setHeaderImage(articleDTO.getHeaderImage()); // Añadido
     article.setCategory(articleDTO.getCategory());
     article.setContent(articleDTO.getContent());
     article.setPublishDate(articleDTO.getPublishDate());
@@ -77,6 +79,4 @@ public class ArticleService {
     }
     return false;
   }
-
-
 }
