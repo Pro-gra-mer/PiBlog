@@ -1,14 +1,28 @@
-<section class="container mx-auto py-10 px-4 flex-grow">
+<section class="container mx-auto max-w-screen-2xl py-10 px-4 flex-grow">
   <h2 class="text-2xl font-bold mb-6 text-[#bd52a5]">Latest Articles</h2>
-  <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+  <!-- Mensaje de error, si lo hubiera -->
+  <div *ngIf="message" class="mb-4 text-red-500">{{ message }}</div>
+
+  <div
+    class="grid gap-6"
+    style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr))"
+  >
     <article
+      *ngFor="let article of articles"
       class="bg-white p-4 shadow-md shadow-secondary rounded-lg border-l-4 border-[#e3b23c]"
     >
-      <h3 class="text-xl font-bold text-indigo-900">Article Title</h3>
-      <p class="mt-2 text-gray-700">Brief article description...</p>
-      <a href="#" class="text-[#bd52a5] mt-4 inline-block hover:text-yellow-400"
-        >Read more</a
+      <h3 class="text-xl font-bold text-indigo-900">{{ article.title }}</h3>
+      <p class="mt-2 text-gray-700">
+        <!-- Puedes limitar el tamaño del extracto con un pipe o función -->
+        {{ article.content | slice : 0 : 150 }}...
+      </p>
+      <a
+        (click)="onReadMore(article.id)"
+        class="text-[#bd52a5] mt-4 inline-block hover:text-yellow-400 cursor-pointer"
       >
+        Read more
+      </a>
     </article>
   </div>
 </section>

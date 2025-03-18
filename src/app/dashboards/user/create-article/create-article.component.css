@@ -1,0 +1,26 @@
+/* Limitar el ancho del contenedor de previsualización y centrarlo */
+.preview-content {
+  max-width: 800px; /* O el ancho que prefieras */
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* Asegurar que los encabezados se vean adecuadamente */
+.preview-content h1,
+.preview-content h2,
+.preview-content h3,
+.preview-content h4,
+.preview-content h5,
+.preview-content h6 {
+  font-weight: bold;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Limitar el tamaño de las imágenes dentro del contenido */
+.preview-content img {
+  max-width: 100%; /* La imagen no excederá el ancho del contenedor */
+  height: auto;
+  display: block;
+  margin: 0.5rem auto; /* Centrar la imagen, opcional */
+}

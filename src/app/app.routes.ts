@@ -7,11 +7,13 @@ import { CreateArticleComponent } from './dashboards/user/create-article/create-
 import { MyArticlesComponent } from './dashboards/user/my-articles/my-articles.component';
 import { SubscriptionComponent } from './dashboards/user/subscription/subscription.component';
 import { AdminDashboardComponent } from './dashboards/admin/admin-dashboard/admin-dashboard.component'; // Importa el nuevo componente
+import { ArticleDetailComponent } from './components/article-detail/article-detail.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
   { path: 'advertise', component: AdvertiseWithUsComponent },
   { path: 'contact', component: ContactComponent },
+  { path: 'articles/:id', component: ArticleDetailComponent },
 
   {
     path: 'user-dashboard',

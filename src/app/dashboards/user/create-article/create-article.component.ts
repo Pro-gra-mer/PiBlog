@@ -54,13 +54,9 @@ export class CreateArticleComponent implements AfterViewInit {
     });
   }
 
-  ngOnInit(): void {
-    this.articleIdToLoad = 1; // Reemplaza con el ID real o usa un parámetro de ruta
-  }
+  ngOnInit(): void {}
 
-  ngAfterViewInit(): void {
-    console.log('ngAfterViewInit - quillEditor:', this.quillEditor);
-  }
+  ngAfterViewInit(): void {}
 
   loadArticle(id: number, quillInstance: any): void {
     this.articleService.getArticleById(id).subscribe({
@@ -68,9 +64,8 @@ export class CreateArticleComponent implements AfterViewInit {
         this.articleForm.patchValue(article);
         if (quillInstance && article.content) {
           quillInstance.clipboard.dangerouslyPasteHTML(0, article.content);
-          console.log('Artículo cargado en el editor:', article.content);
         } else {
-          console.warn('Editor no inicializado o sin contenido');
+          this.message = 'Editor no inicializado o sin contenido';
         }
       },
       error: (err) => {
@@ -108,7 +103,6 @@ export class CreateArticleComponent implements AfterViewInit {
       return;
     }
 
-    // Sincronizar contenido del editor antes de enviar
     if (this.quillEditor && this.quillEditor.quill) {
       const currentContent = this.quillEditor.quill.root.innerHTML;
       this.articleForm.get('content')?.setValue(currentContent);
@@ -146,8 +140,6 @@ export class CreateArticleComponent implements AfterViewInit {
       approved: false,
     };
 
-    console.log('Artículo enviado:', articlePayload);
-
     this.articleService.createArticle(articlePayload).subscribe({
       next: (response: Article) => {
         this.message = 'Artículo enviado para aprobación exitosamente.';
@@ -166,14 +158,7 @@ export class CreateArticleComponent implements AfterViewInit {
   }
 
   openUploadWidget(): void {
-    console.log(
-      'Intentando abrir widget - quillEditor:',
-      this.quillEditor,
-      'quill:',
-      this.quillEditor?.quill
-    );
     if (!this.quillEditor || !this.quillEditor.quill) {
-      console.log('Editor no está listo, esperando inicialización...');
       this.message = 'Por favor, espera a que el editor esté listo.';
       return;
     }
@@ -193,7 +178,6 @@ export class CreateArticleComponent implements AfterViewInit {
           (error: any, result: any) => {
             if (!error && result && result.event === 'success') {
               const imageUrl = result.info.secure_url;
-              console.log('Imagen subida:', imageUrl);
               this.insertImageInEditor(imageUrl);
             } else if (error) {
               console.error('Error en el widget:', error);
@@ -216,12 +200,16 @@ export class CreateArticleComponent implements AfterViewInit {
     if (this.quillEditor && this.quillEditor.quill) {
       const range = this.quillEditor.quill.getSelection(true) || { index: 0 };
       this.quillEditor.quill.insertEmbed(range.index, 'image', imageUrl);
-      console.log('Imagen insertada en el editor en posición:', range.index);
-      // Actualizar el FormControl
+      const img = this.quillEditor.quill.root.querySelector(
+        `img[src="${imageUrl}"]`
+      );
+      if (img) {
+        img.style.maxWidth = '300px';
+        img.style.height = 'auto';
+      }
       const currentContent = this.quillEditor.quill.root.innerHTML;
       this.articleForm.get('content')?.setValue(currentContent);
     } else {
-      console.error('Editor no listo al intentar insertar imagen');
       this.message =
         'No se pudo insertar la imagen porque el editor no está listo.';
     }
@@ -232,9 +220,7 @@ export class CreateArticleComponent implements AfterViewInit {
       .then(() => {
         const toolbar = quillInstance.getModule('toolbar');
         toolbar.addHandler('image', this.openUploadWidget.bind(this));
-        console.log('Editor Quill inicializado');
-        this.quillEditor = { quill: quillInstance }; // Forzar asignación de la instancia
-        console.log('quillEditor asignado:', this.quillEditor);
+        this.quillEditor = { quill: quillInstance };
         if (this.articleIdToLoad) {
           this.loadArticle(this.articleIdToLoad, quillInstance);
           this.articleIdToLoad = null;
