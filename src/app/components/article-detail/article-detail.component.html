@@ -4,7 +4,6 @@
   <article *ngIf="article" class="bg-white p-8 shadow-lg rounded-lg">
     <header class="mb-6 border-b pb-4">
       <h1 class="text-4xl font-bold text-indigo-900">{{ article.title }}</h1>
-      <!-- Mostrar la headerImage después del título -->
       <div *ngIf="article.headerImage" class="mt-4">
         <img
           [src]="article.headerImage"

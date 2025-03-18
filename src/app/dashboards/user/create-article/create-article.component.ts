@@ -146,6 +146,8 @@ export class CreateArticleComponent implements AfterViewInit {
       ALLOWED_ATTR: ['href', 'target', 'src', 'style'],
     });
 
+    console.log('Contenido sanitizado antes de guardar:', sanitizedContent); // Log para diagnóstico
+
     if (!sanitizedContent.trim()) {
       this.message =
         'El contenido no puede estar vacío después de la sanitización.';
@@ -165,7 +167,7 @@ export class CreateArticleComponent implements AfterViewInit {
           publishDate: new Date().toISOString().split('T')[0],
           promoteVideo: false,
         });
-        this.previewArticle = null; // Limpiar la previsualización al enviar
+        this.previewArticle = null;
       },
       error: (err: HttpErrorResponse) => {
         console.error('Error guardando el artículo:', err);
@@ -254,13 +256,7 @@ export class CreateArticleComponent implements AfterViewInit {
     if (this.quillEditor && this.quillEditor.quill) {
       const range = this.quillEditor.quill.getSelection(true) || { index: 0 };
       this.quillEditor.quill.insertEmbed(range.index, 'image', imageUrl);
-      const img = this.quillEditor.quill.root.querySelector(
-        `img[src="${imageUrl}"]`
-      );
-      if (img) {
-        img.style.maxWidth = '300px';
-        img.style.height = 'auto';
-      }
+      // Eliminamos la aplicación de estilos inline aquí
       const currentContent = this.quillEditor.quill.root.innerHTML;
       this.articleForm.get('content')?.setValue(currentContent);
     } else {
@@ -268,7 +264,6 @@ export class CreateArticleComponent implements AfterViewInit {
         'No se pudo insertar la imagen porque el editor no está listo.';
     }
   }
-
   onEditorCreated(quillInstance: any): void {
     import('quill')
       .then(() => {
