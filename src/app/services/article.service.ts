@@ -35,12 +35,12 @@ export class ArticleService {
     return this.http.get<Article>(`${this.apiUrl}/${id}`);
   }
 
-  // Crear un nuevo artículo
+  // Crear un nuevo artículo, incluyendo los metadatos de la imagen
   createArticle(article: Article): Observable<Article> {
     return this.http.post<Article>(this.apiUrl, article);
   }
 
-  // Actualizar un artículo (por ejemplo, para aprobarlo)
+  // Actualizar un artículo (por ejemplo, para aprobarlo) incluyendo los nuevos campos de imagen
   updateArticle(article: Article): Observable<Article> {
     return this.http.put<Article>(`${this.apiUrl}/${article.id}`, article);
   }
@@ -48,5 +48,13 @@ export class ArticleService {
   // Eliminar un artículo
   deleteArticle(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  // (Opcional) Método para solicitar la eliminación de una imagen en Cloudinary a través del backend.
+  // Este endpoint se implementaría en el backend para que, dado un publicId, elimine el archivo.
+  deleteOrphanImage(publicId: string): Observable<any> {
+    return this.http.delete(`${environment.apiUrl}/api/cleanup/${publicId}`, {
+      responseType: 'text',
+    });
   }
 }

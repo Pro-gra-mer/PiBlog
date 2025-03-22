@@ -28,10 +28,13 @@ declare const cloudinary: any;
 export class CreateArticleComponent implements AfterViewInit {
   articleForm: FormGroup;
   message: string | null = null;
-  // Propiedad para la previsualización usando el componente de detalle
   previewArticle: Article | null = null;
   userSubscribed: boolean = false;
   @ViewChild('quillEditor', { static: false }) quillEditor: any;
+
+  // Lista para llevar registro de las imágenes insertadas en el editor.
+  insertedImages: Array<{ url: string; publicId: string; uploadDate: string }> =
+    [];
 
   categories = [
     'Marketplaces',
@@ -61,6 +64,9 @@ export class CreateArticleComponent implements AfterViewInit {
         Validators.required,
       ],
       promoteVideo: [{ value: false, disabled: !this.userSubscribed }],
+      // Campos para el manejo de la imagen de cabecera
+      headerImagePublicId: [''],
+      headerImageUploadDate: [''],
     });
   }
 
@@ -86,10 +92,8 @@ export class CreateArticleComponent implements AfterViewInit {
   }
 
   onPreview(): void {
-    // Extraer los valores del formulario
     const formValues = this.articleForm.value;
     const rawContent = formValues.content;
-    // Sanitizamos el contenido del editor
     const sanitizedContent = DOMPurify.sanitize(rawContent, {
       ALLOWED_TAGS: [
         'p',
@@ -108,10 +112,10 @@ export class CreateArticleComponent implements AfterViewInit {
       ],
       ALLOWED_ATTR: ['href', 'target', 'src', 'style'],
     });
-    // Creamos el objeto para la previsualización
     this.previewArticle = {
       ...formValues,
       content: sanitizedContent,
+      approved: false,
     };
   }
 
@@ -146,7 +150,7 @@ export class CreateArticleComponent implements AfterViewInit {
       ALLOWED_ATTR: ['href', 'target', 'src', 'style'],
     });
 
-    console.log('Contenido sanitizado antes de guardar:', sanitizedContent); // Log para diagnóstico
+    console.log('Contenido sanitizado antes de guardar:', sanitizedContent);
 
     if (!sanitizedContent.trim()) {
       this.message =
@@ -168,6 +172,8 @@ export class CreateArticleComponent implements AfterViewInit {
           promoteVideo: false,
         });
         this.previewArticle = null;
+        // Limpiar la lista de imágenes insertadas
+        this.insertedImages = [];
       },
       error: (err: HttpErrorResponse) => {
         console.error('Error guardando el artículo:', err);
@@ -195,7 +201,12 @@ export class CreateArticleComponent implements AfterViewInit {
           (error: any, result: any) => {
             if (!error && result && result.event === 'success') {
               const imageUrl = result.info.secure_url;
+              const publicId = result.info.public_id;
               this.articleForm.get('headerImage')?.setValue(imageUrl);
+              this.articleForm.get('headerImagePublicId')?.setValue(publicId);
+              this.articleForm
+                .get('headerImageUploadDate')
+                ?.setValue(new Date().toISOString());
             } else if (error) {
               console.error('Error subiendo header image:', error);
               this.message =
@@ -234,7 +245,8 @@ export class CreateArticleComponent implements AfterViewInit {
           (error: any, result: any) => {
             if (!error && result && result.event === 'success') {
               const imageUrl = result.info.secure_url;
-              this.insertImageInEditor(imageUrl);
+              const publicId = result.info.public_id;
+              this.insertImageInEditor(imageUrl, publicId);
             } else if (error) {
               console.error('Error subiendo imagen en editor:', error);
               this.message =
@@ -252,24 +264,70 @@ export class CreateArticleComponent implements AfterViewInit {
     });
   }
 
-  private insertImageInEditor(imageUrl: string): void {
+  private insertImageInEditor(imageUrl: string, publicId: string): void {
     if (this.quillEditor && this.quillEditor.quill) {
       const range = this.quillEditor.quill.getSelection(true) || { index: 0 };
       this.quillEditor.quill.insertEmbed(range.index, 'image', imageUrl);
-      // Eliminamos la aplicación de estilos inline aquí
       const currentContent = this.quillEditor.quill.root.innerHTML;
       this.articleForm.get('content')?.setValue(currentContent);
+      this.insertedImages.push({
+        url: imageUrl,
+        publicId,
+        uploadDate: new Date().toISOString(),
+      });
     } else {
       this.message =
         'No se pudo insertar la imagen porque el editor no está listo.';
     }
   }
+
   onEditorCreated(quillInstance: any): void {
     import('quill')
       .then(() => {
         const toolbar = quillInstance.getModule('toolbar');
         toolbar.addHandler('image', this.openUploadWidget.bind(this));
         this.quillEditor = { quill: quillInstance };
+
+        quillInstance.on('text-change', () => {
+          const currentHTML = quillInstance.root.innerHTML;
+          console.log('Current HTML:', currentHTML);
+
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(currentHTML, 'text/html');
+          const imgElements = Array.from(doc.getElementsByTagName('img'));
+          const currentUrls = imgElements.map((img) => img.getAttribute('src'));
+          console.log('Current image URLs:', currentUrls);
+
+          const removedImages: {
+            url: string;
+            publicId: string;
+            uploadDate: string;
+          }[] = [];
+          this.insertedImages = this.insertedImages.filter((imgData) => {
+            if (!currentUrls.includes(imgData.url)) {
+              removedImages.push(imgData);
+              return false;
+            }
+            return true;
+          });
+          console.log('Removed images:', removedImages);
+
+          removedImages.forEach((imgData) => {
+            this.articleService.deleteOrphanImage(imgData.publicId).subscribe({
+              next: () => {
+                console.log(
+                  `Imagen con publicId ${imgData.publicId} eliminada de Cloudinary.`
+                );
+              },
+              error: (err) => {
+                console.error(
+                  `Error eliminando imagen con publicId ${imgData.publicId}:`,
+                  err
+                );
+              },
+            });
+          });
+        });
       })
       .catch((error) => {
         console.error('Error loading Quill:', error);

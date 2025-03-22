@@ -2,9 +2,11 @@ package com.piblogchain.backend.repositories;
 
 import com.piblogchain.backend.models.Article;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
+import java.time.LocalDateTime;
+import java.util.List;
 
-@Repository
 public interface ArticleRepository extends JpaRepository<Article, Long> {
-  // Puedes agregar métodos de consulta personalizados aquí si lo necesitas.
+
+  // Méttodo para obtener artículos no aprobados con imagen y cuya fecha de carga sea anterior a cutoff
+  List<Article> findByApprovedFalseAndHeaderImagePublicIdIsNotNullAndHeaderImageUploadDateBefore(LocalDateTime cutoff);
 }

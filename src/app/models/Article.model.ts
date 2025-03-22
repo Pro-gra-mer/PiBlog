@@ -10,4 +10,6 @@ export interface Article {
   promoteVideo: boolean;
   approved: boolean;
   headerImage?: string;
+  headerImagePublicId?: string; // Nuevo: identificador público de Cloudinary
+  headerImageUploadDate?: string; // Nuevo: fecha de subida de la imagen
 }

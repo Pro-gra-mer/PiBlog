@@ -38,6 +38,8 @@ public class SecurityConfig {
         .requestMatchers(HttpMethod.GET, "/api/articles/**").permitAll()
         // Restringir endpoints para artículos (y subidas) a roles USER y ADMIN
         .requestMatchers("/api/articles/**", "/api/upload-image").hasAnyRole("USER", "ADMIN")
+        .requestMatchers(HttpMethod.DELETE, "/api/cleanup/**").hasAnyRole("USER", "ADMIN")
+
         // Cualquier otra petición requiere autenticación
         .anyRequest().authenticated()
       )

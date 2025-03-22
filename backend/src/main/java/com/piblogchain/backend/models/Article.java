@@ -2,6 +2,7 @@ package com.piblogchain.backend.models;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
@@ -26,14 +27,32 @@ public class Article {
   private String title;
 
   @Column(nullable = false, columnDefinition = "TEXT")
-  @Schema(description = "Brief description of the article for SEO and summary",
-    example = "This article explains the benefits of using Cloudinary for media uploads.")
+  @Schema(
+    description = "Brief description of the article for SEO and summary",
+    example = "This article explains the benefits of using Cloudinary for media uploads."
+  )
   private String description;
 
   @Column(name = "header_image")
-  @Schema(description = "URL of the header image for the article",
-    example = "https://res.cloudinary.com/dl7on9tjj/image/upload/v1742237037/xdfa4mb0d22ydyxzyvfu.jpg")
+  @Schema(
+    description = "URL of the header image for the article",
+    example = "https://res.cloudinary.com/dl7on9tjj/image/upload/v1742237037/xdfa4mb0d22ydyxzyvfu.jpg"
+  )
   private String headerImage;
+
+  @Column(name = "header_image_public_id")
+  @Schema(
+    description = "Public ID of the header image in Cloudinary",
+    example = "xkz12abc"
+  )
+  private String headerImagePublicId;
+
+  @Column(name = "header_image_upload_date")
+  @Schema(
+    description = "Upload date of the header image",
+    example = "2025-03-16T12:34:56"
+  )
+  private LocalDateTime headerImageUploadDate;
 
   @Column(nullable = false)
   @Schema(description = "Category of the article", example = "Productivity Tools")
@@ -49,23 +68,33 @@ public class Article {
   private LocalDate publishDate;
 
   @Column(nullable = false)
-  @Schema(description = "Indicates if the video should be promoted in the slider", example = "true")
+  @Schema(
+    description = "Indicates if the video should be promoted in the slider",
+    example = "true"
+  )
   private boolean promoteVideo;
 
   @Column(nullable = false)
-  @Schema(description = "Indicates if the article is approved and published", example = "false")
+  @Schema(
+    description = "Indicates if the article is approved and published",
+    example = "false"
+  )
   private boolean approved;
 
   // Constructor vacío
   public Article() {}
 
   // Constructor completo (exceptuando el id autogenerado)
-  public Article(String company, String app, String title, String description, String headerImage, String category, String content, LocalDate publishDate, boolean promoteVideo, boolean approved) {
+  public Article(String company, String app, String title, String description, String headerImage,
+                 String headerImagePublicId, LocalDateTime headerImageUploadDate, String category,
+                 String content, LocalDate publishDate, boolean promoteVideo, boolean approved) {
     this.company = company;
     this.app = app;
     this.title = title;
     this.description = description;
     this.headerImage = headerImage;
+    this.headerImagePublicId = headerImagePublicId;
+    this.headerImageUploadDate = headerImageUploadDate;
     this.category = category;
     this.content = content;
     this.publishDate = publishDate;
@@ -121,6 +150,22 @@ public class Article {
 
   public void setHeaderImage(String headerImage) {
     this.headerImage = headerImage;
+  }
+
+  public String getHeaderImagePublicId() {
+    return headerImagePublicId;
+  }
+
+  public void setHeaderImagePublicId(String headerImagePublicId) {
+    this.headerImagePublicId = headerImagePublicId;
+  }
+
+  public LocalDateTime getHeaderImageUploadDate() {
+    return headerImageUploadDate;
+  }
+
+  public void setHeaderImageUploadDate(LocalDateTime headerImageUploadDate) {
+    this.headerImageUploadDate = headerImageUploadDate;
   }
 
   public String getCategory() {

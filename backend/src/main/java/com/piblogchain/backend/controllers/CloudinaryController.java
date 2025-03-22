@@ -1,8 +1,7 @@
 package com.piblogchain.backend.controllers;
 
 import com.cloudinary.Cloudinary;
-import com.cloudinary.utils.ObjectUtils;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -14,9 +13,9 @@ public class CloudinaryController {
 
   private final Cloudinary cloudinary;
 
-  public CloudinaryController(@Value("${cloudinary.url}") String cloudinaryUrl) {
-    this.cloudinary = new Cloudinary(cloudinaryUrl);
-    System.out.println("Cloudinary configurado con: " + cloudinary.config.cloudName);
+  @Autowired
+  public CloudinaryController(Cloudinary cloudinary) {
+    this.cloudinary = cloudinary;
   }
 
   @GetMapping("/api/cloudinary-signature")

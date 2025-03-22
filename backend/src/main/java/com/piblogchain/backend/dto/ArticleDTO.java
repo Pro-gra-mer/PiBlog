@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class ArticleDTO {
 
@@ -22,11 +23,25 @@ public class ArticleDTO {
   private String title;
 
   @NotBlank(message = "Description is required")
-  @Schema(description = "Brief description of the article for SEO and summary", example = "This article explains the benefits of using Cloudinary for media uploads.")
+  @Schema(
+    description = "Brief description of the article for SEO and summary",
+    example = "This article explains the benefits of using Cloudinary for media uploads.")
   private String description;
 
-  @Schema(description = "URL of the header image for the article", example = "https://res.cloudinary.com/dl7on9tjj/image/upload/v1742237037/xdfa4mb0d22ydyxzyvfu.jpg")
+  @Schema(
+    description = "URL of the header image for the article",
+    example = "https://res.cloudinary.com/dl7on9tjj/image/upload/v1742237037/xdfa4mb0d22ydyxzyvfu.jpg")
   private String headerImage;
+
+  @Schema(
+    description = "Public ID of the header image in Cloudinary",
+    example = "xkz12abc")
+  private String headerImagePublicId;
+
+  @Schema(
+    description = "Upload date of the header image",
+    example = "2025-03-16T12:34:56")
+  private LocalDateTime headerImageUploadDate;
 
   @NotBlank(message = "Category is required")
   @Schema(description = "Category of the article", example = "Productivity Tools")
@@ -47,12 +62,16 @@ public class ArticleDTO {
   public ArticleDTO() {}
 
   // Constructor completo (opcional)
-  public ArticleDTO(String company, String app, String title, String description, String headerImage, String category, String content, LocalDate publishDate, boolean promoteVideo) {
+  public ArticleDTO(String company, String app, String title, String description, String headerImage,
+                    String headerImagePublicId, LocalDateTime headerImageUploadDate, String category,
+                    String content, LocalDate publishDate, boolean promoteVideo) {
     this.company = company;
     this.app = app;
     this.title = title;
     this.description = description;
     this.headerImage = headerImage;
+    this.headerImagePublicId = headerImagePublicId;
+    this.headerImageUploadDate = headerImageUploadDate;
     this.category = category;
     this.content = content;
     this.publishDate = publishDate;
@@ -98,6 +117,22 @@ public class ArticleDTO {
 
   public void setHeaderImage(String headerImage) {
     this.headerImage = headerImage;
+  }
+
+  public String getHeaderImagePublicId() {
+    return headerImagePublicId;
+  }
+
+  public void setHeaderImagePublicId(String headerImagePublicId) {
+    this.headerImagePublicId = headerImagePublicId;
+  }
+
+  public LocalDateTime getHeaderImageUploadDate() {
+    return headerImageUploadDate;
+  }
+
+  public void setHeaderImageUploadDate(LocalDateTime headerImageUploadDate) {
+    this.headerImageUploadDate = headerImageUploadDate;
   }
 
   public String getCategory() {

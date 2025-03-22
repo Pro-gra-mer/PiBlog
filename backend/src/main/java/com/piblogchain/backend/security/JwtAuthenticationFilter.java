@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -29,12 +30,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   @Override
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
-    throws ServletException, IOException {
+    throws ServletException, IOException {  // Añadido ServletException aquí
 
     String authorizationHeader = request.getHeader("Authorization");
     System.out.println("📥 Authorization header: " + authorizationHeader);
 
     if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+      System.out.println("🚫 No se proporcionó token válido");
       chain.doFilter(request, response);
       return;
     }
@@ -54,7 +56,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     if ("dev".equals(piNetworkValidator.getActiveProfile()) || "sandbox".equals(piNetworkValidator.getActiveProfile())) {
       // En modo sandbox/dev, usar valores por defecto
       piId = "sandbox-user";
-      role = "USER"; // O ajusta según el usuario autenticado
+      role = "USER"; // Asegura que coincide con lo esperado en SecurityConfig
+      System.out.println("🟢 Modo sandbox/dev activo");
     } else {
       // En modo producción, validar como JWT
       try {
@@ -75,10 +78,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     if (piId != null && role != null) {
+      // Usar SimpleGrantedAuthority para asignar el rol
       UsernamePasswordAuthenticationToken authToken =
-        new UsernamePasswordAuthenticationToken(piId, null, Collections.singleton(() -> "ROLE_" + role));
+        new UsernamePasswordAuthenticationToken(piId, null, Collections.singleton(new SimpleGrantedAuthority("ROLE_" + role)));
       SecurityContextHolder.getContext().setAuthentication(authToken);
       System.out.println("🔒 Contexto de seguridad establecido: " + authToken);
+    } else {
+      System.out.println("⚠️ piId o role nulos, no se estableció autenticación");
     }
 
     chain.doFilter(request, response);
