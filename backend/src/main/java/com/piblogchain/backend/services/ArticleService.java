@@ -5,6 +5,9 @@ import com.piblogchain.backend.models.Article;
 import com.piblogchain.backend.repositories.ArticleRepository;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -23,17 +26,38 @@ public class ArticleService {
   public ArticleService(ArticleRepository articleRepository, @Value("${cloudinary.url}") String cloudinaryUrl) {
     this.articleRepository = articleRepository;
     // Se inicializa Cloudinary utilizando la URL configurada en el entorno,
-    // la cual debe tener el formato:
-    // cloudinary://<api_key>:<api_secret>@<cloud_name>
+    // la cual debe tener el formato: cloudinary://<api_key>:<api_secret>@<cloud_name>
     this.cloudinary = new Cloudinary(cloudinaryUrl);
   }
 
   /**
    * Crea un nuevo artículo a partir de un DTO.
-   * El campo 'approved' se establece en false para indicar que el artículo
-   * está pendiente de aprobación.
+   * Se valida que el total de imágenes (cabecera + contenido) no supere 5.
+   * El campo 'approved' se establece en false para indicar que el artículo está pendiente de aprobación.
    */
   public Article createArticle(ArticleDTO articleDTO) {
+    validateImageCount(articleDTO);
+    Article article = buildArticleFromDto(articleDTO);
+    return articleRepository.save(article);
+  }
+
+  private void validateImageCount(ArticleDTO articleDTO) {
+    int imageCount = 0;
+    // Contar imagen de cabecera si existe
+    if (articleDTO.getHeaderImage() != null && !articleDTO.getHeaderImage().isEmpty()) {
+      imageCount++;
+    }
+    // Analizar el contenido HTML para contar las etiquetas <img>
+    Document doc = Jsoup.parse(articleDTO.getContent());
+    Elements imgElements = doc.select("img");
+    imageCount += imgElements.size();
+
+    if (imageCount > 5) {
+      throw new IllegalArgumentException("El artículo no puede contener más de 5 imágenes en total.");
+    }
+  }
+
+  private Article buildArticleFromDto(ArticleDTO articleDTO) {
     Article article = new Article();
     article.setCompany(articleDTO.getCompany());
     article.setApp(articleDTO.getApp());
@@ -46,10 +70,10 @@ public class ArticleService {
     article.setContent(articleDTO.getContent());
     article.setPublishDate(articleDTO.getPublishDate());
     article.setPromoteVideo(articleDTO.isPromoteVideo());
-    article.setApproved(false); // El artículo se crea sin aprobación.
-
-    return articleRepository.save(article);
+    article.setApproved(false); // Se crea como pendiente de aprobación
+    return article;
   }
+
 
   /**
    * Retorna la lista de todos los artículos.

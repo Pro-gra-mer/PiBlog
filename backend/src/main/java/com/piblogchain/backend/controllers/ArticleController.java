@@ -30,9 +30,15 @@ public class ArticleController {
 
   @Operation(summary = "Create a new article", security = @SecurityRequirement(name = "BearerAuth"))
   @PostMapping("/articles")
-  public ResponseEntity<Article> createArticle(@Valid @RequestBody ArticleDTO articleDTO) {
-    Article savedArticle = articleService.createArticle(articleDTO);
-    return ResponseEntity.ok(savedArticle);
+  public ResponseEntity<?> createArticle(@Valid @RequestBody ArticleDTO articleDTO) {
+    try {
+      Article savedArticle = articleService.createArticle(articleDTO);
+      return ResponseEntity.ok(savedArticle);
+    } catch (IllegalArgumentException ex) {
+      return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+    } catch (Exception ex) {
+      return ResponseEntity.status(500).body(Map.of("error", "Internal server error"));
+    }
   }
 
   @Operation(summary = "Get all articles")

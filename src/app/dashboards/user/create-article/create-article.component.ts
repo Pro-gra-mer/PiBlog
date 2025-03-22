@@ -32,7 +32,7 @@ export class CreateArticleComponent implements AfterViewInit {
   userSubscribed: boolean = false;
   @ViewChild('quillEditor', { static: false }) quillEditor: any;
 
-  // Lista para llevar registro de las imágenes insertadas en el editor.
+  // Lista para llevar registro de las imágenes insertadas en el editor
   insertedImages: Array<{ url: string; publicId: string; uploadDate: string }> =
     [];
 
@@ -73,6 +73,16 @@ export class CreateArticleComponent implements AfterViewInit {
   ngOnInit(): void {}
 
   ngAfterViewInit(): void {}
+
+  // Devuelve el total de imágenes: suma 1 si existe headerImage + imágenes insertadas
+  private getTotalImagesCount(): number {
+    let count = 0;
+    if (this.articleForm.get('headerImage')?.value) {
+      count++;
+    }
+    count += this.insertedImages.length;
+    return count;
+  }
 
   loadArticle(id: number, quillInstance: any): void {
     this.articleService.getArticleById(id).subscribe({
@@ -125,6 +135,13 @@ export class CreateArticleComponent implements AfterViewInit {
       return;
     }
 
+    // Validar que no se exceda el límite de imágenes
+    if (this.getTotalImagesCount() > 5) {
+      this.message =
+        'El artículo no puede contener más de 5 imágenes en total.';
+      return;
+    }
+
     if (this.quillEditor && this.quillEditor.quill) {
       const currentContent = this.quillEditor.quill.root.innerHTML;
       this.articleForm.get('content')?.setValue(currentContent);
@@ -172,7 +189,6 @@ export class CreateArticleComponent implements AfterViewInit {
           promoteVideo: false,
         });
         this.previewArticle = null;
-        // Limpiar la lista de imágenes insertadas
         this.insertedImages = [];
       },
       error: (err: HttpErrorResponse) => {
@@ -185,6 +201,18 @@ export class CreateArticleComponent implements AfterViewInit {
   }
 
   openHeaderImageWidget(): void {
+    // Verificar que no exista ya una imagen de cabecera
+    if (this.articleForm.get('headerImage')?.value) {
+      this.message = 'Ya se ha subido una imagen de cabecera.';
+      return;
+    }
+    // Verificar que el total de imágenes no supere el límite
+    if (this.getTotalImagesCount() >= 5) {
+      this.message =
+        'El artículo no puede contener más de 5 imágenes en total.';
+      return;
+    }
+
     this.http.get('http://localhost:8080/api/cloudinary-signature').subscribe({
       next: (config: any) => {
         const widget = cloudinary.createUploadWidget(
@@ -230,6 +258,11 @@ export class CreateArticleComponent implements AfterViewInit {
       this.message = 'Por favor, espera a que el editor esté listo.';
       return;
     }
+    // Verificar que no se exceda el límite total de imágenes
+    if (this.getTotalImagesCount() >= 5) {
+      this.message = 'El artículo no puede contener más de 5 imágenes.';
+      return;
+    }
 
     this.http.get('http://localhost:8080/api/cloudinary-signature').subscribe({
       next: (config: any) => {
@@ -272,7 +305,7 @@ export class CreateArticleComponent implements AfterViewInit {
       this.articleForm.get('content')?.setValue(currentContent);
       this.insertedImages.push({
         url: imageUrl,
-        publicId,
+        publicId: publicId,
         uploadDate: new Date().toISOString(),
       });
     } else {
@@ -333,5 +366,28 @@ export class CreateArticleComponent implements AfterViewInit {
         console.error('Error loading Quill:', error);
         this.message = 'No se pudo inicializar el editor.';
       });
+  }
+
+  removeHeaderImage(): void {
+    const publicId = this.articleForm.get('headerImagePublicId')?.value;
+    if (publicId) {
+      this.articleService.deleteOrphanImage(publicId).subscribe({
+        next: () => {
+          console.log(
+            `Imagen con publicId ${publicId} eliminada de Cloudinary.`
+          );
+        },
+        error: (err) => {
+          console.error(
+            `Error eliminando imagen con publicId ${publicId}:`,
+            err
+          );
+        },
+      });
+    }
+    // Limpia los campos del formulario, eliminando la imagen localmente
+    this.articleForm.get('headerImage')?.setValue('');
+    this.articleForm.get('headerImagePublicId')?.setValue('');
+    this.articleForm.get('headerImageUploadDate')?.setValue('');
   }
 }

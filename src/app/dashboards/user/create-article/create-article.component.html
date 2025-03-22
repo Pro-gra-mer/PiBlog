@@ -86,12 +86,24 @@
           >Header Image</label
         >
         <div class="flex items-center space-x-2">
-          <img
-            *ngIf="articleForm.get('headerImage')?.value"
-            [src]="articleForm.get('headerImage')?.value"
-            alt="Header Image"
-            class="h-16 w-auto rounded shadow"
-          />
+          <!-- Contenedor con la imagen y el botón "X" para eliminarla -->
+          <div *ngIf="articleForm.get('headerImage')?.value" class="relative">
+            <img
+              [src]="articleForm.get('headerImage')?.value"
+              alt="Header Image"
+              class="h-16 w-auto rounded shadow"
+            />
+            <!-- Botón para eliminar la imagen -->
+            <button
+              type="button"
+              (click)="removeHeaderImage()"
+              class="absolute -top-1 -right-7 bg-white border border-red-600 w-6 h-6 flex items-center justify-center hover:bg-red-100"
+              title="Remove header image"
+            >
+              &times;
+            </button>
+          </div>
+          <!-- Botón para subir la imagen, visible siempre -->
           <button
             type="button"
             (click)="openHeaderImageWidget()"
@@ -100,6 +112,13 @@
             Upload Header Image
           </button>
         </div>
+      </div>
+
+      <div
+        *ngIf="message"
+        class="border border-red bg-red text-red-700 px-4 py-3 rounded relative shadow-md"
+      >
+        <strong>Error:</strong> {{ message }}
       </div>
 
       <!-- Content (Quill Editor) -->
@@ -111,7 +130,7 @@
           #quillEditor
           class="form-control w-full lg:w-2/3 border border-gradientEnd"
           formControlName="content"
-          placeholder="Enter the full content of the article including download link"
+          placeholder="Enter the full content of the article including download link. 5 images max"
           (onEditorCreated)="onEditorCreated($event)"
         ></quill-editor>
       </div>
