@@ -41,8 +41,8 @@ export class ArticleService {
   }
 
   // Actualizar un artículo (por ejemplo, para aprobarlo) incluyendo los nuevos campos de imagen
-  updateArticle(article: Article): Observable<Article> {
-    return this.http.put<Article>(`${this.apiUrl}/${article.id}`, article);
+  updateArticle(id: number, article: Article): Observable<Article> {
+    return this.http.put<Article>(`${this.apiUrl}/${id}`, article);
   }
 
   // Eliminar un artículo
@@ -56,5 +56,20 @@ export class ArticleService {
     return this.http.delete(`${environment.apiUrl}/api/cleanup/${publicId}`, {
       responseType: 'text',
     });
+  }
+
+  getDrafts(): Observable<Article[]> {
+    return this.http.get<Article[]>(`${this.apiUrl}/drafts`);
+  }
+
+  submitArticleForReview(articleId: number) {
+    return this.http.put<Article>(
+      `http://localhost:8080/api/articles/${articleId}/submit`,
+      {}
+    );
+  }
+
+  getPendingArticles(): Observable<Article[]> {
+    return this.http.get<Article[]>(`${this.apiUrl}/status/PENDING_APPROVAL`);
   }
 }

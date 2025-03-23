@@ -2,6 +2,7 @@ package com.piblogchain.backend.controllers;
 
 import com.cloudinary.Cloudinary;
 import com.piblogchain.backend.dto.ArticleDTO;
+import com.piblogchain.backend.enums.ArticleStatus;
 import com.piblogchain.backend.models.Article;
 import com.piblogchain.backend.services.ArticleService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -9,11 +10,15 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api")
@@ -56,6 +61,14 @@ public class ArticleController {
       .orElseGet(() -> ResponseEntity.notFound().build());
   }
 
+  @Operation(summary = "Submit article for review", security = @SecurityRequirement(name = "BearerAuth"))
+  @PutMapping("/articles/{id}/submit")
+  public ResponseEntity<Article> submitArticle(@PathVariable Long id) {
+    return articleService.submitArticleForReview(id)
+      .map(ResponseEntity::ok)
+      .orElseGet(() -> ResponseEntity.notFound().build());
+  }
+
   @Operation(summary = "Approve an article", security = @SecurityRequirement(name = "BearerAuth"))
   @PutMapping("/articles/{id}/approve")
   public ResponseEntity<Article> approveArticle(@PathVariable Long id) {
@@ -74,6 +87,20 @@ public class ArticleController {
     }
   }
 
+  @Operation(summary = "Get all draft articles", security = @SecurityRequirement(name = "BearerAuth"))
+  @GetMapping("/articles/drafts")
+  public ResponseEntity<List<Article>> getDrafts() {
+    List<Article> drafts = articleService.getArticlesByStatus(ArticleStatus.DRAFT);
+    return ResponseEntity.ok(drafts);
+  }
+
+  @Operation(summary = "Get all pending approval articles", security = @SecurityRequirement(name = "BearerAuth"))
+  @GetMapping("/articles/pending")
+  public ResponseEntity<List<Article>> getPendingArticles() {
+    List<Article> pending = articleService.getArticlesByStatus(ArticleStatus.PENDING_APPROVAL);
+    return ResponseEntity.ok(pending);
+  }
+
   @Operation(summary = "Delete an image from Cloudinary", security = @SecurityRequirement(name = "BearerAuth"))
   @DeleteMapping("/cleanup/{publicId}")
   public ResponseEntity<String> deleteImage(@PathVariable String publicId) {
@@ -90,4 +117,21 @@ public class ArticleController {
       return ResponseEntity.status(500).body("Error al eliminar la imagen: " + e.getMessage());
     }
   }
+
+  @PutMapping("/articles/{id}")
+  @Operation(summary = "Update an article", security = @SecurityRequirement(name = "BearerAuth"))
+  public ResponseEntity<Article> updateArticle(
+    @PathVariable Long id,
+    @RequestBody ArticleDTO articleDTO
+  ) {
+    Optional<Article> updatedArticle = articleService.updateArticle(id, articleDTO);
+    return updatedArticle.map(ResponseEntity::ok)
+      .orElseGet(() -> ResponseEntity.notFound().build());
+  }
+
+
+
+
+
+
 }

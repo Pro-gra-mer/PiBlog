@@ -1,5 +1,6 @@
 package com.piblogchain.backend.dto;
 
+import com.piblogchain.backend.enums.ArticleStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -58,13 +59,16 @@ public class ArticleDTO {
   @Schema(description = "Indicates if the video should be promoted", example = "true")
   private boolean promoteVideo;
 
+  @Schema(description = "Status of the article", example = "DRAFT")
+  private ArticleStatus status;
+
   // Constructor vacío
   public ArticleDTO() {}
 
   // Constructor completo (opcional)
   public ArticleDTO(String company, String app, String title, String description, String headerImage,
                     String headerImagePublicId, LocalDateTime headerImageUploadDate, String category,
-                    String content, LocalDate publishDate, boolean promoteVideo) {
+                    String content, LocalDate publishDate, boolean promoteVideo, ArticleStatus status) {
     this.company = company;
     this.app = app;
     this.title = title;
@@ -76,6 +80,7 @@ public class ArticleDTO {
     this.content = content;
     this.publishDate = publishDate;
     this.promoteVideo = promoteVideo;
+    this.status = status;
   }
 
   // Getters y Setters
@@ -165,5 +170,13 @@ public class ArticleDTO {
 
   public void setPromoteVideo(boolean promoteVideo) {
     this.promoteVideo = promoteVideo;
+  }
+
+  public ArticleStatus getStatus() {
+    return status;
+  }
+
+  public void setStatus(ArticleStatus status) {
+    this.status = status;
   }
 }

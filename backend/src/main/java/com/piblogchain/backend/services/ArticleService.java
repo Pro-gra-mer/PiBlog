@@ -1,6 +1,7 @@
 package com.piblogchain.backend.services;
 
 import com.piblogchain.backend.dto.ArticleDTO;
+import com.piblogchain.backend.enums.ArticleStatus;
 import com.piblogchain.backend.models.Article;
 import com.piblogchain.backend.repositories.ArticleRepository;
 import com.cloudinary.Cloudinary;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
 
 @Service
 public class ArticleService {
@@ -70,7 +72,8 @@ public class ArticleService {
     article.setContent(articleDTO.getContent());
     article.setPublishDate(articleDTO.getPublishDate());
     article.setPromoteVideo(articleDTO.isPromoteVideo());
-    article.setApproved(false); // Se crea como pendiente de aprobación
+    article.setStatus(ArticleStatus.DRAFT);
+
     return article;
   }
 
@@ -96,12 +99,13 @@ public class ArticleService {
     Optional<Article> articleOpt = articleRepository.findById(id);
     if (articleOpt.isPresent()) {
       Article article = articleOpt.get();
-      article.setApproved(true);
+      article.setStatus(ArticleStatus.PUBLISHED);
       Article updatedArticle = articleRepository.save(article);
       return Optional.of(updatedArticle);
     }
     return Optional.empty();
   }
+
 
   /**
    * Elimina un artículo a partir de su ID.
@@ -129,4 +133,56 @@ public class ArticleService {
       return false;
     }
   }
+
+  /**
+   * Envía un artículo a revisión (cambia su estado de DRAFT a PENDING_APPROVAL).
+   */
+  public Optional<Article> submitArticleForReview(Long id) {
+    Optional<Article> articleOpt = articleRepository.findById(id);
+    if (articleOpt.isPresent()) {
+      Article article = articleOpt.get();
+      if (article.getStatus() == ArticleStatus.DRAFT) {
+        article.setStatus(ArticleStatus.PENDING_APPROVAL);
+        Article updated = articleRepository.save(article);
+        return Optional.of(updated);
+      }
+    }
+    return Optional.empty();
+  }
+
+  /**
+   * Obtiene todos los artículos con un estado específico (DRAFT, PENDING_APPROVAL, PUBLISHED).
+   */
+  public List<Article> getArticlesByStatus(ArticleStatus status) {
+    return articleRepository.findByStatus(status);
+  }
+
+
+  public Optional<Article> updateArticle(Long id, ArticleDTO articleDTO) {
+    return articleRepository.findById(id).map(article -> {
+      article.setCompany(articleDTO.getCompany());
+      article.setApp(articleDTO.getApp());
+      article.setTitle(articleDTO.getTitle());
+      article.setDescription(articleDTO.getDescription());
+      article.setHeaderImage(articleDTO.getHeaderImage());
+      article.setHeaderImagePublicId(articleDTO.getHeaderImagePublicId());
+      article.setHeaderImageUploadDate(articleDTO.getHeaderImageUploadDate());
+      article.setCategory(articleDTO.getCategory());
+      article.setContent(articleDTO.getContent());
+      article.setPublishDate(articleDTO.getPublishDate());
+      article.setPromoteVideo(articleDTO.isPromoteVideo());
+
+
+      // ✅ Aquí respetas el estado enviado desde el frontend
+      article.setStatus(articleDTO.getStatus());
+
+      // (opcional) Log de depuración
+      System.out.println("Actualizando artículo ID " + id + " con estado: " + articleDTO.getStatus());
+
+      return articleRepository.save(article);
+    });
+  }
+
+
+
 }

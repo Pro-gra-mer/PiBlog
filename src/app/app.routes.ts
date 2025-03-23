@@ -5,6 +5,7 @@ import { ContactComponent } from './components/contact/contact.component';
 import { UserDashboardComponent } from './dashboards/user/user-dashboard/user-dashboard.component';
 import { CreateArticleComponent } from './dashboards/user/create-article/create-article.component';
 import { MyArticlesComponent } from './dashboards/user/my-articles/my-articles.component';
+import { DraftsComponent } from './dashboards/user/drafts/drafts.component';
 import { SubscriptionComponent } from './dashboards/user/subscription/subscription.component';
 import { AdminDashboardComponent } from './dashboards/admin/admin-dashboard/admin-dashboard.component'; // Importa el nuevo componente
 import { ArticleDetailComponent } from './components/article-detail/article-detail.component';
@@ -20,11 +21,14 @@ export const routes: Routes = [
     component: UserDashboardComponent,
     children: [
       { path: 'create-article', component: CreateArticleComponent },
+      { path: 'edit-article/:id', component: CreateArticleComponent },
       { path: 'my-articles', component: MyArticlesComponent },
+      { path: 'drafts', component: DraftsComponent },
       { path: 'subscription', component: SubscriptionComponent },
       { path: '', redirectTo: 'create-article', pathMatch: 'full' },
     ],
   },
+
   {
     path: 'admin-dashboard',
     component: AdminDashboardComponent,

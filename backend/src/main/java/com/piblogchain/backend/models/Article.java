@@ -1,5 +1,6 @@
 package com.piblogchain.backend.models;
 
+import com.piblogchain.backend.enums.ArticleStatus;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -74,12 +75,13 @@ public class Article {
   )
   private boolean promoteVideo;
 
+  @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   @Schema(
-    description = "Indicates if the article is approved and published",
-    example = "false"
+    description = "Indicates the status of the article",
+    example = "DRAFT"
   )
-  private boolean approved;
+  private ArticleStatus status = ArticleStatus.DRAFT;
 
   // Constructor vacío
   public Article() {}
@@ -87,7 +89,7 @@ public class Article {
   // Constructor completo (exceptuando el id autogenerado)
   public Article(String company, String app, String title, String description, String headerImage,
                  String headerImagePublicId, LocalDateTime headerImageUploadDate, String category,
-                 String content, LocalDate publishDate, boolean promoteVideo, boolean approved) {
+                 String content, LocalDate publishDate, boolean promoteVideo, ArticleStatus status) {
     this.company = company;
     this.app = app;
     this.title = title;
@@ -99,7 +101,7 @@ public class Article {
     this.content = content;
     this.publishDate = publishDate;
     this.promoteVideo = promoteVideo;
-    this.approved = approved;
+    this.status = status;
   }
 
   // Getters y Setters
@@ -200,11 +202,11 @@ public class Article {
     this.promoteVideo = promoteVideo;
   }
 
-  public boolean isApproved() {
-    return approved;
+  public ArticleStatus getStatus() {
+    return status;
   }
 
-  public void setApproved(boolean approved) {
-    this.approved = approved;
+  public void setStatus(ArticleStatus status) {
+    this.status = status;
   }
 }

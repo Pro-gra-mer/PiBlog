@@ -35,7 +35,7 @@ public class SecurityConfig {
         // Permitir el acceso a Swagger y autenticación sin token
         .requestMatchers("/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
         // Permitir GET a artículos públicamente
-        .requestMatchers(HttpMethod.GET, "/api/articles/**").permitAll()
+        .requestMatchers(HttpMethod.GET, "/api/articles", "/api/articles/{id:[\\d]+}").permitAll()
         // Restringir endpoints para artículos (y subidas) a roles USER y ADMIN
         .requestMatchers("/api/articles/**", "/api/upload-image").hasAnyRole("USER", "ADMIN")
         .requestMatchers(HttpMethod.DELETE, "/api/cleanup/**").hasAnyRole("USER", "ADMIN")

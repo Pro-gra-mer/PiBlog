@@ -1,3 +1,4 @@
+import { ActivatedRoute } from '@angular/router';
 import { Component, ViewChild, AfterViewInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -31,6 +32,7 @@ export class CreateArticleComponent implements AfterViewInit {
   previewArticle: Article | null = null;
   userSubscribed: boolean = false;
   @ViewChild('quillEditor', { static: false }) quillEditor: any;
+  articleIdToLoad: number | null = null;
 
   // Lista para llevar registro de las imágenes insertadas en el editor
   insertedImages: Array<{ url: string; publicId: string; uploadDate: string }> =
@@ -49,7 +51,8 @@ export class CreateArticleComponent implements AfterViewInit {
     private formBuilder: FormBuilder,
     private articleService: ArticleService,
     private http: HttpClient,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+    private route: ActivatedRoute
   ) {
     this.articleForm = this.formBuilder.group({
       company: ['', [Validators.required]],
@@ -70,7 +73,12 @@ export class CreateArticleComponent implements AfterViewInit {
     });
   }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      this.articleIdToLoad = +id;
+    }
+  }
 
   ngAfterViewInit(): void {}
 
@@ -87,12 +95,29 @@ export class CreateArticleComponent implements AfterViewInit {
   loadArticle(id: number, quillInstance: any): void {
     this.articleService.getArticleById(id).subscribe({
       next: (article: Article) => {
+        // Actualizar el formulario con los valores del artículo
         this.articleForm.patchValue(article);
+
         if (quillInstance && article.content) {
+          // Limpiar el contenido existente del editor antes de cargar el nuevo
+          quillInstance.setContents([]); // Limpia el editor
+          // Insertar el contenido del artículo
           quillInstance.clipboard.dangerouslyPasteHTML(0, article.content);
+          // Asegurarse de que el formulario refleje el contenido cargado
+          this.articleForm.get('content')?.setValue(article.content);
         } else {
           this.message = 'Editor no inicializado o sin contenido';
         }
+
+        // Si hay imágenes en el contenido, actualizar insertedImages
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(article.content, 'text/html');
+        const imgElements = Array.from(doc.getElementsByTagName('img'));
+        this.insertedImages = imgElements.map((img) => ({
+          url: img.getAttribute('src') || '',
+          publicId: '', // Necesitarías obtener el publicId de alguna manera, si está disponible
+          uploadDate: new Date().toISOString(),
+        }));
       },
       error: (err) => {
         console.error('Error cargando artículo:', err);
@@ -135,7 +160,6 @@ export class CreateArticleComponent implements AfterViewInit {
       return;
     }
 
-    // Validar que no se exceda el límite de imágenes
     if (this.getTotalImagesCount() > 5) {
       this.message =
         'El artículo no puede contener más de 5 imágenes en total.';
@@ -167,8 +191,6 @@ export class CreateArticleComponent implements AfterViewInit {
       ALLOWED_ATTR: ['href', 'target', 'src', 'style'],
     });
 
-    console.log('Contenido sanitizado antes de guardar:', sanitizedContent);
-
     if (!sanitizedContent.trim()) {
       this.message =
         'El contenido no puede estar vacío después de la sanitización.';
@@ -179,25 +201,49 @@ export class CreateArticleComponent implements AfterViewInit {
       ...this.articleForm.value,
       content: sanitizedContent,
       approved: false,
+      status: 'PENDING_APPROVAL',
     };
 
-    this.articleService.createArticle(articlePayload).subscribe({
-      next: (response: Article) => {
-        this.message = 'Artículo enviado para aprobación exitosamente.';
-        this.articleForm.reset({
-          publishDate: new Date().toISOString().split('T')[0],
-          promoteVideo: false,
+    if (this.articleIdToLoad) {
+      this.articleService
+        .updateArticle(this.articleIdToLoad, articlePayload)
+        .subscribe({
+          next: () => {
+            this.message = 'Artículo actualizado correctamente.';
+            this.articleForm.reset({
+              publishDate: new Date().toISOString().split('T')[0],
+              promoteVideo: false,
+            });
+            this.previewArticle = null;
+            this.insertedImages = [];
+            this.articleIdToLoad = null;
+          },
+          error: (err: HttpErrorResponse) => {
+            console.error('Error actualizando el artículo:', err);
+            this.message = `Error al actualizar: ${err.status} - ${
+              err.statusText || 'Sin detalles'
+            }`;
+          },
         });
-        this.previewArticle = null;
-        this.insertedImages = [];
-      },
-      error: (err: HttpErrorResponse) => {
-        console.error('Error guardando el artículo:', err);
-        this.message = `Error al guardar: ${err.status} - ${
-          err.statusText || 'Sin detalles'
-        }`;
-      },
-    });
+    } else {
+      this.articleService.createArticle(articlePayload).subscribe({
+        next: () => {
+          this.message = 'Artículo enviado para aprobación exitosamente.';
+          this.articleForm.reset({
+            publishDate: new Date().toISOString().split('T')[0],
+            promoteVideo: false,
+          });
+          this.previewArticle = null;
+          this.insertedImages = [];
+        },
+        error: (err: HttpErrorResponse) => {
+          console.error('Error guardando el artículo:', err);
+          this.message = `Error al guardar: ${err.status} - ${
+            err.statusText || 'Sin detalles'
+          }`;
+        },
+      });
+    }
   }
 
   openHeaderImageWidget(): void {
@@ -321,6 +367,10 @@ export class CreateArticleComponent implements AfterViewInit {
         toolbar.addHandler('image', this.openUploadWidget.bind(this));
         this.quillEditor = { quill: quillInstance };
 
+        if (this.articleIdToLoad) {
+          this.loadArticle(this.articleIdToLoad, quillInstance);
+        }
+
         quillInstance.on('text-change', () => {
           const currentHTML = quillInstance.root.innerHTML;
           console.log('Current HTML:', currentHTML);
@@ -389,5 +439,87 @@ export class CreateArticleComponent implements AfterViewInit {
     this.articleForm.get('headerImage')?.setValue('');
     this.articleForm.get('headerImagePublicId')?.setValue('');
     this.articleForm.get('headerImageUploadDate')?.setValue('');
+  }
+
+  saveDraft(): void {
+    if (this.articleForm.invalid) {
+      this.message = 'Por favor, completa todos los campos correctamente.';
+      return;
+    }
+
+    if (this.getTotalImagesCount() > 5) {
+      this.message = 'El artículo no puede contener más de 5 imágenes.';
+      return;
+    }
+
+    if (this.quillEditor && this.quillEditor.quill) {
+      const currentContent = this.quillEditor.quill.root.innerHTML;
+      this.articleForm.get('content')?.setValue(currentContent);
+    }
+
+    const rawContent = this.articleForm.get('content')?.value;
+    const sanitizedContent = DOMPurify.sanitize(rawContent, {
+      ALLOWED_TAGS: [
+        'p',
+        'br',
+        'strong',
+        'em',
+        'u',
+        'a',
+        'ul',
+        'ol',
+        'li',
+        'h1',
+        'h2',
+        'h3',
+        'img',
+      ],
+      ALLOWED_ATTR: ['href', 'target', 'src', 'style'],
+    });
+
+    const articlePayload: Article = {
+      ...this.articleForm.value,
+      content: sanitizedContent,
+      approved: false,
+      status: 'DRAFT',
+    };
+
+    if (this.articleIdToLoad) {
+      this.articleService
+        .updateArticle(this.articleIdToLoad, articlePayload)
+        .subscribe({
+          next: () => {
+            this.message = 'Borrador actualizado correctamente.';
+            this.articleForm.reset({
+              publishDate: new Date().toISOString().split('T')[0],
+              promoteVideo: false,
+            });
+            this.previewArticle = null;
+            this.insertedImages = [];
+            this.articleIdToLoad = null;
+          },
+          error: (err) => {
+            console.error('Error actualizando el borrador:', err);
+            this.message = 'No se pudo actualizar el borrador.';
+          },
+        });
+    } else {
+      this.articleService.createArticle(articlePayload).subscribe({
+        next: () => {
+          this.message = 'Borrador guardado correctamente.';
+          this.articleForm.reset({
+            publishDate: new Date().toISOString().split('T')[0],
+            promoteVideo: false,
+          });
+          this.previewArticle = null;
+          this.insertedImages = [];
+          this.articleIdToLoad = null;
+        },
+        error: (err) => {
+          console.error('Error guardando el borrador:', err);
+          this.message = 'No se pudo guardar el borrador.';
+        },
+      });
+    }
   }
 }

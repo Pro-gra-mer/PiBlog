@@ -1,3 +1,5 @@
+export type ArticleStatus = 'DRAFT' | 'PENDING_APPROVAL' | 'PUBLISHED';
+
 export interface Article {
   id: number;
   company: string;
@@ -6,10 +8,10 @@ export interface Article {
   description: string;
   category: string;
   content: string;
-  publishDate: string; // O Date, según cómo manejes las fechas
+  publishDate: string;
   promoteVideo: boolean;
-  approved: boolean;
+  status: ArticleStatus; // ← ¡nuevo!
   headerImage?: string;
-  headerImagePublicId?: string; // Nuevo: identificador público de Cloudinary
-  headerImageUploadDate?: string; // Nuevo: fecha de subida de la imagen
+  headerImagePublicId?: string;
+  headerImageUploadDate?: string;
 }
