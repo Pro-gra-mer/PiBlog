@@ -62,13 +62,16 @@ public class ArticleDTO {
   @Schema(description = "Status of the article", example = "DRAFT")
   private ArticleStatus status;
 
+  @Schema(description = "Username of the article creator", example = "rebeca")
+  private String createdBy;
+
   // Constructor vacío
   public ArticleDTO() {}
 
   // Constructor completo (opcional)
   public ArticleDTO(String company, String app, String title, String description, String headerImage,
                     String headerImagePublicId, LocalDateTime headerImageUploadDate, String category,
-                    String content, LocalDate publishDate, boolean promoteVideo, ArticleStatus status) {
+                    String content, LocalDate publishDate, boolean promoteVideo, ArticleStatus status, String createdBy) {
     this.company = company;
     this.app = app;
     this.title = title;
@@ -81,6 +84,7 @@ public class ArticleDTO {
     this.publishDate = publishDate;
     this.promoteVideo = promoteVideo;
     this.status = status;
+    this.createdBy = createdBy;
   }
 
   // Getters y Setters
@@ -178,5 +182,13 @@ public class ArticleDTO {
 
   public void setStatus(ArticleStatus status) {
     this.status = status;
+  }
+
+  public String getCreatedBy() {
+    return createdBy;
+  }
+
+  public void setCreatedBy(String createdBy) {
+    this.createdBy = createdBy;
   }
 }

@@ -34,22 +34,29 @@ public class SecurityConfig {
       .authorizeHttpRequests(auth -> auth
         // Permitir el acceso a Swagger y autenticación sin token
         .requestMatchers("/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-        // Permitir GET a artículos públicamente
+
+        // Permitir GET público a la lista de artículos y por id numérico
         .requestMatchers(HttpMethod.GET, "/api/articles", "/api/articles/{id:[\\d]+}").permitAll()
-        // Restringir endpoints para artículos (y subidas) a roles USER y ADMIN
+
+        // Permitir acceso autenticado a estado de artículos del usuario
+        .requestMatchers(HttpMethod.GET, "/api/articles/status/**").hasAnyRole("USER", "ADMIN")
+
+        // Restringir creación/edición de artículos y subida de imágenes a usuarios autenticados
         .requestMatchers("/api/articles/**", "/api/upload-image").hasAnyRole("USER", "ADMIN")
+
+        // Restringir limpieza de imágenes a usuarios autenticados
         .requestMatchers(HttpMethod.DELETE, "/api/cleanup/**").hasAnyRole("USER", "ADMIN")
 
         // Cualquier otra petición requiere autenticación
         .anyRequest().authenticated()
       )
-
-      .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class) // Añadido explícitamente
+      .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
       .formLogin(form -> form.disable())
       .httpBasic(httpBasic -> httpBasic.disable());
 
     return http.build();
   }
+
 
 
   @Bean

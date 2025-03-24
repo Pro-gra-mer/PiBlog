@@ -33,11 +33,12 @@ public class ArticleController {
     this.cloudinary = cloudinary;
   }
 
-  @Operation(summary = "Create a new article", security = @SecurityRequirement(name = "BearerAuth"))
   @PostMapping("/articles")
+  @Operation(summary = "Create a new article", security = @SecurityRequirement(name = "BearerAuth"))
   public ResponseEntity<?> createArticle(@Valid @RequestBody ArticleDTO articleDTO) {
     try {
-      Article savedArticle = articleService.createArticle(articleDTO);
+      String username = SecurityContextHolder.getContext().getAuthentication().getName();
+      Article savedArticle = articleService.createArticle(articleDTO, username);
       return ResponseEntity.ok(savedArticle);
     } catch (IllegalArgumentException ex) {
       return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
@@ -45,6 +46,8 @@ public class ArticleController {
       return ResponseEntity.status(500).body(Map.of("error", "Internal server error"));
     }
   }
+
+
 
   @Operation(summary = "Get all articles")
   @GetMapping("/articles")
@@ -71,11 +74,16 @@ public class ArticleController {
 
   @Operation(summary = "Approve an article", security = @SecurityRequirement(name = "BearerAuth"))
   @PutMapping("/articles/{id}/approve")
-  public ResponseEntity<Article> approveArticle(@PathVariable Long id) {
-    return articleService.approveArticle(id)
-      .map(ResponseEntity::ok)
-      .orElseGet(() -> ResponseEntity.notFound().build());
+  public ResponseEntity<?> approveArticle(@PathVariable Long id) {
+    try {
+      return articleService.approveArticle(id)
+        .map(ResponseEntity::ok)
+        .orElseGet(() -> ResponseEntity.notFound().build());
+    } catch (IllegalStateException ex) {
+      return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+    }
   }
+
 
   @Operation(summary = "Delete an article", security = @SecurityRequirement(name = "BearerAuth"))
   @DeleteMapping("/articles/{id}")
@@ -87,12 +95,15 @@ public class ArticleController {
     }
   }
 
-  @Operation(summary = "Get all draft articles", security = @SecurityRequirement(name = "BearerAuth"))
   @GetMapping("/articles/drafts")
+  @Operation(summary = "Get user's draft articles", security = @SecurityRequirement(name = "BearerAuth"))
   public ResponseEntity<List<Article>> getDrafts() {
-    List<Article> drafts = articleService.getArticlesByStatus(ArticleStatus.DRAFT);
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    String username = auth.getName();
+    List<Article> drafts = articleService.getDraftsByUser(username);
     return ResponseEntity.ok(drafts);
   }
+
 
   @Operation(summary = "Get all pending approval articles", security = @SecurityRequirement(name = "BearerAuth"))
   @GetMapping("/articles/pending")
@@ -100,6 +111,16 @@ public class ArticleController {
     List<Article> pending = articleService.getArticlesByStatus(ArticleStatus.PENDING_APPROVAL);
     return ResponseEntity.ok(pending);
   }
+
+  @Operation(summary = "Get published articles of the current user", security = @SecurityRequirement(name = "BearerAuth"))
+  @GetMapping("/articles/published")
+  public ResponseEntity<List<Article>> getPublishedArticles() {
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    String username = auth.getName();
+    List<Article> published = articleService.getPublishedArticlesByUser(username);
+    return ResponseEntity.ok(published);
+  }
+
 
   @Operation(summary = "Delete an image from Cloudinary", security = @SecurityRequirement(name = "BearerAuth"))
   @DeleteMapping("/cleanup/{publicId}")

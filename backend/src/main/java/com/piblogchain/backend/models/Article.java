@@ -83,13 +83,15 @@ public class Article {
   )
   private ArticleStatus status = ArticleStatus.DRAFT;
 
-  // Constructor vacío
+  @Column(nullable = false)
+  @Schema(description = "Username of the creator", example = "rebeca")
+  private String createdBy;
+
   public Article() {}
 
-  // Constructor completo (exceptuando el id autogenerado)
   public Article(String company, String app, String title, String description, String headerImage,
                  String headerImagePublicId, LocalDateTime headerImageUploadDate, String category,
-                 String content, LocalDate publishDate, boolean promoteVideo, ArticleStatus status) {
+                 String content, LocalDate publishDate, boolean promoteVideo, ArticleStatus status, String createdBy) {
     this.company = company;
     this.app = app;
     this.title = title;
@@ -102,9 +104,8 @@ public class Article {
     this.publishDate = publishDate;
     this.promoteVideo = promoteVideo;
     this.status = status;
+    this.createdBy = createdBy;
   }
-
-  // Getters y Setters
 
   public Long getId() {
     return id;
@@ -208,5 +209,13 @@ public class Article {
 
   public void setStatus(ArticleStatus status) {
     this.status = status;
+  }
+
+  public String getCreatedBy() {
+    return createdBy;
+  }
+
+  public void setCreatedBy(String createdBy) {
+    this.createdBy = createdBy;
   }
 }

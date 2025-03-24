@@ -3,9 +3,12 @@ package com.piblogchain.backend.services;
 import com.piblogchain.backend.dto.ArticleDTO;
 import com.piblogchain.backend.enums.ArticleStatus;
 import com.piblogchain.backend.models.Article;
+import com.piblogchain.backend.models.User;
+import com.piblogchain.backend.models.UserRole;
 import com.piblogchain.backend.repositories.ArticleRepository;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import com.piblogchain.backend.repositories.UserRepository;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
@@ -13,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -37,11 +41,35 @@ public class ArticleService {
    * Se valida que el total de imágenes (cabecera + contenido) no supere 5.
    * El campo 'approved' se establece en false para indicar que el artículo está pendiente de aprobación.
    */
-  public Article createArticle(ArticleDTO articleDTO) {
+  @Autowired
+  private UserRepository userRepository;
+  public Article createArticle(ArticleDTO articleDTO, String username) {
     validateImageCount(articleDTO);
+
+    // Verificar el rol del usuario
+    User user = userRepository.findByUsername(username)
+      .orElseThrow(() -> new RuntimeException("User not found: " + username));
+
     Article article = buildArticleFromDto(articleDTO);
+
+    // Validación del estado según el rol
+    if (user.getRole() == UserRole.USER) {
+      if (articleDTO.getStatus() == ArticleStatus.PUBLISHED) {
+        throw new IllegalArgumentException("Users cannot publish articles directly.");
+      }
+      // Si es null, lo dejamos en DRAFT; si no, respetamos lo enviado (siempre que no sea PUBLISHED)
+      article.setStatus(articleDTO.getStatus() != null ? articleDTO.getStatus() : ArticleStatus.DRAFT);
+    } else {
+      // ADMIN puede enviar cualquier estado
+      article.setStatus(articleDTO.getStatus() != null ? articleDTO.getStatus() : ArticleStatus.DRAFT);
+    }
+
+    // Asignar autor
+    article.setCreatedBy(username);
+
     return articleRepository.save(article);
   }
+
 
   private void validateImageCount(ArticleDTO articleDTO) {
     int imageCount = 0;
@@ -72,10 +100,13 @@ public class ArticleService {
     article.setContent(articleDTO.getContent());
     article.setPublishDate(articleDTO.getPublishDate());
     article.setPromoteVideo(articleDTO.isPromoteVideo());
-    article.setStatus(ArticleStatus.DRAFT);
+
+    // ✅ Usa el estado proporcionado, o por defecto DRAFT si viene null
+    article.setStatus(articleDTO.getStatus() != null ? articleDTO.getStatus() : ArticleStatus.DRAFT);
 
     return article;
   }
+
 
 
   /**
@@ -99,12 +130,20 @@ public class ArticleService {
     Optional<Article> articleOpt = articleRepository.findById(id);
     if (articleOpt.isPresent()) {
       Article article = articleOpt.get();
+
+      if (article.getStatus() != ArticleStatus.PENDING_APPROVAL) {
+        throw new IllegalStateException("Only pending articles can be approved.");
+      }
+
       article.setStatus(ArticleStatus.PUBLISHED);
+      article.setPublishDate(LocalDate.now()); // opcional
+
       Article updatedArticle = articleRepository.save(article);
       return Optional.of(updatedArticle);
     }
     return Optional.empty();
   }
+
 
 
   /**
@@ -181,6 +220,14 @@ public class ArticleService {
 
       return articleRepository.save(article);
     });
+  }
+
+  public List<Article> getDraftsByUser(String username) {
+    return articleRepository.findByStatusAndCreatedBy(ArticleStatus.DRAFT, username);
+  }
+
+  public List<Article> getPublishedArticlesByUser(String username) {
+    return articleRepository.findByStatusAndCreatedBy(ArticleStatus.PUBLISHED, username);
   }
 
 

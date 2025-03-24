@@ -144,4 +144,12 @@ export class PiAuthService {
     }
     return null;
   }
+
+  isAdmin(): boolean {
+    if (isPlatformBrowser(this.platformId)) {
+      const storedUser = localStorage.getItem('user');
+      return storedUser ? JSON.parse(storedUser).role === 'ADMIN' : false;
+    }
+    return false;
+  }
 }

@@ -70,6 +70,14 @@ export class ArticleService {
   }
 
   getPendingArticles(): Observable<Article[]> {
-    return this.http.get<Article[]>(`${this.apiUrl}/status/PENDING_APPROVAL`);
+    return this.http.get<Article[]>(`${this.apiUrl}/pending`);
+  }
+
+  approveArticle(id: number): Observable<Article> {
+    return this.http.put<Article>(`${this.apiUrl}/${id}/approve`, {});
+  }
+
+  getPublishedArticles(): Observable<Article[]> {
+    return this.http.get<Article[]>(`${this.apiUrl}/published`);
   }
 }

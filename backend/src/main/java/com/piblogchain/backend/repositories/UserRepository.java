@@ -13,4 +13,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
   Optional<User> findByPiId(String piId); // Buscar usuario por Pi ID
 
   boolean existsByPiId(String piId); // Verificar si ya está registrado
+
+  Optional<User> findByUsername(String username);
 }

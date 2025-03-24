@@ -31,18 +31,15 @@ export class ArticleDetailComponent implements OnInit {
         this.articleService.getArticleById(+articleId).subscribe({
           next: (data: Article) => {
             this.article = data;
-
             this.safeContent = this.sanitizer.bypassSecurityTrustHtml(
-              this.article.content
+              data.content
             );
           },
           error: (err) => {
             console.error('Error fetching article detail', err);
-            this.message = 'Error al cargar el artículo.';
+            this.message = 'Failed to load the article.';
           },
         });
-      } else {
-        this.message = 'No se proporcionó un ID de artículo.';
       }
     } else {
       this.safeContent = this.sanitizer.bypassSecurityTrustHtml(

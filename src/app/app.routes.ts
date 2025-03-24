@@ -9,6 +9,7 @@ import { DraftsComponent } from './dashboards/user/drafts/drafts.component';
 import { SubscriptionComponent } from './dashboards/user/subscription/subscription.component';
 import { AdminDashboardComponent } from './dashboards/admin/admin-dashboard/admin-dashboard.component'; // Importa el nuevo componente
 import { ArticleDetailComponent } from './components/article-detail/article-detail.component';
+import { PendingComponent } from './dashboards/user/pending/pending.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -24,6 +25,7 @@ export const routes: Routes = [
       { path: 'edit-article/:id', component: CreateArticleComponent },
       { path: 'my-articles', component: MyArticlesComponent },
       { path: 'drafts', component: DraftsComponent },
+      { path: 'pending', component: PendingComponent },
       { path: 'subscription', component: SubscriptionComponent },
       { path: '', redirectTo: 'create-article', pathMatch: 'full' },
     ],
@@ -36,6 +38,8 @@ export const routes: Routes = [
     children: [
       { path: 'create-article', component: CreateArticleComponent },
       { path: 'my-articles', component: MyArticlesComponent },
+      { path: 'drafts', component: DraftsComponent },
+      { path: 'pending', component: PendingComponent },
     ],
   },
   { path: '**', redirectTo: '', pathMatch: 'full' },

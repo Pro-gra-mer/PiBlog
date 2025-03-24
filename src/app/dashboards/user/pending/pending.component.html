@@ -1,0 +1,68 @@
+<section class="mt-6 bg-white p-6 rounded-lg shadow-lg shadow-gradientEnd">
+  <h2 class="text-2xl font-bold text-primary mb-4">Pending Articles</h2>
+  <ul
+    *ngIf="!loading && !error && pendingArticles.length > 0"
+    class="space-y-4"
+  >
+    <div *ngIf="loading" class="text-gray-500">Loading pending articles...</div>
+    <div *ngIf="error" class="text-red-500">{{ error }}</div>
+    <li
+      *ngFor="let article of pendingArticles"
+      class="p-4 border border-gray-200 rounded-md shadow-sm hover:shadow-md transition"
+    >
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-lg font-semibold text-primary">
+            {{ article.title }}
+          </h3>
+          <!-- Mostrar mensaje solo en el artículo que ha sido publicado -->
+          <div
+            *ngIf="publishedMessage && article.id === lastPublishedArticleId"
+            class="mb-4 p-4 bg-green-100 text-green-800 rounded"
+          >
+            {{ publishedMessage }}
+          </div>
+
+          <p class="text-sm text-gray-500">
+            {{ article.app }} -
+            <span class="italic">{{ article.category }}</span>
+          </p>
+          <span
+            class="inline-block mt-1 text-xs font-medium px-2 py-1 rounded bg-yellow-100 text-yellow-800"
+          >
+            {{ article.status }}
+          </span>
+        </div>
+
+        <button
+          (click)="viewArticle(article.id)"
+          class="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded hover:bg-blue-700 transition-all duration-200"
+        >
+          {{ isSelected(article.id) ? "Close" : "View" }}
+        </button>
+      </div>
+
+      <!-- Detalle del artículo debajo de su tarjeta -->
+      <div *ngIf="isSelected(article.id)" class="mt-4 border-t pt-4">
+        <app-article-detail
+          [article]="getSelectedArticle(article.id)"
+        ></app-article-detail>
+      </div>
+      <!-- Botón de publicación solo para admins -->
+      <button
+        *ngIf="isAdmin"
+        (click)="publishArticle(article.id)"
+        class="mt-4 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded hover:bg-emerald-700 transition-all duration-200"
+      >
+        Publish
+      </button>
+    </li>
+  </ul>
+  <!-- Mensaje cuando no hay artículos pendientes -->
+  <div
+    *ngIf="!loading && !error && pendingArticles.length === 0"
+    class="text-gray-400"
+  >
+    No pending articles available.
+  </div>
+</section>
