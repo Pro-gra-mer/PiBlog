@@ -230,6 +230,9 @@ public class ArticleService {
     return articleRepository.findByStatusAndCreatedBy(ArticleStatus.PUBLISHED, username);
   }
 
+  public List<Article> getPendingArticlesByUser(String username) {
+    return articleRepository.findByStatusAndCreatedBy(ArticleStatus.PENDING_APPROVAL, username);
+  }
 
 
 }

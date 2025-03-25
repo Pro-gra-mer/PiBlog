@@ -47,12 +47,10 @@ public class ArticleController {
     }
   }
 
-
-
-  @Operation(summary = "Get all articles")
+  @Operation(summary = "Get all published articles")
   @GetMapping("/articles")
-  public ResponseEntity<List<Article>> getAllArticles() {
-    List<Article> articles = articleService.getAllArticles();
+  public ResponseEntity<List<Article>> getPublicPublishedArticles() {
+    List<Article> articles = articleService.getArticlesByStatus(ArticleStatus.PUBLISHED);
     return ResponseEntity.ok(articles);
   }
 
@@ -72,6 +70,7 @@ public class ArticleController {
       .orElseGet(() -> ResponseEntity.notFound().build());
   }
 
+  @PreAuthorize("hasRole('ADMIN')")
   @Operation(summary = "Approve an article", security = @SecurityRequirement(name = "BearerAuth"))
   @PutMapping("/articles/{id}/approve")
   public ResponseEntity<?> approveArticle(@PathVariable Long id) {
@@ -105,22 +104,28 @@ public class ArticleController {
   }
 
 
-  @Operation(summary = "Get all pending approval articles", security = @SecurityRequirement(name = "BearerAuth"))
   @GetMapping("/articles/pending")
+  @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
   public ResponseEntity<List<Article>> getPendingArticles() {
-    List<Article> pending = articleService.getArticlesByStatus(ArticleStatus.PENDING_APPROVAL);
-    return ResponseEntity.ok(pending);
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    String username = auth.getName();
+
+    if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+      return ResponseEntity.ok(articleService.getArticlesByStatus(ArticleStatus.PENDING_APPROVAL));
+    } else {
+      return ResponseEntity.ok(articleService.getPendingArticlesByUser(username));
+    }
   }
+
 
   @Operation(summary = "Get published articles of the current user", security = @SecurityRequirement(name = "BearerAuth"))
   @GetMapping("/articles/published")
-  public ResponseEntity<List<Article>> getPublishedArticles() {
-    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-    String username = auth.getName();
-    List<Article> published = articleService.getPublishedArticlesByUser(username);
-    return ResponseEntity.ok(published);
+  @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+  public ResponseEntity<List<Article>> getUserPublishedArticles() {
+    String username = SecurityContextHolder.getContext().getAuthentication().getName();
+    List<Article> articles = articleService.getPublishedArticlesByUser(username);
+    return ResponseEntity.ok(articles);
   }
-
 
   @Operation(summary = "Delete an image from Cloudinary", security = @SecurityRequirement(name = "BearerAuth"))
   @DeleteMapping("/cleanup/{publicId}")

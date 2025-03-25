@@ -14,7 +14,7 @@ export class ArticleService {
   constructor(private http: HttpClient) {}
 
   // Obtener todos los artículos ordenados por fecha
-  getArticles(order: 'desc' | 'asc' = 'desc'): Observable<Article[]> {
+  getPublicArticles(order: 'desc' | 'asc' = 'desc'): Observable<Article[]> {
     return this.http.get<Article[]>(this.apiUrl).pipe(
       map((articles) =>
         articles.sort((a, b) => {
@@ -50,7 +50,6 @@ export class ArticleService {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
-  // (Opcional) Método para solicitar la eliminación de una imagen en Cloudinary a través del backend.
   // Este endpoint se implementaría en el backend para que, dado un publicId, elimine el archivo.
   deleteOrphanImage(publicId: string): Observable<any> {
     return this.http.delete(`${environment.apiUrl}/api/cleanup/${publicId}`, {
@@ -62,11 +61,8 @@ export class ArticleService {
     return this.http.get<Article[]>(`${this.apiUrl}/drafts`);
   }
 
-  submitArticleForReview(articleId: number) {
-    return this.http.put<Article>(
-      `http://localhost:8080/api/articles/${articleId}/submit`,
-      {}
-    );
+  submitArticleForReview(articleId: number): Observable<Article> {
+    return this.http.put<Article>(`${this.apiUrl}/${articleId}/submit`, {});
   }
 
   getPendingArticles(): Observable<Article[]> {
@@ -77,7 +73,8 @@ export class ArticleService {
     return this.http.put<Article>(`${this.apiUrl}/${id}/approve`, {});
   }
 
-  getPublishedArticles(): Observable<Article[]> {
+  // Devuelve los artículos publicados del usuario actual
+  getUserPublishedArticles(): Observable<Article[]> {
     return this.http.get<Article[]>(`${this.apiUrl}/published`);
   }
 }

@@ -55,7 +55,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     String role;
     if ("dev".equals(piNetworkValidator.getActiveProfile()) || "sandbox".equals(piNetworkValidator.getActiveProfile())) {
       // En modo sandbox/dev, usar valores por defecto
-      piId = "sandbox-user";
+      piId = "Myblood";
       role = "USER"; // Asegura que coincide con lo esperado en SecurityConfig
       System.out.println("🟢 Modo sandbox/dev activo");
     } else {

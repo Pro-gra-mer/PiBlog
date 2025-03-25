@@ -23,7 +23,7 @@ export class ArticleListComponent implements OnInit {
   }
 
   loadArticles(): void {
-    this.articleService.getArticles().subscribe({
+    this.articleService.getPublicArticles().subscribe({
       next: (data: Article[]) => {
         this.articles = data;
       },

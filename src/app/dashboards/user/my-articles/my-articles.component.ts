@@ -18,7 +18,7 @@ export class MyArticlesComponent implements OnInit {
   constructor(private articleService: ArticleService) {}
 
   ngOnInit(): void {
-    this.articleService.getPublishedArticles().subscribe({
+    this.articleService.getUserPublishedArticles().subscribe({
       next: (articles) => {
         this.articles = articles;
         this.loading = false;
