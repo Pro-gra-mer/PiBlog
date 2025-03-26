@@ -87,11 +87,25 @@ public class Article {
   @Schema(description = "Username of the creator", example = "rebeca")
   private String createdBy;
 
+  @Schema(description = "URL of the promo video", example = "https://res.cloudinary.com/yourcloud/video/upload/v1234567890/promo.mp4")
+  @Column(name = "promo_video")
+  private String promoVideo;
+
+  @Schema(description = "Public ID of the promo video in Cloudinary", example = "video_xkz12abc")
+  @Column(name = "promo_video_public_id")
+  private String promoVideoPublicId;
+
+  @Schema(description = "Upload date of the promo video", example = "2025-03-26T15:45:00")
+  @Column(name = "promo_video_upload_date")
+  private LocalDateTime promoVideoUploadDate;
+
   public Article() {}
 
-  public Article(String company, String app, String title, String description, String headerImage,
-                 String headerImagePublicId, LocalDateTime headerImageUploadDate, String category,
-                 String content, LocalDate publishDate, boolean promoteVideo, ArticleStatus status, String createdBy) {
+  public Article(String company, String app, String title, String description,
+                 String headerImage, String headerImagePublicId, LocalDateTime headerImageUploadDate,
+                 String category, String content, LocalDate publishDate, boolean promoteVideo,
+                 String promoVideo, String promoVideoPublicId, LocalDateTime promoVideoUploadDate,
+                 ArticleStatus status, String createdBy) {
     this.company = company;
     this.app = app;
     this.title = title;
@@ -103,9 +117,13 @@ public class Article {
     this.content = content;
     this.publishDate = publishDate;
     this.promoteVideo = promoteVideo;
+    this.promoVideo = promoVideo;
+    this.promoVideoPublicId = promoVideoPublicId;
+    this.promoVideoUploadDate = promoVideoUploadDate;
     this.status = status;
     this.createdBy = createdBy;
   }
+
 
   public Long getId() {
     return id;
@@ -218,4 +236,29 @@ public class Article {
   public void setCreatedBy(String createdBy) {
     this.createdBy = createdBy;
   }
+
+  public String getPromoVideo() {
+    return promoVideo;
+  }
+
+  public void setPromoVideo(String promoVideo) {
+    this.promoVideo = promoVideo;
+  }
+
+  public String getPromoVideoPublicId() {
+    return promoVideoPublicId;
+  }
+
+  public void setPromoVideoPublicId(String promoVideoPublicId) {
+    this.promoVideoPublicId = promoVideoPublicId;
+  }
+
+  public LocalDateTime getPromoVideoUploadDate() {
+    return promoVideoUploadDate;
+  }
+
+  public void setPromoVideoUploadDate(LocalDateTime promoVideoUploadDate) {
+    this.promoVideoUploadDate = promoVideoUploadDate;
+  }
+
 }

@@ -65,13 +65,25 @@ public class ArticleDTO {
   @Schema(description = "Username of the article creator", example = "rebeca")
   private String createdBy;
 
+  @Schema(description = "URL of the promo video", example = "https://res.cloudinary.com/yourcloud/video/upload/v1234567890/promo.mp4")
+  private String promoVideo;
+
+  @Schema(description = "Public ID of the promo video in Cloudinary", example = "video_xkz12abc")
+  private String promoVideoPublicId;
+
+  @Schema(description = "Upload date of the promo video", example = "2025-03-26T15:45:00")
+  private LocalDateTime promoVideoUploadDate;
+
+
   // Constructor vacío
   public ArticleDTO() {}
 
   // Constructor completo (opcional)
   public ArticleDTO(String company, String app, String title, String description, String headerImage,
                     String headerImagePublicId, LocalDateTime headerImageUploadDate, String category,
-                    String content, LocalDate publishDate, boolean promoteVideo, ArticleStatus status, String createdBy) {
+                    String content, LocalDate publishDate, boolean promoteVideo,
+                    String promoVideo, String promoVideoPublicId, LocalDateTime promoVideoUploadDate,
+                    ArticleStatus status, String createdBy) {
     this.company = company;
     this.app = app;
     this.title = title;
@@ -83,9 +95,13 @@ public class ArticleDTO {
     this.content = content;
     this.publishDate = publishDate;
     this.promoteVideo = promoteVideo;
+    this.promoVideo = promoVideo;
+    this.promoVideoPublicId = promoVideoPublicId;
+    this.promoVideoUploadDate = promoVideoUploadDate;
     this.status = status;
     this.createdBy = createdBy;
   }
+
 
   // Getters y Setters
   public String getCompany() {
@@ -191,4 +207,29 @@ public class ArticleDTO {
   public void setCreatedBy(String createdBy) {
     this.createdBy = createdBy;
   }
+
+  public String getPromoVideo() {
+    return promoVideo;
+  }
+
+  public void setPromoVideo(String promoVideo) {
+    this.promoVideo = promoVideo;
+  }
+
+  public String getPromoVideoPublicId() {
+    return promoVideoPublicId;
+  }
+
+  public void setPromoVideoPublicId(String promoVideoPublicId) {
+    this.promoVideoPublicId = promoVideoPublicId;
+  }
+
+  public LocalDateTime getPromoVideoUploadDate() {
+    return promoVideoUploadDate;
+  }
+
+  public void setPromoVideoUploadDate(LocalDateTime promoVideoUploadDate) {
+    this.promoVideoUploadDate = promoVideoUploadDate;
+  }
+
 }

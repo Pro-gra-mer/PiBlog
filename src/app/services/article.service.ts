@@ -77,4 +77,13 @@ export class ArticleService {
   getUserPublishedArticles(): Observable<Article[]> {
     return this.http.get<Article[]>(`${this.apiUrl}/published`);
   }
+
+  deleteOrphanVideo(publicId: string): Observable<any> {
+    return this.http.delete(
+      `${environment.apiUrl}/api/cleanup/video/${publicId}`,
+      {
+        responseType: 'text',
+      }
+    );
+  }
 }

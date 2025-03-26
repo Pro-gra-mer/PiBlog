@@ -67,7 +67,9 @@ export class CreateArticleComponent implements AfterViewInit {
         Validators.required,
       ],
       promoteVideo: [{ value: false, disabled: !this.userSubscribed }],
-      // Campos para el manejo de la imagen de cabecera
+      promoVideo: [''], // URL del video
+      promoVideoPublicId: [''],
+      promoVideoUploadDate: [''],
       headerImagePublicId: [''],
       headerImageUploadDate: [''],
     });
@@ -521,5 +523,75 @@ export class CreateArticleComponent implements AfterViewInit {
         },
       });
     }
+  }
+
+  openVideoUploadWidget(): void {
+    if (this.articleForm.get('promoVideo')?.value) {
+      this.message = 'Ya has subido un video promocional.';
+      return;
+    }
+
+    this.http.get('http://localhost:8080/api/cloudinary-signature').subscribe({
+      next: (config: any) => {
+        const widget = cloudinary.createUploadWidget(
+          {
+            cloudName: config.cloudName,
+            apiKey: config.apiKey,
+            uploadSignature: config.signature,
+            uploadSignatureTimestamp: config.timestamp,
+            uploadPreset: config.uploadPreset,
+            sources: ['local', 'url', 'camera'],
+            multiple: false,
+            resourceType: 'video', // 🔥 Esto es importante
+            maxFileSize: 30 * 1024 * 1024, // 30 MB opcionalmente
+          },
+          (error: any, result: any) => {
+            if (!error && result && result.event === 'success') {
+              const videoUrl = result.info.secure_url;
+              const publicId = result.info.public_id;
+              this.articleForm.get('promoVideo')?.setValue(videoUrl);
+              this.articleForm.get('promoVideoPublicId')?.setValue(publicId);
+              this.articleForm
+                .get('promoVideoUploadDate')
+                ?.setValue(new Date().toISOString());
+            } else if (error) {
+              console.error('Error subiendo video:', error);
+              this.message =
+                'Error al subir el video: ' +
+                (error.statusText || 'Desconocido');
+            }
+          }
+        );
+        widget.open();
+      },
+      error: (err) => {
+        console.error('Error obteniendo firma para video:', err);
+        this.message = 'No se pudo configurar la subida del video.';
+      },
+    });
+  }
+
+  removePromoVideo(): void {
+    const publicId = this.articleForm.get('promoVideoPublicId')?.value;
+    if (publicId) {
+      this.articleService.deleteOrphanVideo(publicId).subscribe({
+        next: () => {
+          console.log(
+            `Video con publicId ${publicId} eliminado de Cloudinary.`
+          );
+        },
+        error: (err) => {
+          console.error(
+            `Error eliminando video con publicId ${publicId}:`,
+            err
+          );
+        },
+      });
+    }
+
+    // Limpiar campos del formulario
+    this.articleForm.get('promoVideo')?.setValue('');
+    this.articleForm.get('promoVideoPublicId')?.setValue('');
+    this.articleForm.get('promoVideoUploadDate')?.setValue('');
   }
 }

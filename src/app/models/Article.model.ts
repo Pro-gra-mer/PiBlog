@@ -10,8 +10,15 @@ export interface Article {
   content: string;
   publishDate: string;
   promoteVideo: boolean;
-  status: ArticleStatus; // ← ¡nuevo!
+  status: ArticleStatus;
+
+  // Header image
   headerImage?: string;
   headerImagePublicId?: string;
   headerImageUploadDate?: string;
+
+  // ✅ Video promo
+  promoVideo?: string;
+  promoVideoPublicId?: string;
+  promoVideoUploadDate?: string;
 }

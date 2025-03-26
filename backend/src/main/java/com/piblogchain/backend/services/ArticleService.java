@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-
 @Service
 public class ArticleService {
 
@@ -31,53 +30,39 @@ public class ArticleService {
   @Autowired
   public ArticleService(ArticleRepository articleRepository, @Value("${cloudinary.url}") String cloudinaryUrl) {
     this.articleRepository = articleRepository;
-    // Se inicializa Cloudinary utilizando la URL configurada en el entorno,
-    // la cual debe tener el formato: cloudinary://<api_key>:<api_secret>@<cloud_name>
     this.cloudinary = new Cloudinary(cloudinaryUrl);
   }
 
-  /**
-   * Crea un nuevo artículo a partir de un DTO.
-   * Se valida que el total de imágenes (cabecera + contenido) no supere 5.
-   * El campo 'approved' se establece en false para indicar que el artículo está pendiente de aprobación.
-   */
   @Autowired
   private UserRepository userRepository;
+
   public Article createArticle(ArticleDTO articleDTO, String username) {
     validateImageCount(articleDTO);
 
-    // Verificar el rol del usuario
     User user = userRepository.findByUsername(username)
       .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
     Article article = buildArticleFromDto(articleDTO);
 
-    // Validación del estado según el rol
     if (user.getRole() == UserRole.USER) {
       if (articleDTO.getStatus() == ArticleStatus.PUBLISHED) {
         throw new IllegalArgumentException("Users cannot publish articles directly.");
       }
-      // Si es null, lo dejamos en DRAFT; si no, respetamos lo enviado (siempre que no sea PUBLISHED)
       article.setStatus(articleDTO.getStatus() != null ? articleDTO.getStatus() : ArticleStatus.DRAFT);
     } else {
-      // ADMIN puede enviar cualquier estado
       article.setStatus(articleDTO.getStatus() != null ? articleDTO.getStatus() : ArticleStatus.DRAFT);
     }
 
-    // Asignar autor
     article.setCreatedBy(username);
 
     return articleRepository.save(article);
   }
 
-
   private void validateImageCount(ArticleDTO articleDTO) {
     int imageCount = 0;
-    // Contar imagen de cabecera si existe
     if (articleDTO.getHeaderImage() != null && !articleDTO.getHeaderImage().isEmpty()) {
       imageCount++;
     }
-    // Analizar el contenido HTML para contar las etiquetas <img>
     Document doc = Jsoup.parse(articleDTO.getContent());
     Elements imgElements = doc.select("img");
     imageCount += imgElements.size();
@@ -100,32 +85,21 @@ public class ArticleService {
     article.setContent(articleDTO.getContent());
     article.setPublishDate(articleDTO.getPublishDate());
     article.setPromoteVideo(articleDTO.isPromoteVideo());
-
-    // ✅ Usa el estado proporcionado, o por defecto DRAFT si viene null
+    article.setPromoVideo(articleDTO.getPromoVideo());
+    article.setPromoVideoPublicId(articleDTO.getPromoVideoPublicId());
+    article.setPromoVideoUploadDate(articleDTO.getPromoVideoUploadDate());
     article.setStatus(articleDTO.getStatus() != null ? articleDTO.getStatus() : ArticleStatus.DRAFT);
-
     return article;
   }
 
-
-
-  /**
-   * Retorna la lista de todos los artículos.
-   */
   public List<Article> getAllArticles() {
     return articleRepository.findAll();
   }
 
-  /**
-   * Retorna un artículo a partir de su ID.
-   */
   public Optional<Article> getArticleById(Long id) {
     return articleRepository.findById(id);
   }
 
-  /**
-   * Aprueba un artículo (actualiza el campo approved a true).
-   */
   public Optional<Article> approveArticle(Long id) {
     Optional<Article> articleOpt = articleRepository.findById(id);
     if (articleOpt.isPresent()) {
@@ -136,7 +110,7 @@ public class ArticleService {
       }
 
       article.setStatus(ArticleStatus.PUBLISHED);
-      article.setPublishDate(LocalDate.now()); // opcional
+      article.setPublishDate(LocalDate.now());
 
       Article updatedArticle = articleRepository.save(article);
       return Optional.of(updatedArticle);
@@ -144,12 +118,6 @@ public class ArticleService {
     return Optional.empty();
   }
 
-
-
-  /**
-   * Elimina un artículo a partir de su ID.
-   * Retorna true si la eliminación fue exitosa, o false si no se encontró el artículo.
-   */
   public boolean deleteArticle(Long id) {
     if (articleRepository.existsById(id)) {
       articleRepository.deleteById(id);
@@ -158,10 +126,6 @@ public class ArticleService {
     return false;
   }
 
-  /**
-   * Elimina una imagen en Cloudinary usando su publicId.
-   * Se utiliza para limpiar imágenes huérfanas.
-   */
   public boolean deleteOrphanImage(String publicId) {
     try {
       @SuppressWarnings("unchecked")
@@ -173,9 +137,6 @@ public class ArticleService {
     }
   }
 
-  /**
-   * Envía un artículo a revisión (cambia su estado de DRAFT a PENDING_APPROVAL).
-   */
   public Optional<Article> submitArticleForReview(Long id) {
     Optional<Article> articleOpt = articleRepository.findById(id);
     if (articleOpt.isPresent()) {
@@ -189,13 +150,9 @@ public class ArticleService {
     return Optional.empty();
   }
 
-  /**
-   * Obtiene todos los artículos con un estado específico (DRAFT, PENDING_APPROVAL, PUBLISHED).
-   */
   public List<Article> getArticlesByStatus(ArticleStatus status) {
     return articleRepository.findByStatus(status);
   }
-
 
   public Optional<Article> updateArticle(Long id, ArticleDTO articleDTO) {
     return articleRepository.findById(id).map(article -> {
@@ -210,12 +167,11 @@ public class ArticleService {
       article.setContent(articleDTO.getContent());
       article.setPublishDate(articleDTO.getPublishDate());
       article.setPromoteVideo(articleDTO.isPromoteVideo());
-
-
-      // ✅ Aquí respetas el estado enviado desde el frontend
+      article.setPromoVideo(articleDTO.getPromoVideo());
+      article.setPromoVideoPublicId(articleDTO.getPromoVideoPublicId());
+      article.setPromoVideoUploadDate(articleDTO.getPromoVideoUploadDate());
       article.setStatus(articleDTO.getStatus());
 
-      // (opcional) Log de depuración
       System.out.println("Actualizando artículo ID " + id + " con estado: " + articleDTO.getStatus());
 
       return articleRepository.save(article);
@@ -234,5 +190,17 @@ public class ArticleService {
     return articleRepository.findByStatusAndCreatedBy(ArticleStatus.PENDING_APPROVAL, username);
   }
 
-
+  public boolean deleteOrphanVideo(String publicId) {
+    try {
+      @SuppressWarnings("unchecked")
+      Map<String, Object> result = cloudinary.uploader().destroy(
+        publicId,
+        Map.of("resource_type", "video")
+      );
+      return "ok".equals(result.get("result"));
+    } catch (Exception e) {
+      e.printStackTrace();
+      return false;
+    }
+  }
 }

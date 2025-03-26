@@ -11,6 +11,12 @@
           class="w-full max-w-2xl h-auto rounded-lg shadow-md mx-auto"
         />
       </div>
+
+      <!-- ✅ Nueva línea: Descripción -->
+      <p class="mt-4 text-lg text-gray-700">
+        {{ article.description }}
+      </p>
+
       <div class="mt-2 text-gray-600 flex flex-wrap gap-4">
         <span><strong>Company:</strong> {{ article.company }}</span>
         <span><strong>App:</strong> {{ article.app }}</span>
@@ -23,6 +29,16 @@
     </header>
 
     <section class="prose max-w-none" [innerHTML]="safeContent"></section>
+
+    <!-- ✅ Nueva sección: Video promocional -->
+    <div *ngIf="article.promoVideo" class="mt-6">
+      <h2 class="text-xl font-semibold text-primary mb-2">Promotional Video</h2>
+      <video
+        controls
+        [src]="article.promoVideo"
+        class="w-full max-w-2xl rounded-md shadow-md"
+      ></video>
+    </div>
 
     <footer class="mt-8">
       <div *ngIf="article.promoteVideo" class="text-sm text-gray-700">

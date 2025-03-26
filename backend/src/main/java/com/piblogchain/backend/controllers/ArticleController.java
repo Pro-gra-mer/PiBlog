@@ -155,6 +155,20 @@ public class ArticleController {
       .orElseGet(() -> ResponseEntity.notFound().build());
   }
 
+  @DeleteMapping("/cleanup/video/{publicId}")
+  public ResponseEntity<Map<String, String>> deleteVideo(@PathVariable String publicId) {
+    try {
+      boolean deleted = articleService.deleteOrphanVideo(publicId);
+      if (deleted) {
+        return ResponseEntity.ok(Map.of("message", "Video eliminado correctamente"));
+      } else {
+        return ResponseEntity.status(400).body(Map.of("error", "No se pudo eliminar el video"));
+      }
+    } catch (Exception e) {
+      return ResponseEntity.status(500).body(Map.of("error", "Error al eliminar el video: " + e.getMessage()));
+    }
+  }
+
 
 
 
