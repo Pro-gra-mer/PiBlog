@@ -49,6 +49,9 @@ public class SecurityConfig {
         // Restringir limpieza de imágenes a usuarios autenticados
         .requestMatchers(HttpMethod.DELETE, "/api/cleanup/**").hasAnyRole("USER", "ADMIN")
 
+        .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
+        .requestMatchers("/api/categories/**").hasRole("ADMIN")
+
         // Cualquier otra petición requiere autenticación
         .anyRequest().authenticated()
       )

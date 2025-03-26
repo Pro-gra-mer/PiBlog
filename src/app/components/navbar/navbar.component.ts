@@ -23,6 +23,18 @@ export class NavbarComponent implements OnInit {
   username: string | null = null;
   dashboardRoute: string = '/user-dashboard'; // Propiedad para la ruta
 
+  categories: string[] = [
+    'Marketplaces',
+    'Games',
+    'Productivity Tools',
+    'Education',
+    'Social & Community',
+    'Digital Services',
+    'Travel & Experiences',
+  ];
+
+  showCategories = false;
+
   constructor(
     public piAuthService: PiAuthService,
     private router: Router,
@@ -94,5 +106,9 @@ export class NavbarComponent implements OnInit {
 
   logout(): void {
     this.piAuthService.logout();
+  }
+
+  toggleCategories(): void {
+    this.showCategories = !this.showCategories;
   }
 }

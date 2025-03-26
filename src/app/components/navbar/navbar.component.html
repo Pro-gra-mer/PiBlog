@@ -73,6 +73,27 @@
     <li>
       <a routerLink="/" class="text-background hover:text-accent block">Home</a>
     </li>
+
+    <!-- Artículos con submenú de categorías -->
+    <li>
+      <div class="relative">
+        <button
+          (click)="toggleCategories()"
+          class="w-full text-background hover:text-accent font-semibold flex justify-center items-center gap-2"
+        >
+          Categories
+          <span [ngClass]="{ 'rotate-180': showCategories }">▼</span>
+        </button>
+        <ul
+          *ngIf="showCategories"
+          class="mt-2 bg-primary text-sm text-gray-200 space-y-2 px-4"
+        >
+          <li *ngFor="let category of categories">
+            <a href="#" class="block hover:text-yellow-400">{{ category }}</a>
+          </li>
+        </ul>
+      </div>
+    </li>
     <li>
       <a routerLink="/articles" class="text-background hover:text-accent block"
         >Articles</a

@@ -1,36 +1,39 @@
-<aside class="bg-gray-100 p-4 shadow-md shadow-secondary rounded-lg">
+<!-- Mobile: Toggle de categorías -->
+<div class="lg:hidden px-4 mt-4">
+  <button
+    (click)="showCategories = !showCategories"
+    class="w-full bg-[#bd52a5] text-white font-semibold px-4 py-2 rounded-md flex justify-between items-center"
+  >
+    Categories
+    <span
+      [ngClass]="{ 'rotate-180': showCategories }"
+      class="transition-transform"
+      >▼</span
+    >
+  </button>
+
+  <ul
+    *ngIf="showCategories"
+    class="mt-2 bg-gray-50 p-4 rounded-lg shadow space-y-2"
+  >
+    <li *ngFor="let category of categories">
+      <a href="#" class="accent-secondary hover:text-yellow-400">
+        {{ category.name }}
+      </a>
+    </li>
+  </ul>
+</div>
+
+<!-- Desktop: Sidebar normal -->
+<aside
+  class="hidden lg:block bg-gray-100 p-4 shadow-md shadow-secondary rounded-lg sticky top-[120px]"
+>
   <h3 class="text-lg font-bold mb-4 text-[#bd52a5]">Categories</h3>
-  <ul>
-    <li>
-      <a href="#" class="accent-secondary hover:text-yellow-400"
-        >Marketplaces</a
-      >
-    </li>
-    <li>
-      <a href="#" class="accent-secondary hover:text-yellow-400">Games</a>
-    </li>
-    <li>
-      <a href="#" class="accent-secondary hover:text-yellow-400"
-        >Productivity Tools</a
-      >
-    </li>
-    <li>
-      <a href="#" class="accent-secondary hover:text-yellow-400">Education</a>
-    </li>
-    <li>
-      <a href="#" class="accent-secondary hover:text-yellow-400"
-        >Social & Community</a
-      >
-    </li>
-    <li>
-      <a href="#" class="accent-secondary hover:text-yellow-400"
-        >Digital Services</a
-      >
-    </li>
-    <li>
-      <a href="#" class="accent-secondary hover:text-yellow-400"
-        >Travel & Experiences</a
-      >
+  <ul class="space-y-2">
+    <li *ngFor="let category of categories">
+      <a href="#" class="accent-secondary hover:text-yellow-400">
+        {{ category.name }}
+      </a>
     </li>
   </ul>
 </aside>

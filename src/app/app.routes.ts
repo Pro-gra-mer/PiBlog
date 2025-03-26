@@ -10,6 +10,7 @@ import { SubscriptionComponent } from './dashboards/user/subscription/subscripti
 import { AdminDashboardComponent } from './dashboards/admin/admin-dashboard/admin-dashboard.component'; // Importa el nuevo componente
 import { ArticleDetailComponent } from './components/article-detail/article-detail.component';
 import { PendingComponent } from './dashboards/user/pending/pending.component';
+import { AdminCategoryFormComponent } from './dashboards/admin/admin-category-form/admin-category-form.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -40,6 +41,7 @@ export const routes: Routes = [
       { path: 'my-articles', component: MyArticlesComponent },
       { path: 'drafts', component: DraftsComponent },
       { path: 'pending', component: PendingComponent },
+      { path: 'admin-category-form', component: AdminCategoryFormComponent },
     ],
   },
   { path: '**', redirectTo: '', pathMatch: 'full' },
