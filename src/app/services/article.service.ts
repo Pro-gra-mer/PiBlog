@@ -86,4 +86,10 @@ export class ArticleService {
       }
     );
   }
+
+  getArticlesByCategorySlug(slug: string): Observable<Article[]> {
+    return this.http.get<Article[]>(
+      `${environment.apiUrl}/api/articles/category/${slug}`
+    );
+  }
 }

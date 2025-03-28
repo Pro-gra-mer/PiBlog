@@ -3,12 +3,14 @@ package com.piblogchain.backend.services;
 import com.piblogchain.backend.dto.ArticleDTO;
 import com.piblogchain.backend.enums.ArticleStatus;
 import com.piblogchain.backend.models.Article;
+import com.piblogchain.backend.models.Category;
 import com.piblogchain.backend.models.User;
 import com.piblogchain.backend.models.UserRole;
 import com.piblogchain.backend.repositories.ArticleRepository;
+import com.piblogchain.backend.repositories.CategoryRepository;
+import com.piblogchain.backend.repositories.UserRepository;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
-import com.piblogchain.backend.repositories.UserRepository;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
@@ -25,16 +27,22 @@ import java.util.Optional;
 public class ArticleService {
 
   private final ArticleRepository articleRepository;
+  private final CategoryRepository categoryRepository;
+  private final UserRepository userRepository;
   private final Cloudinary cloudinary;
 
   @Autowired
-  public ArticleService(ArticleRepository articleRepository, @Value("${cloudinary.url}") String cloudinaryUrl) {
+  public ArticleService(
+    ArticleRepository articleRepository,
+    CategoryRepository categoryRepository,
+    UserRepository userRepository,
+    @Value("${cloudinary.url}") String cloudinaryUrl
+  ) {
     this.articleRepository = articleRepository;
+    this.categoryRepository = categoryRepository;
+    this.userRepository = userRepository;
     this.cloudinary = new Cloudinary(cloudinaryUrl);
   }
-
-  @Autowired
-  private UserRepository userRepository;
 
   public Article createArticle(ArticleDTO articleDTO, String username) {
     validateImageCount(articleDTO);
@@ -74,23 +82,31 @@ public class ArticleService {
 
   private Article buildArticleFromDto(ArticleDTO articleDTO) {
     Article article = new Article();
-    article.setCompany(articleDTO.getCompany());
     article.setApp(articleDTO.getApp());
+    article.setCompany(articleDTO.getCompany());
     article.setTitle(articleDTO.getTitle());
     article.setDescription(articleDTO.getDescription());
     article.setHeaderImage(articleDTO.getHeaderImage());
     article.setHeaderImagePublicId(articleDTO.getHeaderImagePublicId());
     article.setHeaderImageUploadDate(articleDTO.getHeaderImageUploadDate());
-    article.setCategory(articleDTO.getCategory());
+
+    String categoryName = articleDTO.getCategory().getName();
+    Category category = categoryRepository.findByName(categoryName)
+      .orElseThrow(() -> new RuntimeException("Category not found: " + categoryName));
+    article.setCategory(category);
+    article.setCategoryName(categoryName);
+
     article.setContent(articleDTO.getContent());
     article.setPublishDate(articleDTO.getPublishDate());
     article.setPromoteVideo(articleDTO.isPromoteVideo());
     article.setPromoVideo(articleDTO.getPromoVideo());
     article.setPromoVideoPublicId(articleDTO.getPromoVideoPublicId());
     article.setPromoVideoUploadDate(articleDTO.getPromoVideoUploadDate());
-    article.setStatus(articleDTO.getStatus() != null ? articleDTO.getStatus() : ArticleStatus.DRAFT);
+    article.setStatus(articleDTO.getStatus());
+
     return article;
   }
+
 
   public List<Article> getAllArticles() {
     return articleRepository.findAll();
@@ -163,7 +179,14 @@ public class ArticleService {
       article.setHeaderImage(articleDTO.getHeaderImage());
       article.setHeaderImagePublicId(articleDTO.getHeaderImagePublicId());
       article.setHeaderImageUploadDate(articleDTO.getHeaderImageUploadDate());
-      article.setCategory(articleDTO.getCategory());
+
+      String categoryName = articleDTO.getCategory().getName();
+      Category category = categoryRepository.findByName(categoryName)
+        .orElseThrow(() -> new RuntimeException("Category not found: " + categoryName));
+      article.setCategory(category);
+      article.setCategoryName(categoryName);
+
+
       article.setContent(articleDTO.getContent());
       article.setPublishDate(articleDTO.getPublishDate());
       article.setPromoteVideo(articleDTO.isPromoteVideo());
@@ -177,6 +200,7 @@ public class ArticleService {
       return articleRepository.save(article);
     });
   }
+
 
   public List<Article> getDraftsByUser(String username) {
     return articleRepository.findByStatusAndCreatedBy(ArticleStatus.DRAFT, username);
@@ -202,5 +226,9 @@ public class ArticleService {
       e.printStackTrace();
       return false;
     }
+  }
+
+  public List<Article> getArticlesByCategorySlug(String slug) {
+    return articleRepository.findByCategorySlugIgnoreCaseAndStatus(slug, ArticleStatus.PUBLISHED);
   }
 }

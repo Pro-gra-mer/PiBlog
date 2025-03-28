@@ -46,7 +46,7 @@ public class ArticleDTO {
 
   @NotBlank(message = "Category is required")
   @Schema(description = "Category of the article", example = "Productivity Tools")
-  private String category;
+  private CategoryDTO category;
 
   @NotBlank(message = "Content is required")
   @Schema(description = "Content of the article", example = "This article explains...")
@@ -80,7 +80,7 @@ public class ArticleDTO {
 
   // Constructor completo (opcional)
   public ArticleDTO(String company, String app, String title, String description, String headerImage,
-                    String headerImagePublicId, LocalDateTime headerImageUploadDate, String category,
+                    String headerImagePublicId, LocalDateTime headerImageUploadDate, CategoryDTO category,
                     String content, LocalDate publishDate, boolean promoteVideo,
                     String promoVideo, String promoVideoPublicId, LocalDateTime promoVideoUploadDate,
                     ArticleStatus status, String createdBy) {
@@ -160,11 +160,11 @@ public class ArticleDTO {
     this.headerImageUploadDate = headerImageUploadDate;
   }
 
-  public String getCategory() {
+  public CategoryDTO getCategory() {
     return category;
   }
 
-  public void setCategory(String category) {
+  public void setCategory(CategoryDTO category) {
     this.category = category;
   }
 

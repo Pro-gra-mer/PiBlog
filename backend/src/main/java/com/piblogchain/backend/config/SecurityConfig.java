@@ -34,25 +34,28 @@ public class SecurityConfig {
       .csrf(csrf -> csrf.disable())
       .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
       .authorizeHttpRequests(auth -> auth
-        // Permitir el acceso a Swagger y autenticación sin token
+        // Acceso público: Swagger, autenticación y rutas generales
         .requestMatchers("/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
 
-        // Permitir GET público a la lista de artículos y por id numérico
-        .requestMatchers(HttpMethod.GET, "/api/articles", "/api/articles/{id:[\\d]+}").permitAll()
-
-        // Permitir acceso autenticado a estado de artículos del usuario
-        .requestMatchers(HttpMethod.GET, "/api/articles/status/**").hasAnyRole("USER", "ADMIN")
-
-        // Restringir creación/edición de artículos y subida de imágenes a usuarios autenticados
-        .requestMatchers("/api/articles/**", "/api/upload-image").hasAnyRole("USER", "ADMIN")
-
-        // Restringir limpieza de imágenes a usuarios autenticados
-        .requestMatchers(HttpMethod.DELETE, "/api/cleanup/**").hasAnyRole("USER", "ADMIN")
-
+        // Público: artículos y categorías
+        .requestMatchers(HttpMethod.GET, "/api/articles").permitAll()
+        .requestMatchers(HttpMethod.GET, "/api/articles/{id:[\\d]+}").permitAll()
+        .requestMatchers(HttpMethod.GET, "/api/articles/category/**").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
+
+        // Admin: CRUD de categorías
         .requestMatchers("/api/categories/**").hasRole("ADMIN")
 
-        // Cualquier otra petición requiere autenticación
+        // Usuarios autenticados: acceso a estado de sus artículos
+        .requestMatchers(HttpMethod.GET, "/api/articles/status/**").hasAnyRole("USER", "ADMIN")
+
+        // Usuarios autenticados: creación/edición de artículos y subida de imágenes
+        .requestMatchers("/api/articles/**", "/api/upload-image").hasAnyRole("USER", "ADMIN")
+
+        // Usuarios autenticados: eliminación de imágenes y videos
+        .requestMatchers(HttpMethod.DELETE, "/api/cleanup/**").hasAnyRole("USER", "ADMIN")
+
+        // Resto de peticiones requieren autenticación
         .anyRequest().authenticated()
       )
       .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
@@ -62,12 +65,14 @@ public class SecurityConfig {
     return http.build();
   }
 
-
-
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowedOrigins(List.of("http://localhost:4200", "https://sandbox.minepi.com/mobile-app-ui/app/rolling-pi", "https://rollingpi.com"));
+    configuration.setAllowedOrigins(List.of(
+      "http://localhost:4200",
+      "https://sandbox.minepi.com/mobile-app-ui/app/rolling-pi",
+      "https://rollingpi.com"
+    ));
     configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
     configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
     configuration.setAllowCredentials(true);

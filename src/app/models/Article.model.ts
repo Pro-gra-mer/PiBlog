@@ -1,3 +1,5 @@
+import { Category } from './Category.model';
+
 export type ArticleStatus = 'DRAFT' | 'PENDING_APPROVAL' | 'PUBLISHED';
 
 export interface Article {
@@ -6,7 +8,7 @@ export interface Article {
   app: string;
   title: string;
   description: string;
-  category: string;
+  category: Category;
   content: string;
   publishDate: string;
   promoteVideo: boolean;

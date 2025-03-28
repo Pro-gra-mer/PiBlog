@@ -45,9 +45,9 @@
           formControlName="category"
           class="w-full max-w-md mt-1 p-3 border border-gradientEnd rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
         >
-          <option value="" disabled selected>Select a category</option>
-          <option *ngFor="let cat of categories" [value]="cat">
-            {{ cat }}
+          <option [ngValue]="null" disabled>Selecciona una categoría</option>
+          <option *ngFor="let category of categories" [ngValue]="category">
+            {{ category.name }}
           </option>
         </select>
       </div>
@@ -116,9 +116,14 @@
 
       <div
         *ngIf="message"
-        class="border border-red bg-red text-red-700 px-4 py-3 rounded relative shadow-md"
+        class="border px-4 py-3 rounded relative shadow-md"
+        [ngClass]="{
+          'border-red bg-red text-red-700': isError,
+          'border-green-600 bg-green-100 text-green-800': !isError
+        }"
       >
-        <strong>Error:</strong> {{ message }}
+        <strong *ngIf="isError">Error:</strong>
+        {{ message }}
       </div>
 
       <!-- Content (Quill Editor) -->

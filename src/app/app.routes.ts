@@ -11,12 +11,17 @@ import { AdminDashboardComponent } from './dashboards/admin/admin-dashboard/admi
 import { ArticleDetailComponent } from './components/article-detail/article-detail.component';
 import { PendingComponent } from './dashboards/user/pending/pending.component';
 import { AdminCategoryFormComponent } from './dashboards/admin/admin-category-form/admin-category-form.component';
+import { CategoryComponent } from './components/category/category.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
   { path: 'advertise', component: AdvertiseWithUsComponent },
   { path: 'contact', component: ContactComponent },
   { path: 'articles/:id', component: ArticleDetailComponent },
+  {
+    path: 'category/:slug',
+    component: CategoryComponent,
+  },
 
   {
     path: 'user-dashboard',

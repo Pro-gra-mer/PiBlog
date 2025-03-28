@@ -5,6 +5,7 @@ import com.piblogchain.backend.dto.ArticleDTO;
 import com.piblogchain.backend.enums.ArticleStatus;
 import com.piblogchain.backend.models.Article;
 import com.piblogchain.backend.services.ArticleService;
+import com.piblogchain.backend.utils.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
@@ -43,6 +44,7 @@ public class ArticleController {
     } catch (IllegalArgumentException ex) {
       return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
     } catch (Exception ex) {
+      ex.printStackTrace(); // Imprime el stack trace completo
       return ResponseEntity.status(500).body(Map.of("error", "Internal server error"));
     }
   }
@@ -62,13 +64,26 @@ public class ArticleController {
       .orElseGet(() -> ResponseEntity.notFound().build());
   }
 
-  @Operation(summary = "Submit article for review", security = @SecurityRequirement(name = "BearerAuth"))
   @PutMapping("/articles/{id}/submit")
-  public ResponseEntity<Article> submitArticle(@PathVariable Long id) {
+  @Operation(summary = "Submit article for review", security = @SecurityRequirement(name = "BearerAuth"))
+  public ResponseEntity<?> submitArticle(@PathVariable Long id, Authentication authentication) {
+    Optional<Article> optional = articleService.getArticleById(id);
+    if (optional.isEmpty()) return ResponseEntity.notFound().build();
+    Article article = optional.get();
+
+    System.out.println("auth.getName(): " + authentication.getName());
+    System.out.println("article.getCreatedBy(): " + article.getCreatedBy());
+
+    if (!SecurityUtils.isOwnerOrAdmin(authentication, article.getCreatedBy())) {
+      return ResponseEntity.status(403).body("No tienes permisos para enviar este artículo.");
+    }
+
     return articleService.submitArticleForReview(id)
       .map(ResponseEntity::ok)
       .orElseGet(() -> ResponseEntity.notFound().build());
   }
+
+
 
   @PreAuthorize("hasRole('ADMIN')")
   @Operation(summary = "Approve an article", security = @SecurityRequirement(name = "BearerAuth"))
@@ -84,15 +99,22 @@ public class ArticleController {
   }
 
 
-  @Operation(summary = "Delete an article", security = @SecurityRequirement(name = "BearerAuth"))
   @DeleteMapping("/articles/{id}")
-  public ResponseEntity<Void> deleteArticle(@PathVariable Long id) {
-    if (articleService.deleteArticle(id)) {
-      return ResponseEntity.noContent().build();
-    } else {
-      return ResponseEntity.notFound().build();
+  @Operation(summary = "Delete an article", security = @SecurityRequirement(name = "BearerAuth"))
+  public ResponseEntity<?> deleteArticle(@PathVariable Long id, Authentication authentication) {
+    Optional<Article> optional = articleService.getArticleById(id);
+    if (optional.isEmpty()) return ResponseEntity.notFound().build();
+
+    Article article = optional.get();
+    if (!SecurityUtils.isOwnerOrAdmin(authentication, article.getCreatedBy())) {
+      return ResponseEntity.status(403).body("No tienes permisos para eliminar este artículo.");
     }
+
+    boolean deleted = articleService.deleteArticle(id);
+    return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
   }
+
+
 
   @GetMapping("/articles/drafts")
   @Operation(summary = "Get user's draft articles", security = @SecurityRequirement(name = "BearerAuth"))
@@ -146,14 +168,25 @@ public class ArticleController {
 
   @PutMapping("/articles/{id}")
   @Operation(summary = "Update an article", security = @SecurityRequirement(name = "BearerAuth"))
-  public ResponseEntity<Article> updateArticle(
+  public ResponseEntity<?> updateArticle(
     @PathVariable Long id,
-    @RequestBody ArticleDTO articleDTO
+    @RequestBody ArticleDTO articleDTO,
+    Authentication authentication
   ) {
-    Optional<Article> updatedArticle = articleService.updateArticle(id, articleDTO);
-    return updatedArticle.map(ResponseEntity::ok)
+    Optional<Article> optional = articleService.getArticleById(id);
+    if (optional.isEmpty()) return ResponseEntity.notFound().build();
+
+    Article article = optional.get();
+    if (!SecurityUtils.isOwnerOrAdmin(authentication, article.getCreatedBy())) {
+      return ResponseEntity.status(403).body("No tienes permisos para editar este artículo.");
+    }
+
+    Optional<Article> updated = articleService.updateArticle(id, articleDTO);
+    return updated.map(ResponseEntity::ok)
       .orElseGet(() -> ResponseEntity.notFound().build());
   }
+
+
 
   @DeleteMapping("/cleanup/video/{publicId}")
   public ResponseEntity<Map<String, String>> deleteVideo(@PathVariable String publicId) {
@@ -169,8 +202,11 @@ public class ArticleController {
     }
   }
 
-
-
+  @GetMapping("/articles/category/{slug}")
+  public ResponseEntity<List<Article>> getArticlesByCategory(@PathVariable String slug) {
+    List<Article> articles = articleService.getArticlesByCategorySlug(slug);
+    return ResponseEntity.ok(articles);
+  }
 
 
 

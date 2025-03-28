@@ -17,7 +17,10 @@
     class="mt-2 bg-gray-50 p-4 rounded-lg shadow space-y-2"
   >
     <li *ngFor="let category of categories">
-      <a href="#" class="accent-secondary hover:text-yellow-400">
+      <a
+        [routerLink]="['/category', category.slug]"
+        class="accent-secondary hover:text-yellow-400"
+      >
         {{ category.name }}
       </a>
     </li>
@@ -31,7 +34,10 @@
   <h3 class="text-lg font-bold mb-4 text-[#bd52a5]">Categories</h3>
   <ul class="space-y-2">
     <li *ngFor="let category of categories">
-      <a href="#" class="accent-secondary hover:text-yellow-400">
+      <a
+        [routerLink]="['/category', category.slug]"
+        class="accent-secondary hover:text-yellow-400"
+      >
         {{ category.name }}
       </a>
     </li>

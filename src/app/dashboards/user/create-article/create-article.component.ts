@@ -10,6 +10,7 @@ import { Article } from '../../../models/Article.model';
 import DOMPurify from 'dompurify';
 import { DomSanitizer } from '@angular/platform-browser';
 import { ArticleDetailComponent } from '../../../components/article-detail/article-detail.component';
+import { Category, CategoryService } from '../../../services/category.service';
 
 declare const cloudinary: any;
 
@@ -29,30 +30,25 @@ declare const cloudinary: any;
 export class CreateArticleComponent implements AfterViewInit {
   articleForm: FormGroup;
   message: string | null = null;
+  isError: boolean = false;
   previewArticle: Article | null = null;
   userSubscribed: boolean = false;
   @ViewChild('quillEditor', { static: false }) quillEditor: any;
   articleIdToLoad: number | null = null;
 
+  categories: Category[] = [];
+
   // Lista para llevar registro de las imágenes insertadas en el editor
   insertedImages: Array<{ url: string; publicId: string; uploadDate: string }> =
     [];
-
-  categories = [
-    'Marketplaces',
-    'Productivity Tools',
-    'Education',
-    'Social & Community',
-    'Digital Services',
-    'Games',
-  ];
 
   constructor(
     private formBuilder: FormBuilder,
     private articleService: ArticleService,
     private http: HttpClient,
     private sanitizer: DomSanitizer,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private categoryService: CategoryService
   ) {
     this.articleForm = this.formBuilder.group({
       company: ['', [Validators.required]],
@@ -60,7 +56,7 @@ export class CreateArticleComponent implements AfterViewInit {
       title: ['', [Validators.required, Validators.maxLength(100)]],
       description: ['', [Validators.required, Validators.maxLength(200)]],
       headerImage: [''],
-      category: ['', [Validators.required]],
+      category: [null, Validators.required],
       content: ['', [Validators.required]],
       publishDate: [
         new Date().toISOString().split('T')[0],
@@ -80,9 +76,28 @@ export class CreateArticleComponent implements AfterViewInit {
     if (id) {
       this.articleIdToLoad = +id;
     }
+
+    this.categoryService.getAllCategories().subscribe({
+      next: (categoriesFromDB) => {
+        this.categories = categoriesFromDB; // ← guarda los objetos completos
+      },
+      error: (err) => {
+        console.error('Error cargando categorías:', err);
+      },
+    });
   }
 
   ngAfterViewInit(): void {}
+
+  private setSuccessMessage(msg: string): void {
+    this.message = msg;
+    this.isError = false;
+  }
+
+  private setErrorMessage(msg: string): void {
+    this.message = msg;
+    this.isError = true;
+  }
 
   // Devuelve el total de imágenes: suma 1 si existe headerImage + imágenes insertadas
   private getTotalImagesCount(): number {
@@ -199,11 +214,16 @@ export class CreateArticleComponent implements AfterViewInit {
       return;
     }
 
+    const formValues = this.articleForm.value;
+
     const articlePayload: Article = {
-      ...this.articleForm.value,
+      ...formValues,
       content: sanitizedContent,
       approved: false,
       status: 'PENDING_APPROVAL',
+      category: {
+        name: formValues.category.name, // Extrae solo el campo "name"
+      },
     };
 
     if (this.articleIdToLoad) {
@@ -375,13 +395,11 @@ export class CreateArticleComponent implements AfterViewInit {
 
         quillInstance.on('text-change', () => {
           const currentHTML = quillInstance.root.innerHTML;
-          console.log('Current HTML:', currentHTML);
 
           const parser = new DOMParser();
           const doc = parser.parseFromString(currentHTML, 'text/html');
           const imgElements = Array.from(doc.getElementsByTagName('img'));
           const currentUrls = imgElements.map((img) => img.getAttribute('src'));
-          console.log('Current image URLs:', currentUrls);
 
           const removedImages: {
             url: string;
@@ -395,7 +413,6 @@ export class CreateArticleComponent implements AfterViewInit {
             }
             return true;
           });
-          console.log('Removed images:', removedImages);
 
           removedImages.forEach((imgData) => {
             this.articleService.deleteOrphanImage(imgData.publicId).subscribe({
@@ -479,11 +496,16 @@ export class CreateArticleComponent implements AfterViewInit {
       ALLOWED_ATTR: ['href', 'target', 'src', 'style'],
     });
 
+    const formValues = this.articleForm.value;
+
     const articlePayload: Article = {
-      ...this.articleForm.value,
+      ...formValues,
       content: sanitizedContent,
       approved: false,
       status: 'DRAFT',
+      category: {
+        name: formValues.category.name, // Extrae solo el campo "name" del objeto Category
+      },
     };
 
     if (this.articleIdToLoad) {

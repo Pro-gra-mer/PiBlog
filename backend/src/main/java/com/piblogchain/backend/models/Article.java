@@ -55,9 +55,14 @@ public class Article {
   )
   private LocalDateTime headerImageUploadDate;
 
-  @Column(nullable = false)
-  @Schema(description = "Category of the article", example = "Productivity Tools")
-  private String category;
+  @Column(name = "category") // Mapea al campo category en la tabla
+  @Schema(description = "Name of the category", example = "Marketplaces")
+  private String categoryName; // Nombre de la categoría como String
+
+  @ManyToOne
+  @JoinColumn(name = "category_id") // Relación con la tabla categories
+  @Schema(description = "Category object referencing the category ID", example = "Category{id=3, name='Marketplaces'}")
+  private Category category;
 
   @Lob
   @Column(nullable = false, columnDefinition = "MEDIUMTEXT")
@@ -99,11 +104,13 @@ public class Article {
   @Column(name = "promo_video_upload_date")
   private LocalDateTime promoVideoUploadDate;
 
+  // Constructor por defecto
   public Article() {}
 
+  // Constructor con parámetros
   public Article(String company, String app, String title, String description,
                  String headerImage, String headerImagePublicId, LocalDateTime headerImageUploadDate,
-                 String category, String content, LocalDate publishDate, boolean promoteVideo,
+                 Category category, String content, LocalDate publishDate, boolean promoteVideo,
                  String promoVideo, String promoVideoPublicId, LocalDateTime promoVideoUploadDate,
                  ArticleStatus status, String createdBy) {
     this.company = company;
@@ -113,7 +120,8 @@ public class Article {
     this.headerImage = headerImage;
     this.headerImagePublicId = headerImagePublicId;
     this.headerImageUploadDate = headerImageUploadDate;
-    this.category = category;
+    this.category = category; // Relación con Category
+    this.categoryName = (category != null) ? category.getName() : null; // Asigna el nombre de la categoría
     this.content = content;
     this.publishDate = publishDate;
     this.promoteVideo = promoteVideo;
@@ -124,7 +132,7 @@ public class Article {
     this.createdBy = createdBy;
   }
 
-
+  // Getters y Setters
   public Long getId() {
     return id;
   }
@@ -189,12 +197,22 @@ public class Article {
     this.headerImageUploadDate = headerImageUploadDate;
   }
 
-  public String getCategory() {
+  public String getCategoryName() {
+    return categoryName;
+  }
+
+  public void setCategoryName(String categoryName) {
+    this.categoryName = categoryName; // Corrige el setter para asignar el valor
+  }
+
+  public Category getCategory() {
     return category;
   }
 
-  public void setCategory(String category) {
+  public void setCategory(Category category) {
     this.category = category;
+    // Opcional: Sincroniza categoryName con el nombre de la categoría si category no es null
+    this.categoryName = (category != null) ? category.getName() : this.categoryName;
   }
 
   public String getContent() {
@@ -260,5 +278,4 @@ public class Article {
   public void setPromoVideoUploadDate(LocalDateTime promoVideoUploadDate) {
     this.promoVideoUploadDate = promoVideoUploadDate;
   }
-
 }
