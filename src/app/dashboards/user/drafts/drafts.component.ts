@@ -1,5 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-
 import { CommonModule } from '@angular/common';
 import { ArticleService } from '../../../services/article.service';
 import { Article } from '../../../models/Article.model';
@@ -16,6 +15,9 @@ export class DraftsComponent implements OnInit {
   drafts: Article[] = [];
   loading = true;
   error = '';
+
+  showDeleteModal = false;
+  articleIdToDelete: number | null = null;
 
   constructor(private articleService: ArticleService, private router: Router) {}
 
@@ -47,5 +49,36 @@ export class DraftsComponent implements OnInit {
         alert('No se pudo enviar el artículo a revisión.');
       },
     });
+  }
+
+  openDeleteModal(id: number): void {
+    this.articleIdToDelete = id;
+    this.showDeleteModal = true;
+  }
+
+  confirmDelete(): void {
+    if (this.articleIdToDelete !== null) {
+      this.articleService
+        .deleteArticleWithCleanup(this.articleIdToDelete)
+        .subscribe({
+          next: () => {
+            this.drafts = this.drafts.filter(
+              (d) => d.id !== this.articleIdToDelete
+            );
+            this.showDeleteModal = false;
+            this.articleIdToDelete = null;
+          },
+          error: (err) => {
+            console.error('Error al eliminar el artículo:', err);
+            this.error = 'No se pudo eliminar el borrador.';
+            this.showDeleteModal = false;
+          },
+        });
+    }
+  }
+
+  cancelDelete(): void {
+    this.showDeleteModal = false;
+    this.articleIdToDelete = null;
   }
 }

@@ -7,7 +7,7 @@
   <ul *ngIf="!loading && !error && drafts.length > 0" class="space-y-4">
     <li
       *ngFor="let draft of drafts"
-      class="p-4 border border-gray-200 rounded-md shadow-sm flex items-center justify-between hover:shadow-md transition"
+      class="p-4 border border-gray-200 rounded-md shadow-sm hover:shadow-md transition flex justify-between items-start"
     >
       <div>
         <h3 class="text-lg font-semibold text-primary">{{ draft.title }}</h3>
@@ -22,12 +22,18 @@
         </span>
       </div>
 
-      <div class="flex space-x-3">
+      <div class="flex flex-col gap-2">
         <button
           (click)="editDraft(draft.id)"
           class="px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded hover:bg-emerald-700 transition-all duration-200"
         >
           Editar
+        </button>
+        <button
+          (click)="openDeleteModal(draft.id)"
+          class="px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded hover:bg-red-700 transition-all duration-200"
+        >
+          Eliminar
         </button>
       </div>
     </li>
@@ -37,3 +43,30 @@
     No drafts available.
   </div>
 </section>
+
+<!-- Modal de confirmación -->
+<div
+  *ngIf="showDeleteModal"
+  class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
+>
+  <div class="bg-background p-6 rounded-lg shadow-lg w-80 text-center">
+    <h3 class="text-lg font-semibold text-red-600 mb-4">Eliminar borrador</h3>
+    <p class="text-gray-700 mb-6">
+      ¿Estás seguro de que quieres eliminar este borrador?
+    </p>
+    <div class="flex justify-center space-x-4">
+      <button
+        (click)="confirmDelete()"
+        class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+      >
+        Sí, eliminar
+      </button>
+      <button
+        (click)="cancelDelete()"
+        class="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
+      >
+        Cancelar
+      </button>
+    </div>
+  </div>
+</div>

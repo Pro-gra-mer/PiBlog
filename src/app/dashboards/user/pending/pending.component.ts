@@ -3,13 +3,12 @@ import { CommonModule } from '@angular/common';
 import { ArticleService } from '../../../services/article.service';
 import { Article } from '../../../models/Article.model';
 import { Router } from '@angular/router';
-import { ArticleDetailComponent } from '../../../components/article-detail/article-detail.component';
 import { PiAuthService } from '../../../services/pi-auth.service';
 
 @Component({
   selector: 'app-pending',
   standalone: true,
-  imports: [CommonModule, ArticleDetailComponent],
+  imports: [CommonModule],
   templateUrl: './pending.component.html',
   styleUrl: './pending.component.css',
 })
@@ -23,6 +22,9 @@ export class PendingComponent implements OnInit {
   publishedMessage: string | null = null;
   lastPublishedArticleId: number | null = null;
   isAdmin: boolean = false;
+
+  showDeleteModal = false;
+  articleIdToDelete: number | null = null;
 
   constructor(
     private articleService: ArticleService,
@@ -106,5 +108,35 @@ export class PendingComponent implements OnInit {
         this.error = 'Failed to publish the article.';
       },
     });
+  }
+
+  openDeleteModal(id: number): void {
+    this.articleIdToDelete = id;
+    this.showDeleteModal = true;
+  }
+
+  confirmDelete(): void {
+    if (this.articleIdToDelete !== null) {
+      this.articleService
+        .deleteArticleWithCleanup(this.articleIdToDelete)
+        .subscribe({
+          next: () => {
+            this.pendingArticles = this.pendingArticles.filter(
+              (a) => a.id !== this.articleIdToDelete
+            );
+            this.showDeleteModal = false;
+            this.articleIdToDelete = null;
+          },
+          error: () => {
+            this.error = 'No se pudo eliminar el artículo.';
+            this.showDeleteModal = false;
+          },
+        });
+    }
+  }
+
+  cancelDelete(): void {
+    this.showDeleteModal = false;
+    this.articleIdToDelete = null;
   }
 }

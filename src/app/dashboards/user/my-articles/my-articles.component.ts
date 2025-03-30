@@ -15,6 +15,9 @@ export class MyArticlesComponent implements OnInit {
   loading = true;
   error = '';
 
+  showDeleteModal = false;
+  articleIdToDelete: number | null = null;
+
   constructor(private articleService: ArticleService) {}
 
   ngOnInit(): void {
@@ -28,5 +31,35 @@ export class MyArticlesComponent implements OnInit {
         this.loading = false;
       },
     });
+  }
+
+  openDeleteModal(id: number): void {
+    this.articleIdToDelete = id;
+    this.showDeleteModal = true;
+  }
+
+  confirmDelete(): void {
+    if (this.articleIdToDelete !== null) {
+      this.articleService
+        .deleteArticleWithCleanup(this.articleIdToDelete)
+        .subscribe({
+          next: () => {
+            this.articles = this.articles.filter(
+              (a) => a.id !== this.articleIdToDelete
+            );
+            this.showDeleteModal = false;
+            this.articleIdToDelete = null;
+          },
+          error: () => {
+            this.error = 'No se pudo eliminar el artículo.';
+            this.showDeleteModal = false;
+          },
+        });
+    }
+  }
+
+  cancelDelete(): void {
+    this.showDeleteModal = false;
+    this.articleIdToDelete = null;
   }
 }

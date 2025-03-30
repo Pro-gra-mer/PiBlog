@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { map } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
 import { Article } from '../models/Article.model';
 import { environment } from '../environments/environment.dev';
-import { Observable } from 'rxjs';
+import { forkJoin, Observable, of } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -91,5 +91,46 @@ export class ArticleService {
     return this.http.get<Article[]>(
       `${environment.apiUrl}/api/articles/category/${slug}`
     );
+  }
+
+  deleteArticleWithCleanup(id: number): Observable<void> {
+    return this.getArticleById(id).pipe(
+      switchMap((article: Article) => {
+        const deleteRequests: Observable<any>[] = [];
+
+        if (article.headerImagePublicId) {
+          deleteRequests.push(
+            this.deleteOrphanImage(article.headerImagePublicId)
+          );
+        }
+
+        if (article.promoVideoPublicId) {
+          deleteRequests.push(
+            this.deleteOrphanVideo(article.promoVideoPublicId)
+          );
+        }
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(article.content || '', 'text/html');
+        const imgElements = Array.from(doc.getElementsByTagName('img'));
+
+        imgElements.forEach((img) => {
+          const src = img.getAttribute('src') || '';
+          const publicId = this.extractPublicIdFromUrl(src);
+          if (publicId) {
+            deleteRequests.push(this.deleteOrphanImage(publicId));
+          }
+        });
+
+        return forkJoin(
+          deleteRequests.length ? deleteRequests : [of(null)]
+        ).pipe(switchMap(() => this.deleteArticle(id)));
+      })
+    );
+  }
+
+  private extractPublicIdFromUrl(url: string): string | null {
+    const match = url.match(/\/upload\/(?:v\d+\/)?([^\.]+)/);
+    return match ? match[1] : null;
   }
 }
