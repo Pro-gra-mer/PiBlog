@@ -14,13 +14,8 @@ import { PiAuthService } from '../../../services/pi-auth.service';
 })
 export class PendingComponent implements OnInit {
   pendingArticles: Article[] = [];
-  previousPendingIds: number[] = [];
   loading = true;
   error = '';
-  selectedArticleId: number | null = null;
-  selectedArticle: Article | undefined;
-  publishedMessage: string | null = null;
-  lastPublishedArticleId: number | null = null;
   isAdmin: boolean = false;
 
   showDeleteModal = false;
@@ -40,22 +35,7 @@ export class PendingComponent implements OnInit {
   fetchPendingArticles(): void {
     this.articleService.getPendingArticles().subscribe({
       next: (articles) => {
-        const currentIds = articles.map((a) => a.id);
-        const publishedIds = this.previousPendingIds.filter(
-          (prevId) => !currentIds.includes(prevId)
-        );
-
-        if (publishedIds.length > 0) {
-          const published = this.pendingArticles.find((a) =>
-            publishedIds.includes(a.id)
-          );
-          if (published) {
-            this.publishedMessage = `Your article titled "${published.title}" has been published.`;
-          }
-        }
-
         this.pendingArticles = articles;
-        this.previousPendingIds = currentIds;
         this.loading = false;
       },
       error: () => {
@@ -65,44 +45,12 @@ export class PendingComponent implements OnInit {
     });
   }
 
-  viewArticle(id: number): void {
-    if (this.selectedArticleId === id) {
-      this.selectedArticleId = null;
-      this.selectedArticle = undefined;
-    } else {
-      this.selectedArticleId = id;
-      this.articleService.getArticleById(id).subscribe({
-        next: (article) => {
-          this.selectedArticle = article;
-        },
-        error: () => {
-          this.error = 'Failed to load the article.';
-        },
-      });
-    }
-  }
-
-  isSelected(id: number): boolean {
-    return this.selectedArticleId === id;
-  }
-
-  getSelectedArticle(id: number): Article | undefined {
-    return this.selectedArticleId === id ? this.selectedArticle : undefined;
-  }
-
   publishArticle(articleId: number): void {
     this.articleService.approveArticle(articleId).subscribe({
       next: () => {
         this.pendingArticles = this.pendingArticles.filter(
           (a) => a.id !== articleId
         );
-        this.publishedMessage = 'The article has been successfully published.';
-        this.lastPublishedArticleId = articleId;
-
-        setTimeout(() => {
-          this.publishedMessage = null;
-          this.lastPublishedArticleId = null;
-        }, 3000);
       },
       error: () => {
         this.error = 'Failed to publish the article.';
@@ -128,7 +76,7 @@ export class PendingComponent implements OnInit {
             this.articleIdToDelete = null;
           },
           error: () => {
-            this.error = 'No se pudo eliminar el artículo.';
+            this.error = 'The article could not be deleted.';
             this.showDeleteModal = false;
           },
         });
