@@ -156,15 +156,18 @@ public class ArticleController {
       Map<String, String> options = new HashMap<>();
       Map result = cloudinary.uploader().destroy(publicId, options);
       System.out.println("Resultado de Cloudinary: " + result);
-      if ("ok".equals(result.get("result"))) {
-        return ResponseEntity.ok("Imagen eliminada con éxito de Cloudinary");
+
+      String deleteResult = (String) result.get("result");
+      if ("ok".equals(deleteResult) || "not found".equals(deleteResult)) {
+        return ResponseEntity.ok("Imagen eliminada (o ya inexistente) en Cloudinary");
       } else {
-        return ResponseEntity.status(400).body("No se pudo eliminar la imagen: " + result.get("result"));
+        return ResponseEntity.status(400).body("No se pudo eliminar la imagen: " + deleteResult);
       }
     } catch (Exception e) {
       return ResponseEntity.status(500).body("Error al eliminar la imagen: " + e.getMessage());
     }
   }
+
 
   @PutMapping("/articles/{id}")
   @Operation(summary = "Update an article", security = @SecurityRequirement(name = "BearerAuth"))
@@ -187,24 +190,50 @@ public class ArticleController {
   }
 
 
-
   @DeleteMapping("/cleanup/video/{publicId}")
   public ResponseEntity<Map<String, String>> deleteVideo(@PathVariable String publicId) {
     try {
-      boolean deleted = articleService.deleteOrphanVideo(publicId);
-      if (deleted) {
-        return ResponseEntity.ok(Map.of("message", "Video eliminado correctamente"));
+      Map<String, Object> result = cloudinary.uploader().destroy(
+        publicId,
+        Map.of("resource_type", "video")
+      );
+
+      String deleteResult = (String) result.get("result");
+
+      if ("ok".equals(deleteResult) || "not found".equals(deleteResult)) {
+        return ResponseEntity.ok(Map.of("message", "Video eliminado (o ya inexistente)"));
       } else {
-        return ResponseEntity.status(400).body(Map.of("error", "No se pudo eliminar el video"));
+        return ResponseEntity.status(400).body(Map.of("error", "No se pudo eliminar el video: " + deleteResult));
       }
     } catch (Exception e) {
       return ResponseEntity.status(500).body(Map.of("error", "Error al eliminar el video: " + e.getMessage()));
     }
   }
 
+
   @GetMapping("/articles/category/{slug}")
   public ResponseEntity<List<Article>> getArticlesByCategory(@PathVariable String slug) {
     List<Article> articles = articleService.getArticlesByCategorySlug(slug);
+    return ResponseEntity.ok(articles);
+  }
+
+  @PutMapping("/articles/{id}/reject")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<?> rejectArticle(
+    @PathVariable Long id,
+    @RequestBody Map<String, String> body
+  ) {
+    String reason = body.get("reason");
+    return articleService.rejectArticle(id, reason)
+      .map(ResponseEntity::ok)
+      .orElseGet(() -> ResponseEntity.notFound().build());
+  }
+
+  @GetMapping("/articles/rejected")
+  @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+  public ResponseEntity<List<Article>> getRejectedArticles() {
+    String username = SecurityContextHolder.getContext().getAuthentication().getName();
+    List<Article> articles = articleService.getRejectedArticlesByUser(username);
     return ResponseEntity.ok(articles);
   }
 

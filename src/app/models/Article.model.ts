@@ -1,6 +1,10 @@
 import { Category } from './Category.model';
 
-export type ArticleStatus = 'DRAFT' | 'PENDING_APPROVAL' | 'PUBLISHED';
+export type ArticleStatus =
+  | 'DRAFT'
+  | 'PENDING_APPROVAL'
+  | 'PUBLISHED'
+  | 'REJECTED';
 
 export interface Article {
   id: number;
@@ -13,6 +17,7 @@ export interface Article {
   publishDate: string;
   promoteVideo: boolean;
   status: ArticleStatus;
+  rejectionReason: string;
 
   // Header image
   headerImage?: string;

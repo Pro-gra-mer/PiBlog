@@ -12,6 +12,7 @@ import { ArticleDetailComponent } from './components/article-detail/article-deta
 import { PendingComponent } from './dashboards/user/pending/pending.component';
 import { AdminCategoryFormComponent } from './dashboards/admin/admin-category-form/admin-category-form.component';
 import { CategoryComponent } from './components/category/category.component';
+import { RejectedComponent } from './dashboards/user/rejected/rejected.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -32,6 +33,7 @@ export const routes: Routes = [
       { path: 'my-articles', component: MyArticlesComponent },
       { path: 'drafts', component: DraftsComponent },
       { path: 'pending', component: PendingComponent },
+      { path: 'rejected', component: RejectedComponent },
       { path: 'subscription', component: SubscriptionComponent },
       { path: '', redirectTo: 'create-article', pathMatch: 'full' },
     ],

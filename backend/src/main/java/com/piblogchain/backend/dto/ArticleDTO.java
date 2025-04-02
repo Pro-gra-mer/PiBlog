@@ -74,6 +74,8 @@ public class ArticleDTO {
   @Schema(description = "Upload date of the promo video", example = "2025-03-26T15:45:00")
   private LocalDateTime promoVideoUploadDate;
 
+  @Schema(description = "Reason for rejection of the article", example = "The article did not meet the required standards.")
+  private String rejectionReason;
 
   // Constructor vacío
   public ArticleDTO() {}
@@ -83,7 +85,7 @@ public class ArticleDTO {
                     String headerImagePublicId, LocalDateTime headerImageUploadDate, CategoryDTO category,
                     String content, LocalDate publishDate, boolean promoteVideo,
                     String promoVideo, String promoVideoPublicId, LocalDateTime promoVideoUploadDate,
-                    ArticleStatus status, String createdBy) {
+                    ArticleStatus status, String createdBy, String rejectionReason) {
     this.company = company;
     this.app = app;
     this.title = title;
@@ -100,6 +102,7 @@ public class ArticleDTO {
     this.promoVideoUploadDate = promoVideoUploadDate;
     this.status = status;
     this.createdBy = createdBy;
+    this.rejectionReason = rejectionReason;
   }
 
 
@@ -230,6 +233,14 @@ public class ArticleDTO {
 
   public void setPromoVideoUploadDate(LocalDateTime promoVideoUploadDate) {
     this.promoVideoUploadDate = promoVideoUploadDate;
+  }
+
+  public String getRejectionReason() {
+    return rejectionReason;
+  }
+
+  public void setRejectionReason(String rejectionReason) {
+    this.rejectionReason = rejectionReason;
   }
 
 }

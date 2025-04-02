@@ -231,4 +231,28 @@ public class ArticleService {
   public List<Article> getArticlesByCategorySlug(String slug) {
     return articleRepository.findByCategorySlugIgnoreCaseAndStatus(slug, ArticleStatus.PUBLISHED);
   }
+
+  public Optional<Article> rejectArticle(Long id, String reason) {
+    Optional<Article> articleOpt = articleRepository.findById(id);
+    if (articleOpt.isPresent()) {
+      Article article = articleOpt.get();
+
+      if (article.getStatus() != ArticleStatus.PENDING_APPROVAL) {
+        throw new IllegalStateException("Only pending articles can be rejected.");
+      }
+
+      article.setStatus(ArticleStatus.REJECTED);
+      article.setRejectionReason(reason);
+      Article updated = articleRepository.save(article);
+
+      return Optional.of(updated);
+    }
+    return Optional.empty();
+  }
+
+  public List<Article> getRejectedArticlesByUser(String username) {
+    return articleRepository.findByStatusAndCreatedBy(ArticleStatus.REJECTED, username);
+  }
+
+
 }

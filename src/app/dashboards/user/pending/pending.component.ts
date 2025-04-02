@@ -4,11 +4,12 @@ import { ArticleService } from '../../../services/article.service';
 import { Article } from '../../../models/Article.model';
 import { Router } from '@angular/router';
 import { PiAuthService } from '../../../services/pi-auth.service';
+import { FormsModule } from '@angular/forms'; // ✅ Asegúrate de importar esto si usas ngModel
 
 @Component({
   selector: 'app-pending',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './pending.component.html',
   styleUrl: './pending.component.css',
 })
@@ -19,7 +20,10 @@ export class PendingComponent implements OnInit {
   isAdmin: boolean = false;
 
   showDeleteModal = false;
+  showRejectModal = false;
   articleIdToDelete: number | null = null;
+  articleIdToReject: number | null = null;
+  rejectionReason: string = '';
 
   constructor(
     private articleService: ArticleService,
@@ -86,5 +90,38 @@ export class PendingComponent implements OnInit {
   cancelDelete(): void {
     this.showDeleteModal = false;
     this.articleIdToDelete = null;
+  }
+
+  openRejectModal(id: number): void {
+    this.articleIdToReject = id;
+    this.rejectionReason = '';
+    this.showRejectModal = true;
+  }
+
+  confirmReject(): void {
+    if (this.articleIdToReject !== null && this.rejectionReason.trim()) {
+      this.articleService
+        .rejectArticle(this.articleIdToReject, this.rejectionReason)
+        .subscribe({
+          next: () => {
+            this.pendingArticles = this.pendingArticles.filter(
+              (a) => a.id !== this.articleIdToReject
+            );
+            this.showRejectModal = false;
+            this.articleIdToReject = null;
+            this.rejectionReason = '';
+          },
+          error: () => {
+            this.error = 'No se pudo rechazar el artículo.';
+            this.showRejectModal = false;
+          },
+        });
+    }
+  }
+
+  cancelReject(): void {
+    this.showRejectModal = false;
+    this.articleIdToReject = null;
+    this.rejectionReason = '';
   }
 }

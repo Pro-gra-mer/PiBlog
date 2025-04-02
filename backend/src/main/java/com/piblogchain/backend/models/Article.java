@@ -104,6 +104,11 @@ public class Article {
   @Column(name = "promo_video_upload_date")
   private LocalDateTime promoVideoUploadDate;
 
+  @Column(name = "rejection_reason")
+  @Schema(description = "Reason for article rejection", example = "The article did not meet quality standards.")
+  private String rejectionReason;
+
+
   // Constructor por defecto
   public Article() {}
 
@@ -112,7 +117,7 @@ public class Article {
                  String headerImage, String headerImagePublicId, LocalDateTime headerImageUploadDate,
                  Category category, String content, LocalDate publishDate, boolean promoteVideo,
                  String promoVideo, String promoVideoPublicId, LocalDateTime promoVideoUploadDate,
-                 ArticleStatus status, String createdBy) {
+                 ArticleStatus status, String createdBy, String rejectionReason) {
     this.company = company;
     this.app = app;
     this.title = title;
@@ -130,6 +135,7 @@ public class Article {
     this.promoVideoUploadDate = promoVideoUploadDate;
     this.status = status;
     this.createdBy = createdBy;
+    this.rejectionReason = rejectionReason;
   }
 
   // Getters y Setters
@@ -278,4 +284,13 @@ public class Article {
   public void setPromoVideoUploadDate(LocalDateTime promoVideoUploadDate) {
     this.promoVideoUploadDate = promoVideoUploadDate;
   }
+
+  public String getRejectionReason() {
+    return rejectionReason;
+  }
+
+  public void setRejectionReason(String rejectionReason) {
+    this.rejectionReason = rejectionReason;
+  }
+
 }

@@ -133,4 +133,12 @@ export class ArticleService {
     const match = url.match(/\/upload\/(?:v\d+\/)?([^\.]+)/);
     return match ? match[1] : null;
   }
+
+  getUserRejectedArticles(): Observable<Article[]> {
+    return this.http.get<Article[]>(`${this.apiUrl}/rejected`);
+  }
+
+  rejectArticle(id: number, reason: string): Observable<any> {
+    return this.http.put(`${this.apiUrl}/${id}/reject`, { reason });
+  }
 }

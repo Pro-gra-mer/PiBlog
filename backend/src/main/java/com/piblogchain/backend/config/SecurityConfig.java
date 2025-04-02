@@ -55,6 +55,11 @@ public class SecurityConfig {
         // Usuarios autenticados: eliminación de imágenes y videos
         .requestMatchers(HttpMethod.DELETE, "/api/cleanup/**").hasAnyRole("USER", "ADMIN")
 
+        .requestMatchers(HttpMethod.PUT, "/api/articles/{id:[\\d]+}/reject").hasRole("ADMIN")
+
+        .requestMatchers(HttpMethod.GET, "/api/articles/rejected").hasAnyRole("USER", "ADMIN")
+
+
         // Resto de peticiones requieren autenticación
         .anyRequest().authenticated()
       )
