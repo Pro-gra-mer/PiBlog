@@ -35,7 +35,13 @@ export class DraftsComponent implements OnInit {
   }
 
   editDraft(id: number): void {
-    this.router.navigate(['/user-dashboard/edit-article', id]);
+    const userData = localStorage.getItem('user');
+    const isAdmin = userData && JSON.parse(userData).role === 'ADMIN';
+
+    const basePath = isAdmin
+      ? '/admin-dashboard/edit-article'
+      : '/user-dashboard/edit-article';
+    this.router.navigate([basePath, id]);
   }
 
   sendForReview(articleId: number): void {

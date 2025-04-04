@@ -50,16 +50,18 @@
           class="text-secondary hover:text-accent cursor-pointer"
           >Pending</a
         >
-        <a
-          routerLink="/user-dashboard/rejected"
-          routerLinkActive="active-link"
-          class="text-secondary hover:text-accent cursor-pointer flex items-center gap-2"
-        >
-          Rejected
-          <span *ngIf="hasRejected" class="text-red-700 text-sm animate-pulse"
-            >●</span
+        <div class="relative flex items-center gap-2 cursor-pointer">
+          <a
+            routerLink="/user-dashboard/rejected"
+            routerLinkActive="active-link"
+            class="text-secondary hover:text-accent flex items-center gap-2"
           >
-        </a>
+            Rejected
+          </a>
+          <span *ngIf="hasRejected" class="text-red-700 text-sm animate-pulse">
+            ●
+          </span>
+        </div>
 
         <a
           routerLink="/user-dashboard/subscription"

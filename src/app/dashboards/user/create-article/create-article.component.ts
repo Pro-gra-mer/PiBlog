@@ -11,6 +11,7 @@ import DOMPurify from 'dompurify';
 import { DomSanitizer } from '@angular/platform-browser';
 import { ArticleDetailComponent } from '../../../components/article-detail/article-detail.component';
 import { Category, CategoryService } from '../../../services/category.service';
+import { PiAuthService } from '../../../services/pi-auth.service';
 
 declare const cloudinary: any;
 
@@ -40,6 +41,7 @@ export class CreateArticleComponent implements AfterViewInit {
 
   insertedImages: Array<{ url: string; publicId: string; uploadDate: string }> =
     [];
+  isAdmin: boolean = false;
 
   constructor(
     private formBuilder: FormBuilder,
@@ -47,7 +49,8 @@ export class CreateArticleComponent implements AfterViewInit {
     private http: HttpClient,
     private sanitizer: DomSanitizer,
     private route: ActivatedRoute,
-    private categoryService: CategoryService
+    private categoryService: CategoryService,
+    private authService: PiAuthService
   ) {
     this.articleForm = this.formBuilder.group({
       company: ['', [Validators.required]],
@@ -75,6 +78,8 @@ export class CreateArticleComponent implements AfterViewInit {
     if (id) {
       this.articleIdToLoad = +id;
     }
+
+    this.isAdmin = this.authService.isAdmin(); // detectar si es admin
 
     this.categoryService.getAllCategories().subscribe({
       next: (categoriesFromDB) => {
@@ -214,7 +219,7 @@ export class CreateArticleComponent implements AfterViewInit {
       ...formValues,
       content: sanitizedContent,
       approved: false,
-      status: 'PENDING_APPROVAL',
+      status: this.isAdmin ? 'PUBLISHED' : 'PENDING_APPROVAL',
       category: {
         name: formValues.category.name,
       },
@@ -247,7 +252,9 @@ export class CreateArticleComponent implements AfterViewInit {
       this.articleService.createArticle(articlePayload).subscribe({
         next: () => {
           this.setSuccessMessage(
-            'Article submitted for approval successfully.'
+            this.isAdmin
+              ? 'Article published successfully.'
+              : 'Article submitted for approval successfully.'
           );
           this.articleForm.reset({
             publishDate: new Date().toISOString().split('T')[0],

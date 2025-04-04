@@ -34,35 +34,34 @@ public class SecurityConfig {
       .csrf(csrf -> csrf.disable())
       .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
       .authorizeHttpRequests(auth -> auth
-        // Acceso público: Swagger, autenticación y rutas generales
+        // Acceso público
         .requestMatchers("/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-
-        // Público: artículos y categorías
         .requestMatchers(HttpMethod.GET, "/api/articles").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/articles/{id:[\\d]+}").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/articles/category/**").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
 
-        // Admin: CRUD de categorías
+        // 👇 Esta línea debe ir ANTES de la general
+        .requestMatchers(HttpMethod.GET, "/api/articles/rejected").hasAnyRole("USER", "ADMIN")
+
+        // Admin: categorías
         .requestMatchers("/api/categories/**").hasRole("ADMIN")
 
-        // Usuarios autenticados: acceso a estado de sus artículos
+        // Estado de artículos
         .requestMatchers(HttpMethod.GET, "/api/articles/status/**").hasAnyRole("USER", "ADMIN")
 
-        // Usuarios autenticados: creación/edición de artículos y subida de imágenes
+        // ⚠️ Esta línea debe ir DESPUÉS
         .requestMatchers("/api/articles/**", "/api/upload-image").hasAnyRole("USER", "ADMIN")
 
-        // Usuarios autenticados: eliminación de imágenes y videos
+        // Videos e imágenes
         .requestMatchers(HttpMethod.DELETE, "/api/cleanup/**").hasAnyRole("USER", "ADMIN")
 
         .requestMatchers(HttpMethod.PUT, "/api/articles/{id:[\\d]+}/reject").hasRole("ADMIN")
 
-        .requestMatchers(HttpMethod.GET, "/api/articles/rejected").hasAnyRole("USER", "ADMIN")
-
-
-        // Resto de peticiones requieren autenticación
+        // Cualquier otra petición
         .anyRequest().authenticated()
       )
+
       .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
       .formLogin(form -> form.disable())
       .httpBasic(httpBasic -> httpBasic.disable());

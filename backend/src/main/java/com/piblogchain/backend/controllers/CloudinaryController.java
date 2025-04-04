@@ -25,7 +25,7 @@ public class CloudinaryController {
     // Incluir todos los parámetros que el widget usará
     Map<String, Object> paramsToSign = new HashMap<>();
     paramsToSign.put("timestamp", timestamp);
-    paramsToSign.put("upload_preset", "mipreset");
+    paramsToSign.put("upload_preset", "ml_default");
     paramsToSign.put("source", "uw"); // Añadir 'source' si el widget lo incluye
 
     String signature = cloudinary.apiSignRequest(paramsToSign, cloudinary.config.apiSecret);
@@ -35,7 +35,7 @@ public class CloudinaryController {
     response.put("timestamp", timestamp);
     response.put("apiKey", cloudinary.config.apiKey);
     response.put("cloudName", cloudinary.config.cloudName);
-    response.put("uploadPreset", "mipreset");
+    response.put("uploadPreset", "ml_default");
     response.put("source", "uw"); // Incluir en la respuesta si es necesario
 
     return response;

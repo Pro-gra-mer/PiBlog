@@ -35,7 +35,7 @@ export const routes: Routes = [
       { path: 'pending', component: PendingComponent },
       { path: 'rejected', component: RejectedComponent },
       { path: 'subscription', component: SubscriptionComponent },
-      { path: '', redirectTo: 'create-article', pathMatch: 'full' },
+      { path: '', redirectTo: 'my-articles', pathMatch: 'full' },
     ],
   },
 
@@ -45,6 +45,7 @@ export const routes: Routes = [
 
     children: [
       { path: 'create-article', component: CreateArticleComponent },
+      { path: 'edit-article/:id', component: CreateArticleComponent }, // 👈 añade esto
       { path: 'my-articles', component: MyArticlesComponent },
       { path: 'drafts', component: DraftsComponent },
       { path: 'pending', component: PendingComponent },
