@@ -253,6 +253,9 @@ public class ArticleService {
   public List<Article> getRejectedArticlesByUser(String username) {
     return articleRepository.findByStatusAndCreatedBy(ArticleStatus.REJECTED, username);
   }
+  public List<Article> getPromotedVideos() {
+    return articleRepository.findByPromoteVideoTrueAndStatus(ArticleStatus.PUBLISHED);
+  }
 
 
 }

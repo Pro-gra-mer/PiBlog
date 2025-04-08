@@ -236,6 +236,13 @@ public class ArticleController {
     List<Article> articles = articleService.getRejectedArticlesByUser(username);
     return ResponseEntity.ok(articles);
   }
+  @GetMapping("/articles/promoted-videos")
+  public ResponseEntity<List<String>> getPromotedVideos() {
+    List<String> videoUrls = articleService.getPromotedVideos().stream()
+      .map(Article::getPromoVideo)
+      .toList();
+    return ResponseEntity.ok(videoUrls);
+  }
 
 
 
