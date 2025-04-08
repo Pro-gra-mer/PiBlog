@@ -2,6 +2,7 @@ package com.piblogchain.backend.services;
 
 import com.piblogchain.backend.dto.ArticleDTO;
 import com.piblogchain.backend.enums.ArticleStatus;
+import com.piblogchain.backend.enums.PromoteType;
 import com.piblogchain.backend.models.Article;
 import com.piblogchain.backend.models.Category;
 import com.piblogchain.backend.models.User;
@@ -98,7 +99,7 @@ public class ArticleService {
 
     article.setContent(articleDTO.getContent());
     article.setPublishDate(articleDTO.getPublishDate());
-    article.setPromoteVideo(articleDTO.isPromoteVideo());
+    article.setPromoteType(articleDTO.getPromoteType());
     article.setPromoVideo(articleDTO.getPromoVideo());
     article.setPromoVideoPublicId(articleDTO.getPromoVideoPublicId());
     article.setPromoVideoUploadDate(articleDTO.getPromoVideoUploadDate());
@@ -189,7 +190,7 @@ public class ArticleService {
 
       article.setContent(articleDTO.getContent());
       article.setPublishDate(articleDTO.getPublishDate());
-      article.setPromoteVideo(articleDTO.isPromoteVideo());
+      article.setPromoteType(articleDTO.getPromoteType());
       article.setPromoVideo(articleDTO.getPromoVideo());
       article.setPromoVideoPublicId(articleDTO.getPromoVideoPublicId());
       article.setPromoVideoUploadDate(articleDTO.getPromoVideoUploadDate());
@@ -253,9 +254,12 @@ public class ArticleService {
   public List<Article> getRejectedArticlesByUser(String username) {
     return articleRepository.findByStatusAndCreatedBy(ArticleStatus.REJECTED, username);
   }
-  public List<Article> getPromotedVideos() {
-    return articleRepository.findByPromoteVideoTrueAndStatus(ArticleStatus.PUBLISHED);
+
+
+  public List<Article> getPromotedVideosByType(PromoteType type) {
+    return articleRepository.findByPromoteTypeAndStatus(type, ArticleStatus.PUBLISHED);
   }
+
 
 
 }

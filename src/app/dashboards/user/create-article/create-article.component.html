@@ -159,20 +159,28 @@
         </div>
       </div>
 
-      <!-- Video Promotion Option -->
-      <div class="flex items-center">
-        <input
-          type="checkbox"
-          id="promoteVideo"
-          formControlName="promoteVideo"
-          class="mr-2"
-        />
-        <label for="promoteVideo" class="text-secondary"
-          >Promote video in slider</label
+      <!-- Video Promotion Type -->
+      <div>
+        <label class="text-secondary font-medium block" for="promoteType">
+          Promote video in slider
+        </label>
+        <select
+          id="promoteType"
+          formControlName="promoteType"
+          class="w-full max-w-md mt-1 p-3 border border-gradientEnd rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
         >
-        <span *ngIf="!userSubscribed" class="ml-2 text-xs text-secondary">
-          Available only for subscribers
-        </span>
+          <option value="NONE">No promotion</option>
+          <option value="CATEGORY" [disabled]="!userSubscribed">
+            Category slider (Subscribers only)
+          </option>
+          <option value="MAIN" [disabled]="!userSubscribed">
+            Main slider (Subscribers only)
+          </option>
+        </select>
+
+        <p *ngIf="!userSubscribed" class="text-xs text-secondary mt-1 italic">
+          Subscribe to unlock category and main slider promotion.
+        </p>
       </div>
 
       <!-- Embedded Video (Preview) con botón para eliminar -->

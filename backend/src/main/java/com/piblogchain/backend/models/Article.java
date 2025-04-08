@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import io.swagger.v3.oas.annotations.media.Schema;
+import com.piblogchain.backend.enums.PromoteType;
+
 
 @Entity
 @Table(name = "articles")
@@ -73,12 +75,10 @@ public class Article {
   @Schema(description = "Publication date of the article", example = "2025-03-16")
   private LocalDate publishDate;
 
+  @Enumerated(EnumType.STRING)
   @Column(nullable = false)
-  @Schema(
-    description = "Indicates if the video should be promoted in the slider",
-    example = "true"
-  )
-  private boolean promoteVideo;
+  @Schema(description = "Where the promotional video will appear", example = "CATEGORY")
+  private PromoteType promoteType = PromoteType.NONE;
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
@@ -115,7 +115,7 @@ public class Article {
   // Constructor con parámetros
   public Article(String company, String app, String title, String description,
                  String headerImage, String headerImagePublicId, LocalDateTime headerImageUploadDate,
-                 Category category, String content, LocalDate publishDate, boolean promoteVideo,
+                 Category category, String content, LocalDate publishDate, PromoteType  promoteType ,
                  String promoVideo, String promoVideoPublicId, LocalDateTime promoVideoUploadDate,
                  ArticleStatus status, String createdBy, String rejectionReason) {
     this.company = company;
@@ -129,7 +129,7 @@ public class Article {
     this.categoryName = (category != null) ? category.getName() : null; // Asigna el nombre de la categoría
     this.content = content;
     this.publishDate = publishDate;
-    this.promoteVideo = promoteVideo;
+    this.promoteType  = promoteType ;
     this.promoVideo = promoVideo;
     this.promoVideoPublicId = promoVideoPublicId;
     this.promoVideoUploadDate = promoVideoUploadDate;
@@ -237,12 +237,12 @@ public class Article {
     this.publishDate = publishDate;
   }
 
-  public boolean isPromoteVideo() {
-    return promoteVideo;
+  public PromoteType getPromoteType() {
+    return promoteType;
   }
 
-  public void setPromoteVideo(boolean promoteVideo) {
-    this.promoteVideo = promoteVideo;
+  public void setPromoteType(PromoteType promoteType) {
+    this.promoteType = promoteType;
   }
 
   public ArticleStatus getStatus() {

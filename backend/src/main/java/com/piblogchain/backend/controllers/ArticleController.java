@@ -3,6 +3,7 @@ package com.piblogchain.backend.controllers;
 import com.cloudinary.Cloudinary;
 import com.piblogchain.backend.dto.ArticleDTO;
 import com.piblogchain.backend.enums.ArticleStatus;
+import com.piblogchain.backend.enums.PromoteType;
 import com.piblogchain.backend.models.Article;
 import com.piblogchain.backend.services.ArticleService;
 import com.piblogchain.backend.utils.SecurityUtils;
@@ -236,13 +237,20 @@ public class ArticleController {
     List<Article> articles = articleService.getRejectedArticlesByUser(username);
     return ResponseEntity.ok(articles);
   }
+
   @GetMapping("/articles/promoted-videos")
-  public ResponseEntity<List<String>> getPromotedVideos() {
-    List<String> videoUrls = articleService.getPromotedVideos().stream()
-      .map(Article::getPromoVideo)
-      .toList();
-    return ResponseEntity.ok(videoUrls);
+  public ResponseEntity<List<String>> getPromotedVideosByType(@RequestParam("type") String type) {
+    try {
+      PromoteType promoteType = PromoteType.valueOf(type.toUpperCase());
+      List<String> videoUrls = articleService.getPromotedVideosByType(promoteType).stream()
+        .map(Article::getPromoVideo)
+        .toList();
+      return ResponseEntity.ok(videoUrls);
+    } catch (IllegalArgumentException e) {
+      return ResponseEntity.badRequest().body(List.of("Invalid promote type: " + type));
+    }
   }
+
 
 
 

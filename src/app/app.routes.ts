@@ -50,6 +50,7 @@ export const routes: Routes = [
       { path: 'drafts', component: DraftsComponent },
       { path: 'pending', component: PendingComponent },
       { path: 'admin-category-form', component: AdminCategoryFormComponent },
+      { path: '', redirectTo: 'my-articles', pathMatch: 'full' },
     ],
   },
   { path: '**', redirectTo: '', pathMatch: 'full' },

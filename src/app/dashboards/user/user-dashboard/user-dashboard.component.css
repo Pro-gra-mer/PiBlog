@@ -1,7 +1,0 @@
-.active-link {
-  text-decoration: underline;
-  text-decoration-thickness: 2px; /* Grosor del subrayado */
-  text-underline-offset: 4px; /* Distancia entre texto y subrayado */
-  color: #4e598c; /* Color del texto */
-  font-weight: bold;
-}

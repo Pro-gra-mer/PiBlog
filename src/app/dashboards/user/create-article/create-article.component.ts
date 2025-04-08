@@ -64,7 +64,7 @@ export class CreateArticleComponent implements AfterViewInit {
         new Date().toISOString().split('T')[0],
         Validators.required,
       ],
-      promoteVideo: [false], // simple, sin disabled
+      promoteType: ['NONE'],
 
       promoVideo: [''],
       promoVideoPublicId: [''],
@@ -221,7 +221,7 @@ export class CreateArticleComponent implements AfterViewInit {
       content: sanitizedContent,
       approved: false,
       status: this.isAdmin ? 'PUBLISHED' : 'PENDING_APPROVAL',
-      promoteVideo: formValues.promoteVideo, // 👈 asegúrate que va
+      promoteType: formValues.promoteType,
       category: {
         name: formValues.category.name,
       },
@@ -509,7 +509,7 @@ export class CreateArticleComponent implements AfterViewInit {
       content: sanitizedContent,
       approved: false,
       status: 'DRAFT',
-      promoteVideo: formValues.promoteVideo, // 👈 importante
+      promoteType: formValues.promoteType,
       category: {
         name: formValues.category.name,
       },

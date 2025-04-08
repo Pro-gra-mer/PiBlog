@@ -8,8 +8,10 @@ export class PromotedVideoService {
   constructor(private http: HttpClient) {}
 
   getPromotedVideos(): Observable<string[]> {
+    const params = { type: 'MAIN' };
     return this.http.get<string[]>(
-      `${environment.apiUrl}/api/articles/promoted-videos`
+      `${environment.apiUrl}/api/articles/promoted-videos`,
+      { params }
     );
   }
 }

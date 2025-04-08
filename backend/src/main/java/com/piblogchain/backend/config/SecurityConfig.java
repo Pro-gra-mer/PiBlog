@@ -40,6 +40,8 @@ public class SecurityConfig {
         .requestMatchers(HttpMethod.GET, "/api/articles/{id:[\\d]+}").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/articles/category/**").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
+        .requestMatchers(HttpMethod.GET, "/api/articles/promoted-videos").permitAll()
+
 
         // 👇 Esta línea debe ir ANTES de la general
         .requestMatchers(HttpMethod.GET, "/api/articles/rejected").hasAnyRole("USER", "ADMIN")

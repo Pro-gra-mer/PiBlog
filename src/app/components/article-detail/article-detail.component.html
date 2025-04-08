@@ -41,10 +41,17 @@
     </div>
 
     <footer class="mt-8">
-      <div *ngIf="article.promoteVideo" class="text-sm text-gray-700">
-        This article includes a promoted video.
+      <div *ngIf="article.promoteType !== 'NONE'" class="text-sm text-gray-700">
+        This article includes a promoted video in
+        <strong>
+          {{
+            article.promoteType === "MAIN"
+              ? "the main slider"
+              : "the category slider"
+          }}.
+        </strong>
       </div>
-      <div *ngIf="!article.promoteVideo" class="text-sm text-gray-700">
+      <div *ngIf="article.promoteType === 'NONE'" class="text-sm text-gray-700">
         No video promotion.
       </div>
     </footer>

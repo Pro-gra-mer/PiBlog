@@ -6,6 +6,8 @@ export type ArticleStatus =
   | 'PUBLISHED'
   | 'REJECTED';
 
+export type PromoteType = 'NONE' | 'CATEGORY' | 'MAIN';
+
 export interface Article {
   id: number;
   company: string;
@@ -15,7 +17,7 @@ export interface Article {
   category: Category;
   content: string;
   publishDate: string;
-  promoteVideo: boolean;
+  promoteType: PromoteType;
   status: ArticleStatus;
   rejectionReason: string;
 
