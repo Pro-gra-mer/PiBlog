@@ -3,7 +3,6 @@ package com.piblogchain.backend.repositories;
 import com.piblogchain.backend.enums.ArticleStatus;
 import com.piblogchain.backend.enums.PromoteType;
 import com.piblogchain.backend.models.Article;
-import com.piblogchain.backend.models.Category;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
@@ -15,7 +14,14 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
 
   List<Article> findByCategorySlugIgnoreCaseAndStatus(String slug, ArticleStatus status);
 
-  List<Article> findByPromoteType(PromoteType promoteType); // opcional si te interesa sin estado
+  List<Article> findByPromoteType(PromoteType promoteType); // Opcional
 
-  List<Article> findByPromoteTypeAndStatus(PromoteType promoteType, ArticleStatus status); // 👈 este es el que necesita tu servicio
+  List<Article> findByPromoteTypeAndStatus(PromoteType promoteType, ArticleStatus status);
+
+  // ✅ Este es el correcto para videos promocionados por categoría usando slug
+  List<Article> findByPromoteTypeAndCategory_SlugIgnoreCaseAndStatus(
+    PromoteType type,
+    String slug,
+    ArticleStatus status
+  );
 }

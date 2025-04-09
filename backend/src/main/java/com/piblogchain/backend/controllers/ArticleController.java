@@ -251,6 +251,15 @@ public class ArticleController {
     }
   }
 
+  @GetMapping("/articles/promoted-videos/category/{slug}")
+  public ResponseEntity<List<String>> getPromotedVideosByCategory(@PathVariable String slug) {
+    List<String> videoUrls = articleService.getPromotedVideosByCategorySlug(slug).stream()
+      .map(Article::getPromoVideo)
+      .toList();
+
+    return ResponseEntity.ok(videoUrls);
+  }
+
 
 
 

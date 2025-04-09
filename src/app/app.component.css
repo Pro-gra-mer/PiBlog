@@ -1,0 +1,5 @@
+/* app.component.css */
+.flex-grow {
+  position: static; /* Por defecto, pero asegúralo */
+  overflow: visible; /* Evita que corte elementos fijos */
+}

@@ -41,6 +41,7 @@ public class SecurityConfig {
         .requestMatchers(HttpMethod.GET, "/api/articles/category/**").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/articles/promoted-videos").permitAll()
+        .requestMatchers(HttpMethod.GET, "/api/articles/promoted-videos/category/**").permitAll()
 
 
         // 👇 Esta línea debe ir ANTES de la general

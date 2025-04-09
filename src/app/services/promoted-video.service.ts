@@ -14,4 +14,10 @@ export class PromotedVideoService {
       { params }
     );
   }
+
+  getPromotedVideosByCategory(slug: string): Observable<string[]> {
+    return this.http.get<string[]>(
+      `${environment.apiUrl}/api/articles/promoted-videos/category/${slug}`
+    );
+  }
 }

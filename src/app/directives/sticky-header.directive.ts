@@ -14,7 +14,7 @@ import { DOCUMENT, isPlatformBrowser } from '@angular/common';
   standalone: true,
 })
 export class StickyHeaderDirective implements OnInit {
-  private scrollThreshold = 650; // ✅ Retrasar el cambio con más scroll
+  private scrollThreshold = 100;
   private isBrowser: boolean;
 
   constructor(
@@ -28,6 +28,9 @@ export class StickyHeaderDirective implements OnInit {
 
   ngOnInit(): void {
     if (!this.isBrowser) return;
+    console.log('Directiva aplicada a:', this.el.nativeElement);
+    // Forzar posición inicial para evitar conflictos
+    this.renderer.setStyle(this.el.nativeElement, 'position', 'relative');
   }
 
   @HostListener('window:scroll', ['$event'])
@@ -35,11 +38,16 @@ export class StickyHeaderDirective implements OnInit {
     if (!this.isBrowser) return;
 
     const scrollTop = window.scrollY || this.document.documentElement.scrollTop;
+    console.log('Scroll position:', scrollTop);
 
     if (scrollTop > this.scrollThreshold) {
       this.renderer.addClass(this.el.nativeElement, 'fixed-slider');
+      // Forzar estilos clave directamente
+      this.renderer.setStyle(this.el.nativeElement, 'position', 'fixed');
+      this.renderer.setStyle(this.el.nativeElement, 'z-index', '1000');
     } else {
       this.renderer.removeClass(this.el.nativeElement, 'fixed-slider');
+      this.renderer.setStyle(this.el.nativeElement, 'position', 'relative');
     }
   }
 }

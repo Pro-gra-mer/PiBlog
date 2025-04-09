@@ -61,6 +61,10 @@ public class Article {
   @Schema(description = "Name of the category", example = "Marketplaces")
   private String categoryName; // Nombre de la categoría como String
 
+  @Column(name = "category_slug")
+  @Schema(description = "Slug of the category", example = "marketplaces")
+  private String categorySlug;
+
   @ManyToOne
   @JoinColumn(name = "category_id") // Relación con la tabla categories
   @Schema(description = "Category object referencing the category ID", example = "Category{id=3, name='Marketplaces'}")
@@ -127,6 +131,7 @@ public class Article {
     this.headerImageUploadDate = headerImageUploadDate;
     this.category = category; // Relación con Category
     this.categoryName = (category != null) ? category.getName() : null; // Asigna el nombre de la categoría
+    this.categorySlug = (category != null) ? category.getSlug() : null;
     this.content = content;
     this.publishDate = publishDate;
     this.promoteType  = promoteType ;
@@ -211,6 +216,14 @@ public class Article {
     this.categoryName = categoryName; // Corrige el setter para asignar el valor
   }
 
+  public String getCategorySlug() {
+    return categorySlug;
+  }
+
+  public void setCategorySlug(String categorySlug) {
+    this.categorySlug = categorySlug;
+  }
+
   public Category getCategory() {
     return category;
   }
@@ -219,6 +232,7 @@ public class Article {
     this.category = category;
     // Opcional: Sincroniza categoryName con el nombre de la categoría si category no es null
     this.categoryName = (category != null) ? category.getName() : this.categoryName;
+    this.categorySlug = (category != null) ? category.getSlug() : this.categorySlug;
   }
 
   public String getContent() {

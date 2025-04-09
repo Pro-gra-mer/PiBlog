@@ -5,6 +5,9 @@ import {
   ElementRef,
   Inject,
   PLATFORM_ID,
+  Input,
+  SimpleChanges,
+  OnChanges,
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -20,11 +23,12 @@ import { PromotedVideoService } from '../../services/promoted-video.service';
   templateUrl: './slider.component.html',
   styleUrls: ['./slider.component.css'],
 })
-export class SliderComponent implements AfterViewInit {
+export class SliderComponent implements AfterViewInit, OnChanges {
   @ViewChild('swiperContainer', { static: false }) swiperContainer!: ElementRef;
   videos: SafeResourceUrl[] = [];
   private swiperInstance: Swiper | undefined;
   private isBrowser: boolean;
+  @Input() customVideos: string[] = [];
 
   constructor(
     @Inject(PLATFORM_ID) private platformId: object,
@@ -35,31 +39,52 @@ export class SliderComponent implements AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    if (this.isBrowser) {
-      this.loadPromotedVideos();
+    if (!this.isBrowser) return;
+
+    // Si no hay customVideos, cargamos los videos MAIN como fallback
+    if (!this.customVideos.length) {
+      this.loadMainVideos();
+    } else if (this.videos.length) {
+      this.initSwiper();
     }
   }
 
-  loadPromotedVideos(): void {
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!this.isBrowser) return;
+
+    if (changes['customVideos'] && this.customVideos?.length > 0) {
+      this.videos = this.customVideos.map((url) =>
+        this.sanitizer.bypassSecurityTrustResourceUrl(url)
+      );
+      this.destroySwiper();
+      setTimeout(() => {
+        this.initSwiper();
+        this.ensureVideosPlay();
+      }, 100);
+    }
+  }
+
+  // Método para cargar videos MAIN como fallback
+  loadMainVideos(): void {
     this.promotedVideoService.getPromotedVideos().subscribe({
       next: (urls) => {
-        const limited = urls.slice(0, 10);
-        this.videos = limited.map((url) =>
+        this.videos = urls.map((url) =>
           this.sanitizer.bypassSecurityTrustResourceUrl(url)
         );
-        // Retrasamos la inicialización para asegurar que el DOM esté listo
         setTimeout(() => {
           this.initSwiper();
           this.ensureVideosPlay();
         }, 100);
       },
-      error: () => {
-        console.error('Error loading promoted videos');
+      error: (err) => {
+        console.error('Error loading MAIN videos:', err);
       },
     });
   }
 
   initSwiper(): void {
+    if (!this.swiperContainer?.nativeElement) return;
+
     this.swiperInstance = new Swiper(this.swiperContainer.nativeElement, {
       modules: [Autoplay, Navigation],
       loop: true,
@@ -80,20 +105,24 @@ export class SliderComponent implements AfterViewInit {
     });
   }
 
-  // Método para asegurar que los videos se reproduzcan
   ensureVideosPlay(): void {
     const videos = this.swiperContainer.nativeElement.querySelectorAll('video');
     videos.forEach((video: HTMLVideoElement) => {
-      video.muted = true; // Asegura que esté silenciado (requerido para autoplay)
+      video.muted = true;
       video.play().catch((error) => {
         console.log('Error al intentar reproducir video:', error);
       });
     });
   }
 
-  ngOnDestroy(): void {
+  destroySwiper(): void {
     if (this.swiperInstance) {
-      this.swiperInstance.destroy();
+      this.swiperInstance.destroy(true, true);
+      this.swiperInstance = undefined;
     }
+  }
+
+  ngOnDestroy(): void {
+    this.destroySwiper();
   }
 }

@@ -1,5 +1,5 @@
 <nav
-  class="bg-primary text-[#ada1ae] rounded-b-md text-lg py-4 shadow-md shadow-secondary fixed top-0 w-full z-50"
+  class="bg-primary text-[#ada1ae] rounded-b-md text-lg py-4 shadow-md shadow-secondary fixed top-0 w-full z-[1100]"
 >
   <div class="container mx-auto flex justify-between items-center px-4">
     <a routerLink="/" class="text-4xl font-title text-accent">
@@ -68,7 +68,7 @@
   <!-- Menú móvil -->
   <ul
     *ngIf="isMenuOpen"
-    class="absolute top-full left-0 w-full bg-primary text-center py-7 space-y-4 md:hidden"
+    class="absolute top-full left-0 w-full bg-primary py-7 space-y-4 md:hidden text-left px-6"
   >
     <li>
       <a routerLink="/" class="text-background hover:text-accent block">Home</a>

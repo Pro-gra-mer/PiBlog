@@ -96,6 +96,7 @@ public class ArticleService {
       .orElseThrow(() -> new RuntimeException("Category not found: " + categoryName));
     article.setCategory(category);
     article.setCategoryName(categoryName);
+    article.setCategorySlug(category.getSlug()); // Para lógica interna
 
     article.setContent(articleDTO.getContent());
     article.setPublishDate(articleDTO.getPublishDate());
@@ -186,6 +187,7 @@ public class ArticleService {
         .orElseThrow(() -> new RuntimeException("Category not found: " + categoryName));
       article.setCategory(category);
       article.setCategoryName(categoryName);
+      article.setCategorySlug(category.getSlug());
 
 
       article.setContent(articleDTO.getContent());
@@ -260,6 +262,12 @@ public class ArticleService {
     return articleRepository.findByPromoteTypeAndStatus(type, ArticleStatus.PUBLISHED);
   }
 
-
+  public List<Article> getPromotedVideosByCategorySlug(String slug) {
+    return articleRepository.findByPromoteTypeAndCategory_SlugIgnoreCaseAndStatus(
+      PromoteType.CATEGORY,
+      slug,
+      ArticleStatus.PUBLISHED
+    );
+  }
 
 }
