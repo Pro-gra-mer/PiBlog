@@ -38,7 +38,6 @@ export class StickyHeaderDirective implements OnInit {
     if (!this.isBrowser) return;
 
     const scrollTop = window.scrollY || this.document.documentElement.scrollTop;
-    console.log('Scroll position:', scrollTop);
 
     if (scrollTop > this.scrollThreshold) {
       this.renderer.addClass(this.el.nativeElement, 'fixed-slider');

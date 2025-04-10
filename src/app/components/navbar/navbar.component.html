@@ -89,28 +89,46 @@
           class="mt-2 bg-primary text-sm text-gray-200 space-y-2 px-4"
         >
           <li *ngFor="let category of categories">
-            <a href="#" class="block hover:text-yellow-400">{{ category }}</a>
+            <a
+              [routerLink]="['/category', category.slug]"
+              (click)="closeMenu()"
+              class="block hover:text-yellow-400"
+            >
+              {{ category.name }}
+            </a>
           </li>
         </ul>
       </div>
     </li>
     <li>
-      <a routerLink="/articles" class="text-background hover:text-accent block"
+      <a
+        routerLink="/articles"
+        (click)="closeMenu()"
+        class="text-background hover:text-accent block"
         >Articles</a
       >
     </li>
     <li>
-      <a routerLink="/featured" class="text-background hover:text-accent block"
+      <a
+        routerLink="/featured"
+        (click)="closeMenu()"
+        class="text-background hover:text-accent block"
         >Featured Apps</a
       >
     </li>
     <li>
-      <a routerLink="/advertise" class="text-background hover:text-accent block"
+      <a
+        routerLink="/advertise"
+        (click)="closeMenu()"
+        class="text-background hover:text-accent block"
         >Advertise with Us</a
       >
     </li>
     <li>
-      <a routerLink="/contact" class="text-background hover:text-accent block"
+      <a
+        routerLink="/contact"
+        (click)="closeMenu()"
+        class="text-background hover:text-accent block"
         >Contact</a
       >
     </li>
@@ -118,6 +136,7 @@
       <a
         href="#"
         (click)="loginWithPi()"
+        (click)="closeMenu()"
         class="text-background hover:text-accent block"
         >Sign in with Pi</a
       >
@@ -130,6 +149,7 @@
     <li *ngIf="isAuthenticated">
       <a
         [routerLink]="dashboardRoute"
+        (click)="closeMenu()"
         class="text-background hover:text-accent block"
         >Dashboard</a
       >
@@ -138,6 +158,7 @@
       <a
         href="#"
         (click)="logout()"
+        (click)="closeMenu()"
         class="text-background hover:text-red-500 block"
         >Logout</a
       >

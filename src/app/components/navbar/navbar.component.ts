@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { Router, RouterLink, NavigationEnd } from '@angular/router';
 import { PiAuthService } from '../../services/pi-auth.service';
+import { CategoryService, Category } from '../../services/category.service';
 
 @Component({
   selector: 'app-navbar',
@@ -23,15 +24,7 @@ export class NavbarComponent implements OnInit {
   username: string | null = null;
   dashboardRoute: string = '/user-dashboard'; // Propiedad para la ruta
 
-  categories: string[] = [
-    'Marketplaces',
-    'Games',
-    'Productivity Tools',
-    'Education',
-    'Social & Community',
-    'Digital Services',
-    'Travel & Experiences',
-  ];
+  categories: Category[] = [];
 
   showCategories = false;
 
@@ -39,6 +32,7 @@ export class NavbarComponent implements OnInit {
     public piAuthService: PiAuthService,
     private router: Router,
     private cdr: ChangeDetectorRef,
+    private categoryService: CategoryService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
@@ -47,6 +41,7 @@ export class NavbarComponent implements OnInit {
       this.isAuthenticated = authStatus;
       this.updateUserInfo();
       this.cdr.detectChanges();
+      this.loadCategories();
     });
 
     this.piAuthService.username$.subscribe((username) => {
@@ -110,5 +105,21 @@ export class NavbarComponent implements OnInit {
 
   toggleCategories(): void {
     this.showCategories = !this.showCategories;
+  }
+
+  loadCategories(): void {
+    this.categoryService.getAllCategories().subscribe({
+      next: (data) => {
+        this.categories = data;
+      },
+      error: (err) => {
+        console.error('Error loading categories:', err);
+      },
+    });
+  }
+
+  closeMenu() {
+    this.isMenuOpen = false;
+    this.showCategories = false; // opcional si también quieres cerrar subcategorías
   }
 }
