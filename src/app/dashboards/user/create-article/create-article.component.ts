@@ -12,6 +12,7 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { ArticleDetailComponent } from '../../../components/article-detail/article-detail.component';
 import { Category, CategoryService } from '../../../services/category.service';
 import { PiAuthService } from '../../../services/pi-auth.service';
+import { environment } from '../../../environments/environment.dev';
 
 declare const cloudinary: any;
 
@@ -170,7 +171,6 @@ export class CreateArticleComponent implements AfterViewInit {
       approved: false,
     };
   }
-
   onSubmit(): void {
     if (this.articleForm.invalid) {
       this.setErrorMessage('Please complete all fields correctly.');
@@ -252,7 +252,7 @@ export class CreateArticleComponent implements AfterViewInit {
         });
     } else {
       this.articleService.createArticle(articlePayload).subscribe({
-        next: () => {
+        next: (response: any) => {
           this.setSuccessMessage(
             this.isAdmin
               ? 'Article published successfully.'
@@ -264,6 +264,18 @@ export class CreateArticleComponent implements AfterViewInit {
           });
           this.previewArticle = null;
           this.insertedImages = [];
+
+          const pendingPaymentId = localStorage.getItem('pendingPaymentId');
+          if (pendingPaymentId) {
+            this.http
+              .post(`${environment.apiUrl}/api/payments/attach-article`, {
+                paymentId: pendingPaymentId,
+                articleId: response.id,
+              })
+              .subscribe(() => {
+                localStorage.removeItem('pendingPaymentId');
+              });
+          }
         },
         error: (err: HttpErrorResponse) => {
           console.error('Error saving article:', err);

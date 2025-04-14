@@ -1,3 +1,9 @@
+<div
+  *ngIf="showSuccess"
+  class="mt-28 bg-green-500 text-white px-6 py-4 rounded-xl shadow-lg animate-fade-in-out transition duration-300"
+>
+  🎉 ¡Pago simulado completado!
+</div>
 <!-- Advertise with Us Component (Pricing Cards) -->
 <section class="container mx-auto py-20 mt-6 text-center">
   <h2 class="text-4xl font-bold text-primary mb-10">Advertise with Us</h2>
@@ -35,6 +41,7 @@
       </div>
       <button
         class="mt-6 bg-accent text-background py-2 px-6 rounded-lg hover:bg-opacity-80 w-full"
+        (click)="pay(PlanType.STANDARD)"
       >
         Publish Now
       </button>
@@ -47,7 +54,11 @@
       <h3 class="text-2xl font-bold text-accent text-center w-full">
         Category Slider
       </h3>
+
       <p class="text-secondary mt-4">
+        <span class="block"
+          >✔ Publish <strong>1 article</strong> featuring your app.</span
+        >
         <span class="block"
           >✔ Video <strong>featured in the category slider</strong>.</span
         >
@@ -60,6 +71,7 @@
           ✔ If canceled, the video will be removed from the slider but the
           article remains online.
         </span>
+        <span class="block">✔ You can delete your article at any time.</span>
       </p>
       <span class="block mt-2">
         <p class="text-sm text-red-500 font-bold">
@@ -71,6 +83,7 @@
       </div>
       <button
         class="mt-6 bg-accent text-background py-2 px-6 rounded-lg hover:bg-opacity-80 w-full"
+        (click)="pay(PlanType.CATEGORY_SLIDER)"
       >
         Get Featured
       </button>
@@ -85,17 +98,26 @@
       </h3>
       <p class="text-secondary mt-4">
         <span class="block"
+          >✔ Publish <strong>1 article</strong> featuring your app.</span
+        >
+        <span class="block"
+          >✔ The article will appear in
+          <strong>featured apps</strong> section</span
+        >
+        <span class="block"
           >✔ Video <strong>featured on the homepage slider</strong>.</span
         >
 
         <span class="block text-sm text-secondary">
           ✔ Rotates every <strong>15–30 seconds</strong> for maximum visibility.
         </span>
+
         <span class="block text-sm text-secondary">
           ✔ If canceled, the video will be removed from the slider but the
           article remains online.
         </span>
       </p>
+      <span class="block">✔ You can delete your article at any time.</span>
       <span class="block mt-2">
         <p class="text-sm text-red-500 font-bold">
           ✔ 10 spots available globally
@@ -106,6 +128,7 @@
       </div>
       <button
         class="mt-6 bg-primary text-background py-2 px-6 rounded-lg hover:bg-opacity-80 w-full"
+        (click)="pay(PlanType.MAIN_SLIDER)"
       >
         Get Maximum Visibility
       </button>
