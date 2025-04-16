@@ -47,13 +47,14 @@
           >Hello, {{ username }}</a
         >
       </li>
-      <li *ngIf="isAuthenticated">
+      <li *ngIf="isAuthenticated && hasActivePlan">
         <a
           [routerLink]="dashboardRoute"
           class="text-background hover:text-accent"
           >Dashboard</a
         >
       </li>
+
       <li *ngIf="isAuthenticated">
         <a
           href="#"
@@ -146,14 +147,12 @@
         >Hello, {{ username }}</a
       >
     </li>
-    <li *ngIf="isAuthenticated">
-      <a
-        [routerLink]="dashboardRoute"
-        (click)="closeMenu()"
-        class="text-background hover:text-accent block"
+    <li *ngIf="isAuthenticated && hasActivePlan">
+      <a [routerLink]="dashboardRoute" class="text-background hover:text-accent"
         >Dashboard</a
       >
     </li>
+
     <li *ngIf="isAuthenticated">
       <a
         href="#"

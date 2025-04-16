@@ -1,17 +1,17 @@
 package com.piblogchain.backend.models;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "payment")
 public class Payment {
 
   @Id
-  private String paymentId;
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+
   private String username;
   private String planType;
   private String txid;
@@ -21,18 +21,19 @@ public class Payment {
   private LocalDateTime completedAt;
   private LocalDateTime expirationAt;
 
+  @Column(name = "payment_id", unique = true)
+  private String paymentId;
+
+
   @OneToOne
   @JoinColumn(name = "article_id")
-  private Long articleId; // ID del artículo asociado a esta suscripción (opcional)
+  private Article article;
+
 
   public Payment() {}
 
-  public String getPaymentId() {
-    return paymentId;
-  }
-
-  public void setPaymentId(String paymentId) {
-    this.paymentId = paymentId;
+  public Long id() {
+    return id;
   }
 
   public String getUsername() {
@@ -99,11 +100,20 @@ public class Payment {
     this.expirationAt = expirationAt;
   }
 
-  public Long getArticleId() {
-    return articleId;
+  public Article getArticle() {
+    return article;
   }
 
-  public void setArticleId(Long articleId) {
-    this.articleId = articleId;
+  public void setArticle(Article article) {
+    this.article = article;
   }
+
+  public String getPaymentId() {
+    return paymentId;
+  }
+
+  public void setPaymentId(String paymentId) {
+    this.paymentId = paymentId;
+  }
+
 }

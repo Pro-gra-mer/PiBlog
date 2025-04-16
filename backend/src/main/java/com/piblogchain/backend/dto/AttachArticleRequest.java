@@ -1,23 +1,15 @@
 package com.piblogchain.backend.dto;
 
 public class AttachArticleRequest {
-  private Long paymentId;
+  private String paymentId;
   private Long articleId;
 
-
-  public AttachArticleRequest() {
-  }
-
-  public AttachArticleRequest(Long paymentId, Long articleId) {
-    this.paymentId = paymentId;
-    this.articleId = articleId;
-  }
-
-  public Long getPaymentId() {
+  // Getters y setters
+  public String getPaymentId() {
     return paymentId;
   }
 
-  public void setPaymentId(Long paymentId) {
+  public void setPaymentId(String paymentId) {
     this.paymentId = paymentId;
   }
 
@@ -28,5 +20,5 @@ public class AttachArticleRequest {
   public void setArticleId(Long articleId) {
     this.articleId = articleId;
   }
-// getters y setters
 }
+

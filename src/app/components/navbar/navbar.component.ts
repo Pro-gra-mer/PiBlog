@@ -23,10 +23,9 @@ export class NavbarComponent implements OnInit {
   role: string | null = null;
   username: string | null = null;
   dashboardRoute: string = '/user-dashboard'; // Propiedad para la ruta
-
   categories: Category[] = [];
-
   showCategories = false;
+  hasActivePlan: boolean = false;
 
   constructor(
     public piAuthService: PiAuthService,
@@ -40,24 +39,27 @@ export class NavbarComponent implements OnInit {
     this.piAuthService.isAuthenticated$.subscribe((authStatus) => {
       this.isAuthenticated = authStatus;
       this.updateUserInfo();
-      this.cdr.detectChanges();
       this.loadCategories();
+      this.checkPlan(); // 👈 Añadir aquí
+      this.cdr.detectChanges();
     });
 
     this.piAuthService.username$.subscribe((username) => {
       this.username = username;
       this.updateUserInfo();
+      this.checkPlan(); // 👈 Y aquí también
       this.cdr.detectChanges();
     });
 
     if (isPlatformBrowser(this.platformId) && localStorage.getItem('user')) {
       this.updateUserInfo();
+      this.checkPlan(); // 👈 Esto asegura que esté presente tras recargar
     }
 
-    // Suscribirse a los eventos del router para cerrar el menú móvil en cada navegación.
     this.router.events.subscribe((event) => {
       if (event instanceof NavigationEnd) {
         this.isMenuOpen = false;
+        this.checkPlan(); // 👈 Al cambiar de ruta, especialmente tras completar pago
         this.cdr.detectChanges();
       }
     });
@@ -121,5 +123,17 @@ export class NavbarComponent implements OnInit {
   closeMenu() {
     this.isMenuOpen = false;
     this.showCategories = false; // opcional si también quieres cerrar subcategorías
+  }
+
+  checkPlan(): void {
+    if (!this.isAuthenticated) {
+      this.hasActivePlan = false;
+      return;
+    }
+
+    this.piAuthService.getActivePlan().subscribe((planType) => {
+      this.hasActivePlan = planType !== 'NONE';
+      this.cdr.detectChanges();
+    });
   }
 }

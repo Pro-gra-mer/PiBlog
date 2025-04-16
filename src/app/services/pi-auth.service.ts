@@ -7,7 +7,7 @@ import {
 } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, map, Observable, of } from 'rxjs';
 import { isPlatformBrowser } from '@angular/common';
 
 declare let Pi: any;
@@ -98,13 +98,22 @@ export class PiAuthService {
                     this.usernameSubject.next(username);
 
                     this.appRef.tick();
-                    const dashboard =
-                      response.role === 'ADMIN'
-                        ? '/admin-dashboard'
-                        : '/user-dashboard';
-                    this.router.navigate([dashboard]);
+
+                    // 👇 Consultar si tiene plan activo antes de redirigir
+                    this.getActivePlan().subscribe((planType) => {
+                      const hasPlan = planType !== 'NONE';
+
+                      if (response.role === 'ADMIN') {
+                        this.router.navigate(['/admin-dashboard']);
+                      } else if (hasPlan) {
+                        this.router.navigate(['/user-dashboard']);
+                      } else {
+                        this.router.navigate(['/']); // 👈 sin plan, redirige al home
+                      }
+                    });
                   }
                 },
+
                 error: (err) => {
                   console.error('Error en el backend:', err);
                   this.router.navigate(['/user-dashboard']);
@@ -151,5 +160,17 @@ export class PiAuthService {
       return storedUser ? JSON.parse(storedUser).role === 'ADMIN' : false;
     }
     return false;
+  }
+
+  getActivePlan(): Observable<string> {
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser) return of('NONE');
+
+    const { username } = JSON.parse(storedUser);
+    return this.http
+      .get<any>(
+        `http://localhost:8080/api/payments/active-plan?username=${username}`
+      )
+      .pipe(map((response) => response.planType || 'NONE'));
   }
 }

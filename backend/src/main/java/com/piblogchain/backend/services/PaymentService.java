@@ -4,15 +4,19 @@ import com.piblogchain.backend.dto.AttachArticleRequest;
 import com.piblogchain.backend.dto.PaymentApprovalRequest;
 import com.piblogchain.backend.dto.PaymentCompleteRequest;
 import com.piblogchain.backend.dto.PaymentCreateRequest;
+import com.piblogchain.backend.enums.ArticleStatus;
 import com.piblogchain.backend.enums.PlanType;
 import com.piblogchain.backend.models.Article;
+import com.piblogchain.backend.models.Category;
 import com.piblogchain.backend.models.Payment;
 import com.piblogchain.backend.repositories.ArticleRepository;
+import com.piblogchain.backend.repositories.CategoryRepository;
 import com.piblogchain.backend.repositories.PaymentRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,20 +30,21 @@ public class PaymentService {
   private final Environment env;
   private final PaymentRepository paymentRepository;
   private final ArticleRepository articleRepository;
+  private final CategoryRepository categoryRepository;
 
 
-  public PaymentService(Environment env, PaymentRepository paymentRepository, ArticleRepository articleRepository) {
+  public PaymentService(Environment env, PaymentRepository paymentRepository, ArticleRepository articleRepository, CategoryRepository categoryRepository) {
     this.env = env;
     this.paymentRepository = paymentRepository;
     this.articleRepository = articleRepository;
+    this.categoryRepository = categoryRepository;
   }
-
 
   public Map<String, Object> createPayment(PaymentCreateRequest request) {
     double amount = getPlanPrice(request.getPlanType());
     String memo = "Payment for plan: " + request.getPlanType();
 
-    String paymentId = "sandbox-" + System.currentTimeMillis(); // Generar un ID único temporal
+    String paymentId = request.getPaymentId(); // ✅ usa el del frontend
 
     Payment payment = new Payment();
     payment.setPaymentId(paymentId);
@@ -49,7 +54,9 @@ public class PaymentService {
     payment.setSandbox(env.acceptsProfiles("sandbox"));
     payment.setCreatedAt(LocalDateTime.now());
 
-    paymentRepository.save(payment);
+    System.out.println("Creando pago con paymentId: " + paymentId);
+    Payment savedPayment = paymentRepository.save(payment);
+    System.out.println("Pago guardado: " + savedPayment.getPaymentId() + ", ID: " + savedPayment.id());
 
     Map<String, Object> response = new HashMap<>();
     response.put("amount", amount);
@@ -66,30 +73,66 @@ public class PaymentService {
   }
 
   public void approvePayment(PaymentApprovalRequest request) {
-    boolean isSandbox = env.acceptsProfiles("sandbox");
     System.out.println("✔ Approved payment: " + request.getPaymentId() + " - Plan: " + request.getPlanType());
 
-    Payment payment = paymentRepository.findById(request.getPaymentId()).orElse(null);
-    if (payment != null) {
-      payment.setStatus("APPROVED");
-      paymentRepository.save(payment);
-    }
+    Payment payment = findPaymentOrThrow(request.getPaymentId());
+    payment.setStatus("APPROVED");
+    paymentRepository.save(payment);
   }
 
   public void completePayment(PaymentCompleteRequest request) {
     System.out.println("✅ Completed payment: " + request.getPaymentId() + " - TxID: " + request.getTxid());
 
-    Payment payment = paymentRepository.findById(request.getPaymentId()).orElse(null);
-    if (payment != null) {
-      payment.setStatus("COMPLETED");
-      payment.setTxid(request.getTxid());
-      payment.setCompletedAt(LocalDateTime.now());
-      payment.setExpirationAt(LocalDateTime.now().plusDays(30)); // ⏳ 30 días de suscripción
-      if (request.getArticleId() != null) {
-        payment.setArticleId(request.getArticleId()); // 👈 asocia el artículo
-      }
-      paymentRepository.save(payment);
+    Payment payment = findPaymentOrThrow(request.getPaymentId());
+    payment.setStatus("COMPLETED");
+    payment.setTxid(request.getTxid());
+    payment.setCompletedAt(LocalDateTime.now());
+
+    // STANDARD no expira, los otros duran 30 días
+    if (payment.getPlanType().equals("STANDARD")) {
+      payment.setExpirationAt(null);
+    } else {
+      payment.setExpirationAt(LocalDateTime.now().plusDays(30));
     }
+
+    // Si es STANDARD, crea artículo vacío
+    if (payment.getPlanType().equals("STANDARD") && payment.getArticle() == null) {
+      Article newArticle = new Article();
+      newArticle.setCreatedBy(payment.getUsername());
+      newArticle.setStatus(ArticleStatus.DRAFT);
+      newArticle.setPublishDate(LocalDate.now());
+
+      // ❗️ Campos mínimos
+      newArticle.setApp("");
+      newArticle.setCompany("");
+      newArticle.setTitle("");
+      newArticle.setDescription("");
+      newArticle.setContent("");
+
+      // ✅ Asignar categoría "Sin categoría"
+      Category defaultCategory = categoryRepository.findBySlug("sin-categoria")
+        .orElseThrow(() -> new RuntimeException("Default category not found"));
+
+      newArticle.setCategory(defaultCategory);
+
+      articleRepository.save(newArticle);
+      payment.setArticle(newArticle);
+    }
+
+
+
+    paymentRepository.save(payment);
+  }
+
+  public void attachArticleToPayment(AttachArticleRequest request) {
+    Payment payment = findPaymentOrThrow(request.getPaymentId());
+
+    Article article = articleRepository.findById(request.getArticleId())
+      .orElseThrow(() -> new RuntimeException("Article not found"));
+
+    payment.setArticle(article);
+
+    paymentRepository.save(payment);
   }
 
   public String getActivePlanForUser(String username) {
@@ -104,8 +147,10 @@ public class PaymentService {
     Payment active = paymentRepository.findTopByUsernameAndStatusOrderByCompletedAtDesc(username, "COMPLETED");
 
     Map<String, Object> response = new HashMap<>();
-
-    if (active != null && active.getExpirationAt() != null && active.getExpirationAt().isAfter(LocalDateTime.now())) {
+    if (active != null && (
+      active.getPlanType().equals("STANDARD") ||
+        (active.getExpirationAt() != null && active.getExpirationAt().isAfter(LocalDateTime.now()))
+    )) {
       response.put("planType", active.getPlanType());
       response.put("expirationAt", active.getExpirationAt());
     } else {
@@ -123,17 +168,14 @@ public class PaymentService {
     };
   }
 
-  public void attachArticleToPayment(AttachArticleRequest request) {
-    String paymentId = String.valueOf(request.getPaymentId());
-    Payment payment = paymentRepository.findById(paymentId)
+  // ✅ Método reutilizable para evitar repetir el mismo error-check
+  private Payment findPaymentOrThrow(String paymentId) {
+    return paymentRepository.findByPaymentId(paymentId)
       .orElseThrow(() -> new RuntimeException("Payment not found"));
+  }
 
-    Article article = articleRepository.findById(request.getArticleId())
-      .orElseThrow(() -> new RuntimeException("Article not found"));
-
-    payment.setArticleId(article.getId());
-
-    paymentRepository.save(payment);
+  public Payment getByPaymentId(String paymentId) {
+    return findPaymentOrThrow(paymentId);
   }
 
 }

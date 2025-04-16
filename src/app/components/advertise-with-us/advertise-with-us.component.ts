@@ -20,50 +20,71 @@ export class AdvertiseWithUsComponent {
 
   readonly PlanType = PlanType;
   showSuccess = false;
+  showLoginMessage = false;
 
   pay(plan: PlanType): void {
     const storedUser = localStorage.getItem('user');
     if (!storedUser) {
-      console.error('Usuario no autenticado');
+      console.warn('User not authenticated');
+      this.showLoginMessage = true;
+      setTimeout(() => {
+        this.showLoginMessage = false;
+      }, 4000);
       return;
     }
 
     const user = JSON.parse(storedUser);
+    const timestamp = Date.now(); // ✅ Mismo timestamp para todo
+    const fakePaymentId = 'sandbox-' + timestamp;
+    const fakeTxId = 'sandbox-tx-' + timestamp;
+
     const payload = {
       planType: plan,
       username: user.username,
+      paymentId: fakePaymentId,
     };
 
     this.http
       .post(`${environment.apiUrl}/api/payments/create`, payload)
       .subscribe({
         next: (payment: any) => {
-          // 🧪 SANDBOX
           if (environment.sandbox || user.username === 'sandbox-user') {
             alert('🧪 Modo sandbox activo. Simulando pago completo sin SDK.');
+            localStorage.setItem('pendingPaymentId', fakePaymentId);
 
-            const fakePaymentId = 'sandbox-' + Date.now();
-            const fakeTxId = 'sandbox-tx-' + Date.now();
-
-            localStorage.setItem('pendingPaymentId', fakePaymentId); // Guardar para usar luego
+            const accessToken = user.accessToken;
+            const headers = {
+              Authorization: `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+            };
 
             this.http
-              .post(`${environment.apiUrl}/api/payments/approve`, {
-                paymentId: fakePaymentId,
-                planType: plan,
-              })
+              .post(
+                `${environment.apiUrl}/api/payments/approve`,
+                {
+                  paymentId: fakePaymentId,
+                  planType: plan,
+                },
+                { headers }
+              )
               .subscribe(() => {
                 this.http
-                  .post(`${environment.apiUrl}/api/payments/complete`, {
-                    paymentId: fakePaymentId,
-                    txid: fakeTxId,
-                  })
-                  .subscribe(() => {
+                  .post(
+                    `${environment.apiUrl}/api/payments/complete`,
+                    {
+                      paymentId: fakePaymentId,
+                      txid: fakeTxId,
+                    },
+                    { headers }
+                  )
+                  .subscribe((response: any) => {
+                    const articleId = response.articleId;
                     this.showSuccess = true;
                     setTimeout(() => {
-                      this.showSuccess = false;
-                      this.router.navigate(['/user-dashboard/create-article']);
-                    }, 3000);
+                      this.router.navigate([
+                        `/user-dashboard/edit-article/${articleId}`,
+                      ]);
+                    }, 500);
                   });
               });
 
@@ -80,29 +101,73 @@ export class AdvertiseWithUsComponent {
             onReadyForServerApproval: (paymentId: string) => {
               localStorage.setItem('pendingPaymentId', paymentId); // ✅ Guardar para usarlo en create-article
 
+              const storedUser = localStorage.getItem('user');
+              if (!storedUser) return;
+
+              const user = JSON.parse(storedUser);
+              const accessToken = user.accessToken;
+
+              const headers = {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+              };
+
               this.http
-                .post(`${environment.apiUrl}/api/payments/approve`, {
-                  paymentId,
-                  planType: plan,
-                })
-                .subscribe();
-            },
-            onReadyForServerCompletion: (paymentId: string, txid: string) => {
-              this.http
-                .post(`${environment.apiUrl}/api/payments/complete`, {
-                  paymentId,
-                  txid,
-                })
-                .subscribe(() => {
-                  alert(`✅ ¡Pago completado con éxito para el plan ${plan}!`);
-                  this.router.navigate(['/user-dashboard/create-article']);
+                .post(
+                  `${environment.apiUrl}/api/payments/approve`,
+                  {
+                    paymentId,
+                    planType: plan,
+                  },
+                  { headers }
+                )
+                .subscribe({
+                  next: () => console.log('✔ Pago aprobado.'),
+                  error: (err) =>
+                    console.error('❌ Error al aprobar el pago:', err),
                 });
             },
+
+            onReadyForServerCompletion: (paymentId: string, txid: string) => {
+              const storedUser = localStorage.getItem('user');
+              if (!storedUser) return;
+
+              const user = JSON.parse(storedUser);
+              const accessToken = user.accessToken;
+
+              const headers = {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+              };
+
+              this.http
+                .post(
+                  `${environment.apiUrl}/api/payments/complete`,
+                  {
+                    paymentId,
+                    txid,
+                  },
+                  { headers }
+                )
+                .subscribe({
+                  next: () => {
+                    alert(
+                      `✅ ¡Pago completado con éxito para el plan ${plan}!`
+                    );
+                    this.router.navigate(['/user-dashboard/create-article']);
+                  },
+                  error: (err) => {
+                    console.error('❌ Error al completar el pago:', err);
+                  },
+                });
+            },
+
             onCancel: (paymentId: string) => {
               console.warn('❌ Pago cancelado', paymentId);
               alert('⚠️ El pago fue cancelado o no se confirmó a tiempo.');
               localStorage.removeItem('pendingPaymentId');
             },
+
             onError: (error: any, paymentId: string) => {
               console.error('⚠️ Error en el pago', error, paymentId);
               alert('❌ Ha ocurrido un error al procesar el pago.');

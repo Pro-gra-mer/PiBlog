@@ -9,9 +9,11 @@ import com.piblogchain.backend.models.Payment;
 import com.piblogchain.backend.repositories.PaymentRepository;
 import com.piblogchain.backend.services.PaymentService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -32,6 +34,7 @@ public class PaymentController {
     return ResponseEntity.ok(paymentService.createPayment(request));
   }
 
+  @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
   @PostMapping("/approve")
   public ResponseEntity<?> approvePayment(@RequestBody PaymentApprovalRequest request) {
     paymentService.approvePayment(request);
@@ -39,10 +42,22 @@ public class PaymentController {
   }
 
   @PostMapping("/complete")
-  public ResponseEntity<?> completePayment(@RequestBody PaymentCompleteRequest request) {
+  public ResponseEntity<Map<String, Object>> completePayment(@RequestBody PaymentCompleteRequest request) {
     paymentService.completePayment(request);
-    return ResponseEntity.ok().build();
+
+    Payment payment = paymentService.getByPaymentId(request.getPaymentId());
+
+    Map<String, Object> response = new HashMap<>();
+    response.put("message", "Payment completed successfully");
+
+    if (payment.getArticle() != null) {
+      response.put("articleId", payment.getArticle().getId());
+    }
+
+    return ResponseEntity.ok(response);
   }
+
+
 
   @PostMapping("/complete-with-article")
   public ResponseEntity<?> completeWithArticle(@RequestBody PaymentCompleteRequest request) {
@@ -53,10 +68,11 @@ public class PaymentController {
   @GetMapping("/active-plan")
   public ResponseEntity<?> getActivePlan(
     @RequestParam(required = false) String username,
-    @AuthenticationPrincipal(expression = "username") String jwtUsername // solo válido si usas JWT
+    @AuthenticationPrincipal String principal
+
   ) {
-    // Prioriza el username por parámetro (modo dev), pero usa el del JWT si está disponible
-    String finalUsername = (username != null) ? username : jwtUsername;
+    String finalUsername = (username != null) ? username : principal;
+
     if (finalUsername == null) {
       return ResponseEntity.badRequest().body("Username is required");
     }
@@ -64,6 +80,7 @@ public class PaymentController {
     Map<String, Object> planDetails = paymentService.getActivePlanDetails(finalUsername);
     return ResponseEntity.ok(planDetails);
   }
+
 
   @PostMapping("/attach-article")
   public ResponseEntity<?> attachArticleToPayment(@RequestBody AttachArticleRequest request) {

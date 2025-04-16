@@ -120,12 +120,15 @@ export class CreateArticleComponent implements AfterViewInit {
       next: (article: Article) => {
         this.articleForm.patchValue(article);
 
-        if (quillInstance && article.content) {
+        if (quillInstance) {
           quillInstance.setContents([]);
-          quillInstance.clipboard.dangerouslyPasteHTML(0, article.content);
-          this.articleForm.get('content')?.setValue(article.content);
+          quillInstance.clipboard.dangerouslyPasteHTML(
+            0,
+            article.content || ''
+          );
+          this.articleForm.get('content')?.setValue(article.content || '');
         } else {
-          this.setErrorMessage('Editor not initialized or without content');
+          this.setErrorMessage('Editor not initialized yet.');
         }
 
         const parser = new DOMParser();

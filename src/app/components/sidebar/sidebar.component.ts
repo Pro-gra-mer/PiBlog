@@ -19,7 +19,8 @@ export class SidebarComponent implements OnInit {
   ngOnInit(): void {
     this.categoryService.getAllCategories().subscribe({
       next: (data) => {
-        this.categories = data;
+        // Oculta la categoría 'sin-categoria'
+        this.categories = data.filter((c) => c.slug !== 'sin-categoria');
       },
       error: (err) => {
         console.error('Error loading categories', err);

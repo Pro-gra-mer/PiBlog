@@ -43,6 +43,9 @@ public class SecurityConfig {
         .requestMatchers(HttpMethod.GET, "/api/articles/promoted-videos").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/articles/promoted-videos/category/**").permitAll()
 
+        .requestMatchers("/api/payments/create", "/api/payments/approve", "/api/payments/complete")
+        .hasAnyRole("USER", "ADMIN") // o simplemente `.authenticated()`
+
 
         // 👇 Esta línea debe ir ANTES de la general
         .requestMatchers(HttpMethod.GET, "/api/articles/rejected").hasAnyRole("USER", "ADMIN")
