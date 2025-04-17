@@ -34,7 +34,7 @@ export class AdvertiseWithUsComponent {
     }
 
     const user = JSON.parse(storedUser);
-    const timestamp = Date.now(); // ✅ Mismo timestamp para todo
+    const timestamp = Date.now();
     const fakePaymentId = 'sandbox-' + timestamp;
     const fakeTxId = 'sandbox-tx-' + timestamp;
 
@@ -99,8 +99,7 @@ export class AdvertiseWithUsComponent {
 
           Pi.createPayment(payment, {
             onReadyForServerApproval: (paymentId: string) => {
-              localStorage.setItem('pendingPaymentId', paymentId); // ✅ Guardar para usarlo en create-article
-
+              localStorage.setItem('pendingPaymentId', paymentId);
               const storedUser = localStorage.getItem('user');
               if (!storedUser) return;
 

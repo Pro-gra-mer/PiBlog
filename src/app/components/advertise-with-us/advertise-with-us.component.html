@@ -1,9 +1,10 @@
 <div
   *ngIf="showSuccess"
-  class="mt-28 bg-green-500 text-white px-6 py-4 rounded-xl shadow-lg animate-fade-in-out transition duration-300"
+  class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-4 rounded-xl shadow-lg z-50 animate-fade-in-out transition duration-300"
 >
-  🎉 ¡Pago simulado completado!
+  🎉 Payment completed successfully!
 </div>
+
 <div
   *ngIf="showLoginMessage"
   class="mt-24 bg-red-600 text-white px-6 py-4 rounded-xl shadow-lg animate-fade-in-out transition duration-300 max-w-2xl mx-auto"

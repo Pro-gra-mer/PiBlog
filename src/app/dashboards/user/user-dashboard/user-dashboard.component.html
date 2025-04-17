@@ -1,3 +1,13 @@
+<div
+  *ngIf="showInfoMessage"
+  class="fixed top-24 left-1/2 transform -translate-x-1/2 bg-blue-100 border border-blue-300 text-blue-800 px-6 py-4 rounded-lg shadow-lg transition-all duration-300 animate-fade-in z-50 text-center w-fit max-w-[90%]"
+>
+  <strong class="font-semibold">Heads up!</strong>
+  <span class="ml-2">
+    Redirecting to the payment page to publish your article...
+  </span>
+</div>
+
 <div class="flex min-h-screen mt-20 relative">
   <!-- Botón de menú solo en móviles -->
   <button
@@ -33,10 +43,10 @@
           >My Articles</a
         >
         <a
-          routerLink="/user-dashboard/create-article"
+          (click)="handleCreateArticleClick()"
           routerLinkActive="font-bold text-accent border-l-4 border-accent pl-2"
           class="text-secondary hover:text-accent cursor-pointer"
-          >Create Article</a
+          >New Article</a
         >
         <a
           routerLink="/user-dashboard/drafts"

@@ -8,7 +8,7 @@ import {
 } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { filter } from 'rxjs';
-
+import { PiAuthService } from '../../../services/pi-auth.service';
 @Component({
   selector: 'app-user-dashboard',
   standalone: true,
@@ -19,8 +19,14 @@ import { filter } from 'rxjs';
 export class UserDashboardComponent implements OnInit {
   sidebarOpen = false;
   hasRejected = false;
+  infoMessage: string | null = null;
+  showInfoMessage = false;
 
-  constructor(private articleService: ArticleService, private router: Router) {
+  constructor(
+    private articleService: ArticleService,
+    private router: Router,
+    private piAuthService: PiAuthService
+  ) {
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
       .subscribe(() => {
@@ -45,5 +51,19 @@ export class UserDashboardComponent implements OnInit {
         this.hasRejected = false;
       },
     });
+  }
+
+  handleCreateArticleClick(): void {
+    if (this.piAuthService.isAdmin()) {
+      // 🔓 Si es admin, puede ir directamente a redactar
+      this.router.navigate(['/user-dashboard/create-article']);
+    } else {
+      // 🔐 Si no es admin, debe ir a pagar primero
+      this.showInfoMessage = true;
+
+      setTimeout(() => {
+        this.router.navigate(['/advertise']);
+      }, 3000);
+    }
   }
 }

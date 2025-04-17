@@ -3,21 +3,21 @@ package com.piblogchain.backend.services;
 import com.piblogchain.backend.dto.ArticleDTO;
 import com.piblogchain.backend.enums.ArticleStatus;
 import com.piblogchain.backend.enums.PromoteType;
-import com.piblogchain.backend.models.Article;
-import com.piblogchain.backend.models.Category;
-import com.piblogchain.backend.models.User;
-import com.piblogchain.backend.models.UserRole;
+import com.piblogchain.backend.models.*;
 import com.piblogchain.backend.repositories.ArticleRepository;
 import com.piblogchain.backend.repositories.CategoryRepository;
 import com.piblogchain.backend.repositories.UserRepository;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import jakarta.transaction.Transactional;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import com.piblogchain.backend.repositories.PaymentRepository;
+
 
 import java.time.LocalDate;
 import java.util.List;
@@ -31,17 +31,21 @@ public class ArticleService {
   private final CategoryRepository categoryRepository;
   private final UserRepository userRepository;
   private final Cloudinary cloudinary;
+  private final PaymentRepository paymentRepository;
+
 
   @Autowired
   public ArticleService(
     ArticleRepository articleRepository,
     CategoryRepository categoryRepository,
     UserRepository userRepository,
+    PaymentRepository paymentRepository,
     @Value("${cloudinary.url}") String cloudinaryUrl
   ) {
     this.articleRepository = articleRepository;
     this.categoryRepository = categoryRepository;
     this.userRepository = userRepository;
+    this.paymentRepository = paymentRepository;
     this.cloudinary = new Cloudinary(cloudinaryUrl);
   }
 
@@ -136,13 +140,25 @@ public class ArticleService {
     return Optional.empty();
   }
 
+  @Transactional
   public boolean deleteArticle(Long id) {
-    if (articleRepository.existsById(id)) {
-      articleRepository.deleteById(id);
-      return true;
+    Optional<Article> optionalArticle = articleRepository.findById(id);
+    if (optionalArticle.isEmpty()) {
+      return false;
     }
-    return false;
+
+    Article article = optionalArticle.get();
+
+    // 🔍 Buscar y eliminar el Payment asociado
+    Optional<Payment> paymentOptional = paymentRepository.findByArticle(article);
+    paymentOptional.ifPresent(paymentRepository::delete);
+
+    // 🧹 Eliminar el artículo
+    articleRepository.delete(article);
+
+    return true;
   }
+
 
   public boolean deleteOrphanImage(String publicId) {
     try {

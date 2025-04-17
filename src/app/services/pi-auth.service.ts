@@ -9,6 +9,8 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { BehaviorSubject, map, Observable, of } from 'rxjs';
 import { isPlatformBrowser } from '@angular/common';
+import { PlanType } from '../models/PlanType.model';
+import { environment } from '../environments/environment.dev';
 
 declare let Pi: any;
 
@@ -161,16 +163,21 @@ export class PiAuthService {
     }
     return false;
   }
-
-  getActivePlan(): Observable<string> {
+  getActivePlan(): Observable<PlanType> {
     const storedUser = localStorage.getItem('user');
-    if (!storedUser) return of('NONE');
+    if (!storedUser) return of(PlanType.NONE); // Asegura tipo PlanType
 
     const { username } = JSON.parse(storedUser);
     return this.http
       .get<any>(
-        `http://localhost:8080/api/payments/active-plan?username=${username}`
+        `${environment.apiUrl}/api/payments/active-plan?username=${username}`
       )
-      .pipe(map((response) => response.planType || 'NONE'));
+      .pipe(
+        map((response) => {
+          const plan = response.planType;
+          // Asegura que devuelve un PlanType válido
+          return plan in PlanType ? (plan as PlanType) : PlanType.NONE;
+        })
+      );
   }
 }

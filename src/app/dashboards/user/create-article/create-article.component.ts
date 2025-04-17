@@ -1,4 +1,4 @@
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Component, ViewChild, AfterViewInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -51,7 +51,8 @@ export class CreateArticleComponent implements AfterViewInit {
     private sanitizer: DomSanitizer,
     private route: ActivatedRoute,
     private categoryService: CategoryService,
-    private authService: PiAuthService
+    private authService: PiAuthService,
+    private router: Router
   ) {
     this.articleForm = this.formBuilder.group({
       company: ['', [Validators.required]],
@@ -174,6 +175,7 @@ export class CreateArticleComponent implements AfterViewInit {
       approved: false,
     };
   }
+
   onSubmit(): void {
     if (this.articleForm.invalid) {
       this.setErrorMessage('Please complete all fields correctly.');
@@ -236,6 +238,13 @@ export class CreateArticleComponent implements AfterViewInit {
         .subscribe({
           next: () => {
             this.setSuccessMessage('Article updated correctly.');
+
+            setTimeout(() => {
+              if (!this.isAdmin) {
+                this.router.navigate(['/user-dashboard/pending']);
+              }
+            }, 3000); // Espera 2 segundos antes de redirigir
+
             this.articleForm.reset({
               publishDate: new Date().toISOString().split('T')[0],
               promoteVideo: false,
@@ -244,6 +253,7 @@ export class CreateArticleComponent implements AfterViewInit {
             this.insertedImages = [];
             this.articleIdToLoad = null;
           },
+
           error: (err: HttpErrorResponse) => {
             console.error('Error updating article:', err);
             this.setErrorMessage(
@@ -256,11 +266,16 @@ export class CreateArticleComponent implements AfterViewInit {
     } else {
       this.articleService.createArticle(articlePayload).subscribe({
         next: (response: any) => {
+          const isAdmin = this.isAdmin;
+
+          // ✅ Mensaje de éxito
           this.setSuccessMessage(
-            this.isAdmin
+            isAdmin
               ? 'Article published successfully.'
               : 'Article submitted for approval successfully.'
           );
+
+          // ✅ Limpiar el formulario
           this.articleForm.reset({
             publishDate: new Date().toISOString().split('T')[0],
             promoteVideo: false,
@@ -268,6 +283,7 @@ export class CreateArticleComponent implements AfterViewInit {
           this.previewArticle = null;
           this.insertedImages = [];
 
+          // ✅ Asociar articleId al payment si hay uno pendiente
           const pendingPaymentId = localStorage.getItem('pendingPaymentId');
           if (pendingPaymentId) {
             this.http
@@ -280,6 +296,7 @@ export class CreateArticleComponent implements AfterViewInit {
               });
           }
         },
+
         error: (err: HttpErrorResponse) => {
           console.error('Error saving article:', err);
           this.setErrorMessage(
@@ -302,7 +319,7 @@ export class CreateArticleComponent implements AfterViewInit {
       return;
     }
 
-    this.http.get('http://localhost:8080/api/cloudinary-signature').subscribe({
+    this.http.get(`${environment.apiUrl}/api/cloudinary-signature`).subscribe({
       next: (config: any) => {
         const widget = cloudinary.createUploadWidget(
           {
@@ -352,7 +369,7 @@ export class CreateArticleComponent implements AfterViewInit {
       return;
     }
 
-    this.http.get('http://localhost:8080/api/cloudinary-signature').subscribe({
+    this.http.get(`${environment.apiUrl}/api/cloudinary-signature`).subscribe({
       next: (config: any) => {
         const widget = cloudinary.createUploadWidget(
           {
@@ -536,6 +553,11 @@ export class CreateArticleComponent implements AfterViewInit {
         .subscribe({
           next: () => {
             this.setSuccessMessage('Draft updated successfully.');
+
+            setTimeout(() => {
+              this.router.navigate(['/user-dashboard/drafts']);
+            }, 3000);
+
             this.articleForm.reset({
               publishDate: new Date().toISOString().split('T')[0],
               promoteVideo: false,
@@ -544,6 +566,7 @@ export class CreateArticleComponent implements AfterViewInit {
             this.insertedImages = [];
             this.articleIdToLoad = null;
           },
+
           error: (err) => {
             console.error('Error actualizando el borrador:', err);
             this.setErrorMessage('The draft could not be updated.');
@@ -575,7 +598,7 @@ export class CreateArticleComponent implements AfterViewInit {
       return;
     }
 
-    this.http.get('http://localhost:8080/api/cloudinary-signature').subscribe({
+    this.http.get(`${environment.apiUrl}/api/cloudinary-signature`).subscribe({
       next: (config: any) => {
         const widget = cloudinary.createUploadWidget(
           {
