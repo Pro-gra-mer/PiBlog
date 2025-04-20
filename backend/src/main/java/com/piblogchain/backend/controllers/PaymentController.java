@@ -81,11 +81,14 @@ public class PaymentController {
     return ResponseEntity.ok(planDetails);
   }
 
-
   @PostMapping("/attach-article")
-  public ResponseEntity<?> attachArticleToPayment(@RequestBody AttachArticleRequest request) {
-    paymentService.attachArticleToPayment(request);
+  public ResponseEntity<?> attachArticleToPayment(
+    @RequestParam String paymentId,
+    @RequestParam Long articleId
+  ) {
+    paymentService.attachArticleToPayment(paymentId, articleId);
     return ResponseEntity.ok("Article attached to payment successfully.");
   }
+
 
 }

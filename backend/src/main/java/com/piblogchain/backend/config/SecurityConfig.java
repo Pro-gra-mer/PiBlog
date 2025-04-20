@@ -43,9 +43,9 @@ public class SecurityConfig {
         .requestMatchers(HttpMethod.GET, "/api/articles/promoted-videos").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/articles/promoted-videos/category/**").permitAll()
 
-        .requestMatchers("/api/payments/create", "/api/payments/approve", "/api/payments/complete")
-        .hasAnyRole("USER", "ADMIN") // o simplemente `.authenticated()`
-
+        // Pagos
+        .requestMatchers("/api/payments/create", "/api/payments/approve", "/api/payments/complete").hasAnyRole("USER", "ADMIN")
+        .requestMatchers(HttpMethod.POST, "/api/payments/attach-article").hasAnyRole("USER", "ADMIN")
 
         // 👇 Esta línea debe ir ANTES de la general
         .requestMatchers(HttpMethod.GET, "/api/articles/rejected").hasAnyRole("USER", "ADMIN")
@@ -67,6 +67,7 @@ public class SecurityConfig {
         // Cualquier otra petición
         .anyRequest().authenticated()
       )
+
 
       .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
       .formLogin(form -> form.disable())

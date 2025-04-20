@@ -7,6 +7,7 @@ import com.piblogchain.backend.models.*;
 import com.piblogchain.backend.repositories.ArticleRepository;
 import com.piblogchain.backend.repositories.CategoryRepository;
 import com.piblogchain.backend.repositories.UserRepository;
+import com.piblogchain.backend.repositories.PaymentRepository;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import jakarta.transaction.Transactional;
@@ -15,9 +16,9 @@ import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import com.piblogchain.backend.repositories.PaymentRepository;
-
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -32,7 +33,7 @@ public class ArticleService {
   private final UserRepository userRepository;
   private final Cloudinary cloudinary;
   private final PaymentRepository paymentRepository;
-
+  private final PaymentService paymentService;
 
   @Autowired
   public ArticleService(
@@ -40,35 +41,47 @@ public class ArticleService {
     CategoryRepository categoryRepository,
     UserRepository userRepository,
     PaymentRepository paymentRepository,
+    PaymentService paymentService,
     @Value("${cloudinary.url}") String cloudinaryUrl
   ) {
     this.articleRepository = articleRepository;
     this.categoryRepository = categoryRepository;
     this.userRepository = userRepository;
     this.paymentRepository = paymentRepository;
+    this.paymentService = paymentService;
     this.cloudinary = new Cloudinary(cloudinaryUrl);
   }
 
   public Article createArticle(ArticleDTO articleDTO, String username) {
-    validateImageCount(articleDTO);
-
-    User user = userRepository.findByUsername(username)
-      .orElseThrow(() -> new RuntimeException("User not found: " + username));
-
-    Article article = buildArticleFromDto(articleDTO);
-
-    if (user.getRole() == UserRole.USER) {
-      if (articleDTO.getStatus() == ArticleStatus.PUBLISHED) {
-        throw new IllegalArgumentException("Users cannot publish articles directly.");
+    try {
+      validateImageCount(articleDTO);
+      if (articleDTO.getCategory() == null || articleDTO.getCategory().getName() == null) {
+        throw new IllegalArgumentException("El nombre de la categoría es obligatorio");
       }
-      article.setStatus(articleDTO.getStatus() != null ? articleDTO.getStatus() : ArticleStatus.DRAFT);
-    } else {
-      article.setStatus(articleDTO.getStatus() != null ? articleDTO.getStatus() : ArticleStatus.DRAFT);
+      User user = userRepository.findByUsername(username)
+        .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + username));
+      Article article = buildArticleFromDto(articleDTO);
+
+      if (user.getRole() == UserRole.USER) {
+        if (articleDTO.getStatus() == ArticleStatus.PUBLISHED) {
+          throw new IllegalArgumentException("Los usuarios no pueden publicar artículos directamente.");
+        }
+        article.setStatus(articleDTO.getStatus() != null ? articleDTO.getStatus() : ArticleStatus.DRAFT);
+      } else {
+        article.setStatus(articleDTO.getStatus() != null ? articleDTO.getStatus() : ArticleStatus.DRAFT);
+      }
+
+      article.setCreatedBy(username);
+      Article savedArticle = articleRepository.save(article);
+
+      if (user.getRole() == UserRole.USER && articleDTO.getPaymentId() != null) {
+        paymentService.attachArticleToPayment(articleDTO.getPaymentId(), savedArticle.getId());
+      }
+
+      return savedArticle;
+    } catch (RuntimeException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
     }
-
-    article.setCreatedBy(username);
-
-    return articleRepository.save(article);
   }
 
   private void validateImageCount(ArticleDTO articleDTO) {
@@ -100,7 +113,7 @@ public class ArticleService {
       .orElseThrow(() -> new RuntimeException("Category not found: " + categoryName));
     article.setCategory(category);
     article.setCategoryName(categoryName);
-    article.setCategorySlug(category.getSlug()); // Para lógica interna
+    article.setCategorySlug(category.getSlug());
 
     article.setContent(articleDTO.getContent());
     article.setPublishDate(articleDTO.getPublishDate());
@@ -112,7 +125,6 @@ public class ArticleService {
 
     return article;
   }
-
 
   public List<Article> getAllArticles() {
     return articleRepository.findAll();
@@ -149,16 +161,13 @@ public class ArticleService {
 
     Article article = optionalArticle.get();
 
-    // 🔍 Buscar y eliminar el Payment asociado
     Optional<Payment> paymentOptional = paymentRepository.findByArticle(article);
     paymentOptional.ifPresent(paymentRepository::delete);
 
-    // 🧹 Eliminar el artículo
     articleRepository.delete(article);
 
     return true;
   }
-
 
   public boolean deleteOrphanImage(String publicId) {
     try {
@@ -205,7 +214,6 @@ public class ArticleService {
       article.setCategoryName(categoryName);
       article.setCategorySlug(category.getSlug());
 
-
       article.setContent(articleDTO.getContent());
       article.setPublishDate(articleDTO.getPublishDate());
       article.setPromoteType(articleDTO.getPromoteType());
@@ -219,7 +227,6 @@ public class ArticleService {
       return articleRepository.save(article);
     });
   }
-
 
   public List<Article> getDraftsByUser(String username) {
     return articleRepository.findByStatusAndCreatedBy(ArticleStatus.DRAFT, username);
@@ -273,7 +280,6 @@ public class ArticleService {
     return articleRepository.findByStatusAndCreatedBy(ArticleStatus.REJECTED, username);
   }
 
-
   public List<Article> getPromotedVideosByType(PromoteType type) {
     return articleRepository.findByPromoteTypeAndStatus(type, ArticleStatus.PUBLISHED);
   }
@@ -285,5 +291,4 @@ public class ArticleService {
       ArticleStatus.PUBLISHED
     );
   }
-
 }

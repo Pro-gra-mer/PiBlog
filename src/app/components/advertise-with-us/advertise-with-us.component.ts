@@ -84,7 +84,7 @@ export class AdvertiseWithUsComponent {
                       this.router.navigate([
                         `/user-dashboard/edit-article/${articleId}`,
                       ]);
-                    }, 500);
+                    }, 2500);
                   });
               });
 

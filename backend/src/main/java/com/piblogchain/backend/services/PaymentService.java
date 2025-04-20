@@ -124,16 +124,15 @@ public class PaymentService {
     paymentRepository.save(payment);
   }
 
-  public void attachArticleToPayment(AttachArticleRequest request) {
-    Payment payment = findPaymentOrThrow(request.getPaymentId());
-
-    Article article = articleRepository.findById(request.getArticleId())
-      .orElseThrow(() -> new RuntimeException("Article not found"));
+  public void attachArticleToPayment(String paymentId, Long articleId) {
+    Payment payment = findPaymentOrThrow(paymentId);
+    Article article = articleRepository.findById(articleId)
+      .orElseThrow(() -> new RuntimeException("Article not found: " + articleId));
 
     payment.setArticle(article);
-
     paymentRepository.save(payment);
   }
+
 
   public String getActivePlanForUser(String username) {
     Payment active = paymentRepository.findTopByUsernameAndStatusOrderByCompletedAtDesc(username, "COMPLETED");

@@ -79,6 +79,9 @@ public class ArticleDTO {
   @Schema(description = "Reason for rejection of the article", example = "The article did not meet the required standards.")
   private String rejectionReason;
 
+  private String paymentId;
+
+
   // Constructor vacío
   public ArticleDTO() {}
 
@@ -245,5 +248,14 @@ public class ArticleDTO {
   public void setRejectionReason(String rejectionReason) {
     this.rejectionReason = rejectionReason;
   }
+
+  public String getPaymentId() {
+    return paymentId;
+  }
+
+  public void setPaymentId(String paymentId) {
+    this.paymentId = paymentId;
+  }
+
 
 }

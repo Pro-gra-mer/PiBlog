@@ -43,6 +43,7 @@ export class CreateArticleComponent implements AfterViewInit {
   insertedImages: Array<{ url: string; publicId: string; uploadDate: string }> =
     [];
   isAdmin: boolean = false;
+  private isSaving = false; // Nueva bandera
 
   constructor(
     private formBuilder: FormBuilder,
@@ -177,17 +178,23 @@ export class CreateArticleComponent implements AfterViewInit {
   }
 
   onSubmit(): void {
+    console.log('📝 Total imágenes insertadas:', this.insertedImages);
+
     if (this.articleForm.invalid) {
-      this.setErrorMessage('Please complete all fields correctly.');
+      this.setErrorMessage(
+        'Por favor, completa todos los campos correctamente.'
+      );
       return;
     }
 
     if (this.getTotalImagesCount() > 5) {
       this.setErrorMessage(
-        'The article cannot contain more than 5 images in total.'
+        'El artículo no puede contener más de 5 imágenes en total.'
       );
       return;
     }
+
+    this.isSaving = true; // Marcar que estamos guardando
 
     if (this.quillEditor && this.quillEditor.quill) {
       const currentContent = this.quillEditor.quill.root.innerHTML;
@@ -215,96 +222,60 @@ export class CreateArticleComponent implements AfterViewInit {
     });
 
     if (!sanitizedContent.trim()) {
-      this.setErrorMessage('The content cannot be empty after sanitization.');
+      this.setErrorMessage(
+        'El contenido no puede estar vacío después de la sanitización.'
+      );
       return;
     }
 
     const formValues = this.articleForm.value;
-
     const articlePayload: Article = {
       ...formValues,
       content: sanitizedContent,
       approved: false,
       status: this.isAdmin ? 'PUBLISHED' : 'PENDING_APPROVAL',
-      promoteType: formValues.promoteType,
-      category: {
-        name: formValues.category.name,
-      },
+      promoteType: formValues.promoteType || 'NONE',
+      category: formValues.category ? { name: formValues.category.name } : null,
+      headerImageUploadDate: formValues.headerImageUploadDate
+        ? new Date(formValues.headerImageUploadDate).toISOString()
+        : null,
+      promoVideoUploadDate: formValues.promoVideoUploadDate
+        ? new Date(formValues.promoVideoUploadDate).toISOString()
+        : null,
     };
 
-    if (this.articleIdToLoad) {
-      this.articleService
-        .updateArticle(this.articleIdToLoad, articlePayload)
-        .subscribe({
-          next: () => {
-            this.setSuccessMessage('Article updated correctly.');
-
-            setTimeout(() => {
-              if (!this.isAdmin) {
-                this.router.navigate(['/user-dashboard/pending']);
-              }
-            }, 3000); // Espera 2 segundos antes de redirigir
-
-            this.articleForm.reset({
-              publishDate: new Date().toISOString().split('T')[0],
-              promoteVideo: false,
-            });
-            this.previewArticle = null;
-            this.insertedImages = [];
-            this.articleIdToLoad = null;
-          },
-
-          error: (err: HttpErrorResponse) => {
-            console.error('Error updating article:', err);
-            this.setErrorMessage(
-              `Error updating: ${err.status} - ${
-                err.statusText || 'No details'
-              }`
-            );
-          },
-        });
-    } else {
-      this.articleService.createArticle(articlePayload).subscribe({
-        next: (response: any) => {
-          const isAdmin = this.isAdmin;
-
-          // ✅ Mensaje de éxito
-          this.setSuccessMessage(
-            isAdmin
-              ? 'Article published successfully.'
-              : 'Article submitted for approval successfully.'
-          );
-
-          // ✅ Limpiar el formulario
-          this.articleForm.reset({
-            publishDate: new Date().toISOString().split('T')[0],
-            promoteVideo: false,
-          });
-          this.previewArticle = null;
-          this.insertedImages = [];
-
-          // ✅ Asociar articleId al payment si hay uno pendiente
-          const pendingPaymentId = localStorage.getItem('pendingPaymentId');
-          if (pendingPaymentId) {
-            this.http
-              .post(`${environment.apiUrl}/api/payments/attach-article`, {
-                paymentId: pendingPaymentId,
-                articleId: response.id,
-              })
-              .subscribe(() => {
-                localStorage.removeItem('pendingPaymentId');
-              });
-          }
-        },
-
-        error: (err: HttpErrorResponse) => {
-          console.error('Error saving article:', err);
-          this.setErrorMessage(
-            `Saving error: ${err.status} - ${err.statusText || 'No details'}`
-          );
-        },
-      });
+    if (!articlePayload.category || !articlePayload.category.name) {
+      this.setErrorMessage('Por favor, selecciona una categoría válida.');
+      return;
     }
+
+    console.log('Payload enviado:', JSON.stringify(articlePayload, null, 2));
+
+    this.articleService.createArticle(articlePayload).subscribe({
+      next: (response: any) => {
+        this.setSuccessMessage(
+          this.isAdmin
+            ? 'Artículo publicado exitosamente.'
+            : 'Artículo enviado para aprobación exitosamente.'
+        );
+        this.articleForm.reset({
+          publishDate: new Date().toISOString().split('T')[0],
+          promoteVideo: false,
+        });
+        this.previewArticle = null;
+        this.insertedImages = [];
+        this.isSaving = false; // Finalizar el guardado
+      },
+      error: (err: HttpErrorResponse) => {
+        console.error('Error guardando el artículo:', err);
+        const errorMessage =
+          err.error?.message || err.statusText || 'Error desconocido';
+        this.setErrorMessage(
+          `Error al guardar: ${err.status} - ${errorMessage}`
+        );
+        this.isSaving = false; // Finalizar el guardado en caso de error
+      },
+    });
   }
 
   openHeaderImageWidget(): void {
@@ -413,6 +384,10 @@ export class CreateArticleComponent implements AfterViewInit {
         publicId: publicId,
         uploadDate: new Date().toISOString(),
       });
+      console.log('INSERTANDO EN EDITOR');
+      console.log('URL:', imageUrl);
+      console.log('publicId:', publicId);
+      console.log('Antes:', this.insertedImages);
     } else {
       this.setErrorMessage(
         'The image could not be inserted because the editor is not ready.'
@@ -421,6 +396,7 @@ export class CreateArticleComponent implements AfterViewInit {
   }
 
   onEditorCreated(quillInstance: any): void {
+    if (this.isSaving) return; // Evitar limpieza durante el guardado
     import('quill')
       .then(() => {
         const toolbar = quillInstance.getModule('toolbar');
@@ -432,6 +408,7 @@ export class CreateArticleComponent implements AfterViewInit {
         }
 
         quillInstance.on('text-change', () => {
+          if (this.isSaving) return; // No procesar cambios durante el guardado
           const currentHTML = quillInstance.root.innerHTML;
 
           const parser = new DOMParser();
@@ -500,14 +477,18 @@ export class CreateArticleComponent implements AfterViewInit {
 
   saveDraft(): void {
     if (this.articleForm.invalid) {
-      this.setErrorMessage('Please complete all fields correctly.');
+      this.setErrorMessage(
+        'Por favor, completa todos los campos correctamente.'
+      );
       return;
     }
 
     if (this.getTotalImagesCount() > 5) {
-      this.setErrorMessage('The article cannot contain more than 5 images.');
+      this.setErrorMessage('El artículo no puede contener más de 5 imágenes.');
       return;
     }
+
+    this.isSaving = true; // Marcar que estamos guardando
 
     if (this.quillEditor && this.quillEditor.quill) {
       const currentContent = this.quillEditor.quill.root.innerHTML;
@@ -552,7 +533,7 @@ export class CreateArticleComponent implements AfterViewInit {
         .updateArticle(this.articleIdToLoad, articlePayload)
         .subscribe({
           next: () => {
-            this.setSuccessMessage('Draft updated successfully.');
+            this.setSuccessMessage('Borrador actualizado exitosamente.');
 
             setTimeout(() => {
               this.router.navigate(['/user-dashboard/drafts']);
@@ -565,17 +546,18 @@ export class CreateArticleComponent implements AfterViewInit {
             this.previewArticle = null;
             this.insertedImages = [];
             this.articleIdToLoad = null;
+            this.isSaving = false; // Finalizar el guardado
           },
-
           error: (err) => {
             console.error('Error actualizando el borrador:', err);
-            this.setErrorMessage('The draft could not be updated.');
+            this.setErrorMessage('El borrador no pudo ser actualizado.');
+            this.isSaving = false; // Finalizar el guardado en caso de error
           },
         });
     } else {
       this.articleService.createArticle(articlePayload).subscribe({
         next: () => {
-          this.setSuccessMessage('Draft saved successfully.');
+          this.setSuccessMessage('Borrador guardado exitosamente.');
           this.articleForm.reset({
             publishDate: new Date().toISOString().split('T')[0],
             promoteVideo: false,
@@ -583,10 +565,12 @@ export class CreateArticleComponent implements AfterViewInit {
           this.previewArticle = null;
           this.insertedImages = [];
           this.articleIdToLoad = null;
+          this.isSaving = false; // Finalizar el guardado
         },
         error: (err) => {
           console.error('Error guardando el borrador:', err);
-          this.setErrorMessage('The draft could not be saved.');
+          this.setErrorMessage('El borrador no pudo ser guardado.');
+          this.isSaving = false; // Finalizar el guardado en caso de error
         },
       });
     }
