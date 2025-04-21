@@ -1,5 +1,10 @@
 import { ActivatedRoute, Router } from '@angular/router';
-import { Component, ViewChild, AfterViewInit } from '@angular/core';
+import {
+  Component,
+  ViewChild,
+  AfterViewInit,
+  ChangeDetectorRef,
+} from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -13,6 +18,7 @@ import { ArticleDetailComponent } from '../../../components/article-detail/artic
 import { Category, CategoryService } from '../../../services/category.service';
 import { PiAuthService } from '../../../services/pi-auth.service';
 import { environment } from '../../../environments/environment.dev';
+import { PlanType } from '../../../models/PlanType.model';
 
 declare const cloudinary: any;
 
@@ -37,13 +43,12 @@ export class CreateArticleComponent implements AfterViewInit {
   userSubscribed: boolean = false;
   @ViewChild('quillEditor', { static: false }) quillEditor: any;
   articleIdToLoad: number | null = null;
-
   categories: Category[] = [];
-
   insertedImages: Array<{ url: string; publicId: string; uploadDate: string }> =
     [];
   isAdmin: boolean = false;
   private isSaving = false; // Nueva bandera
+  activePlan: PlanType = PlanType.NONE;
 
   constructor(
     private formBuilder: FormBuilder,
@@ -53,7 +58,8 @@ export class CreateArticleComponent implements AfterViewInit {
     private route: ActivatedRoute,
     private categoryService: CategoryService,
     private authService: PiAuthService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {
     this.articleForm = this.formBuilder.group({
       company: ['', [Validators.required]],
@@ -83,7 +89,7 @@ export class CreateArticleComponent implements AfterViewInit {
       this.articleIdToLoad = +id;
     }
 
-    this.isAdmin = this.authService.isAdmin(); // detectar si es admin
+    this.isAdmin = this.authService.isAdmin();
 
     this.categoryService.getAllCategories().subscribe({
       next: (categoriesFromDB) => {
@@ -94,6 +100,26 @@ export class CreateArticleComponent implements AfterViewInit {
         this.setErrorMessage('Failed to load categories.');
       },
     });
+
+    if (!this.articleIdToLoad) {
+      this.http
+        .get<any>(`${environment.apiUrl}/api/payments/active-plan`)
+        .subscribe({
+          next: (data) => {
+            this.activePlan = data.planType || PlanType.NONE;
+            const normalizedPromoteType =
+              this.activePlan === 'STANDARD' ? 'NONE' : this.activePlan;
+            this.articleForm
+              .get('promoteType')
+              ?.setValue(normalizedPromoteType);
+          },
+          error: (err) => {
+            console.error('Error fetching active plan:', err);
+            this.activePlan = PlanType.NONE;
+            this.articleForm.get('promoteType')?.setValue('NONE');
+          },
+        });
+    }
   }
 
   ngAfterViewInit(): void {}
@@ -120,7 +146,31 @@ export class CreateArticleComponent implements AfterViewInit {
   loadArticle(id: number, quillInstance: any): void {
     this.articleService.getArticleById(id).subscribe({
       next: (article: Article) => {
-        this.articleForm.patchValue(article);
+        console.log('Artículo cargado:', article);
+        console.log('promoteType del artículo:', article.promoteType);
+
+        const normalizedPromoteType =
+          article.promoteType === 'MAIN'
+            ? 'MAIN_SLIDER'
+            : article.promoteType === 'CATEGORY'
+            ? 'CATEGORY_SLIDER'
+            : article.promoteType === 'NONE' ||
+              article.promoteType === 'STANDARD'
+            ? 'NONE'
+            : 'NONE';
+
+        this.articleForm.patchValue({
+          ...article,
+          promoteType: normalizedPromoteType,
+        });
+
+        console.log(
+          'promoteType en el formulario después de patchValue:',
+          this.articleForm.get('promoteType')?.value
+        );
+        console.log('promoteTypeValue:', this.promoteTypeValue); // Depurar getter
+
+        this.cdr.detectChanges(); // Forzar detección de cambios
 
         if (quillInstance) {
           quillInstance.setContents([]);
@@ -265,6 +315,16 @@ export class CreateArticleComponent implements AfterViewInit {
         this.previewArticle = null;
         this.insertedImages = [];
         this.isSaving = false; // Finalizar el guardado
+
+        // 🔁 Redirigir a "/dashboard/pending"
+        // 🕒 Mostrar mensaje por 2 segundos y luego redirigir
+        setTimeout(() => {
+          if (this.isAdmin) {
+            this.router.navigate(['/dashboard/published']);
+          } else {
+            this.router.navigate(['/user-dashboard/pending']);
+          }
+        }, 2000);
       },
       error: (err: HttpErrorResponse) => {
         console.error('Error guardando el artículo:', err);
@@ -643,5 +703,22 @@ export class CreateArticleComponent implements AfterViewInit {
     this.articleForm.get('promoVideo')?.setValue('');
     this.articleForm.get('promoVideoPublicId')?.setValue('');
     this.articleForm.get('promoVideoUploadDate')?.setValue('');
+  }
+
+  get promoteTypeValue(): string {
+    const value = this.articleForm.get('promoteType')?.value || 'NONE';
+    switch (value) {
+      case 'MAIN':
+      case 'MAIN_SLIDER':
+        return 'MAIN_SLIDER';
+      case 'CATEGORY':
+      case 'CATEGORY_SLIDER':
+        return 'CATEGORY_SLIDER';
+      case 'NONE':
+      case 'STANDARD':
+        return 'NONE';
+      default:
+        return 'NONE';
+    }
   }
 }

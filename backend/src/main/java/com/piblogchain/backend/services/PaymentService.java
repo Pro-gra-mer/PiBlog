@@ -6,6 +6,7 @@ import com.piblogchain.backend.dto.PaymentCompleteRequest;
 import com.piblogchain.backend.dto.PaymentCreateRequest;
 import com.piblogchain.backend.enums.ArticleStatus;
 import com.piblogchain.backend.enums.PlanType;
+import com.piblogchain.backend.enums.PromoteType;
 import com.piblogchain.backend.models.Article;
 import com.piblogchain.backend.models.Category;
 import com.piblogchain.backend.models.Payment;
@@ -88,41 +89,44 @@ public class PaymentService {
     payment.setTxid(request.getTxid());
     payment.setCompletedAt(LocalDateTime.now());
 
-    // STANDARD no expira, los otros duran 30 días
-    if (payment.getPlanType().equals("STANDARD")) {
+    PlanType plan = PlanType.valueOf(payment.getPlanType());
+
+    if (plan == PlanType.STANDARD) {
       payment.setExpirationAt(null);
     } else {
       payment.setExpirationAt(LocalDateTime.now().plusDays(30));
     }
 
-    // Si es STANDARD, crea artículo vacío
-    if (payment.getPlanType().equals("STANDARD") && payment.getArticle() == null) {
-      Article newArticle = new Article();
-      newArticle.setCreatedBy(payment.getUsername());
-      newArticle.setStatus(ArticleStatus.DRAFT);
-      newArticle.setPublishDate(LocalDate.now());
+    if (payment.getArticle() == null) {
+      Article article = new Article();
+      article.setCreatedBy(payment.getUsername());
+      article.setStatus(ArticleStatus.DRAFT);
+      article.setPublishDate(LocalDate.now());
 
-      // ❗️ Campos mínimos
-      newArticle.setApp("");
-      newArticle.setCompany("");
-      newArticle.setTitle("");
-      newArticle.setDescription("");
-      newArticle.setContent("");
+      article.setApp("");
+      article.setCompany("");
+      article.setTitle("");
+      article.setDescription("");
+      article.setContent("");
 
-      // ✅ Asignar categoría "Sin categoría"
       Category defaultCategory = categoryRepository.findBySlug("sin-categoria")
         .orElseThrow(() -> new RuntimeException("Default category not found"));
+      article.setCategory(defaultCategory);
 
-      newArticle.setCategory(defaultCategory);
+      // ✅ Asignar promoteType como enum
+      switch (plan) {
+        case STANDARD -> article.setPromoteType(PromoteType.NONE);
+        case CATEGORY_SLIDER -> article.setPromoteType(PromoteType.CATEGORY);
+        case MAIN_SLIDER -> article.setPromoteType(PromoteType.MAIN);
+      }
 
-      articleRepository.save(newArticle);
-      payment.setArticle(newArticle);
+      articleRepository.save(article);
+      payment.setArticle(article);
     }
-
-
 
     paymentRepository.save(payment);
   }
+
 
   public void attachArticleToPayment(String paymentId, Long articleId) {
     Payment payment = findPaymentOrThrow(paymentId);
