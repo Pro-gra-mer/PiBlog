@@ -286,7 +286,7 @@ public class ArticleService {
 
   public List<Article> getPromotedVideosByCategorySlug(String slug) {
     return articleRepository.findByPromoteTypeAndCategory_SlugIgnoreCaseAndStatus(
-      PromoteType.CATEGORY,
+      PromoteType.CATEGORY_SLIDER,
       slug,
       ArticleStatus.PUBLISHED
     );

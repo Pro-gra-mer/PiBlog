@@ -2,8 +2,9 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { environment } from '../../environments/environment.dev';
-import { PlanType } from '../../models/PlanType.model';
+
 import { Router } from '@angular/router';
+import { PromoteType } from '../../models/PromoteType';
 
 declare let Pi: any;
 
@@ -18,11 +19,12 @@ export class AdvertiseWithUsComponent {
   private http = inject(HttpClient);
   private router = inject(Router);
 
-  readonly PlanType = PlanType;
+  readonly PromoteType = PromoteType;
+
   showSuccess = false;
   showLoginMessage = false;
 
-  pay(plan: PlanType): void {
+  pay(plan: PromoteType): void {
     const storedUser = localStorage.getItem('user');
     if (!storedUser) {
       console.warn('User not authenticated');

@@ -1,12 +1,11 @@
 import { Category } from './Category.model';
+import { PromoteType } from './PromoteType';
 
 export type ArticleStatus =
   | 'DRAFT'
   | 'PENDING_APPROVAL'
   | 'PUBLISHED'
   | 'REJECTED';
-
-export type PromoteType = 'NONE' | 'CATEGORY' | 'MAIN';
 
 export interface Article {
   id: number;

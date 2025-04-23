@@ -1,7 +1,7 @@
 package com.piblogchain.backend.enums;
 
 public enum PromoteType {
-  NONE,
-  CATEGORY,
-  MAIN
+  STANDARD,
+  CATEGORY_SLIDER,
+  MAIN_SLIDER
 }

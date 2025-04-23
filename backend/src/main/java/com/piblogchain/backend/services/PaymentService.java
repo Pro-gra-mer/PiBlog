@@ -115,9 +115,9 @@ public class PaymentService {
 
       // ✅ Asignar promoteType como enum
       switch (plan) {
-        case STANDARD -> article.setPromoteType(PromoteType.NONE);
-        case CATEGORY_SLIDER -> article.setPromoteType(PromoteType.CATEGORY);
-        case MAIN_SLIDER -> article.setPromoteType(PromoteType.MAIN);
+        case STANDARD -> article.setPromoteType(PromoteType.STANDARD);
+        case CATEGORY_SLIDER -> article.setPromoteType(PromoteType.CATEGORY_SLIDER);
+        case MAIN_SLIDER -> article.setPromoteType(PromoteType.MAIN_SLIDER);
       }
 
       articleRepository.save(article);

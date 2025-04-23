@@ -18,7 +18,7 @@ import { ArticleDetailComponent } from '../../../components/article-detail/artic
 import { Category, CategoryService } from '../../../services/category.service';
 import { PiAuthService } from '../../../services/pi-auth.service';
 import { environment } from '../../../environments/environment.dev';
-import { PlanType } from '../../../models/PlanType.model';
+import { PromoteType } from '../../../models/PromoteType';
 
 declare const cloudinary: any;
 
@@ -47,8 +47,8 @@ export class CreateArticleComponent implements AfterViewInit {
   insertedImages: Array<{ url: string; publicId: string; uploadDate: string }> =
     [];
   isAdmin: boolean = false;
-  private isSaving = false; // Nueva bandera
-  activePlan: PlanType = PlanType.NONE;
+  private isSaving = false;
+  activePlan: PromoteType = PromoteType.STANDARD;
 
   constructor(
     private formBuilder: FormBuilder,
@@ -106,17 +106,13 @@ export class CreateArticleComponent implements AfterViewInit {
         .get<any>(`${environment.apiUrl}/api/payments/active-plan`)
         .subscribe({
           next: (data) => {
-            this.activePlan = data.planType || PlanType.NONE;
-            const normalizedPromoteType =
-              this.activePlan === 'STANDARD' ? 'NONE' : this.activePlan;
-            this.articleForm
-              .get('promoteType')
-              ?.setValue(normalizedPromoteType);
+            this.activePlan = data.planType as PromoteType; // ✅ usar PromoteType directamente
+            this.articleForm.get('promoteType')?.setValue(this.activePlan); // ✅ sin convertir
           },
           error: (err) => {
             console.error('Error fetching active plan:', err);
-            this.activePlan = PlanType.NONE;
-            this.articleForm.get('promoteType')?.setValue('NONE');
+            this.activePlan = PromoteType.STANDARD; // Default, por si acaso
+            this.articleForm.get('promoteType')?.setValue(this.activePlan);
           },
         });
     }
@@ -149,28 +145,9 @@ export class CreateArticleComponent implements AfterViewInit {
         console.log('Artículo cargado:', article);
         console.log('promoteType del artículo:', article.promoteType);
 
-        const normalizedPromoteType =
-          article.promoteType === 'MAIN'
-            ? 'MAIN_SLIDER'
-            : article.promoteType === 'CATEGORY'
-            ? 'CATEGORY_SLIDER'
-            : article.promoteType === 'NONE' ||
-              article.promoteType === 'STANDARD'
-            ? 'NONE'
-            : 'NONE';
+        this.articleForm.patchValue(article); // ya contiene promoteType directamente
 
-        this.articleForm.patchValue({
-          ...article,
-          promoteType: normalizedPromoteType,
-        });
-
-        console.log(
-          'promoteType en el formulario después de patchValue:',
-          this.articleForm.get('promoteType')?.value
-        );
-        console.log('promoteTypeValue:', this.promoteTypeValue); // Depurar getter
-
-        this.cdr.detectChanges(); // Forzar detección de cambios
+        this.cdr.detectChanges(); // fuerza que se actualice el valor en el form
 
         if (quillInstance) {
           quillInstance.setContents([]);
@@ -284,12 +261,12 @@ export class CreateArticleComponent implements AfterViewInit {
       content: sanitizedContent,
       approved: false,
       status: this.isAdmin ? 'PUBLISHED' : 'PENDING_APPROVAL',
-      promoteType: formValues.promoteType || 'NONE',
+      promoteType: formValues.promoteType,
       category: formValues.category ? { name: formValues.category.name } : null,
       headerImageUploadDate: formValues.headerImageUploadDate
         ? new Date(formValues.headerImageUploadDate).toISOString()
         : null,
-      promoVideoUploadDate: formValues.promoVideoUploadDate
+      promoビデオUploadDate: formValues.promoVideoUploadDate
         ? new Date(formValues.promoVideoUploadDate).toISOString()
         : null,
     };
@@ -301,41 +278,83 @@ export class CreateArticleComponent implements AfterViewInit {
 
     console.log('Payload enviado:', JSON.stringify(articlePayload, null, 2));
 
-    this.articleService.createArticle(articlePayload).subscribe({
-      next: (response: any) => {
-        this.setSuccessMessage(
-          this.isAdmin
-            ? 'Artículo publicado exitosamente.'
-            : 'Artículo enviado para aprobación exitosamente.'
-        );
-        this.articleForm.reset({
-          publishDate: new Date().toISOString().split('T')[0],
-          promoteVideo: false,
-        });
-        this.previewArticle = null;
-        this.insertedImages = [];
-        this.isSaving = false; // Finalizar el guardado
+    // Verificar si hay un borrador existente
+    if (this.articleIdToLoad) {
+      // Actualizar el borrador existente
+      this.articleService
+        .updateArticle(this.articleIdToLoad, articlePayload)
+        .subscribe({
+          next: () => {
+            this.setSuccessMessage(
+              this.isAdmin
+                ? 'Artículo publicado exitosamente.'
+                : 'Artículo enviado para aprobación exitosamente.'
+            );
+            this.articleForm.reset({
+              publishDate: new Date().toISOString().split('T')[0],
+              promoteVideo: false,
+            });
+            this.previewArticle = null;
+            this.insertedImages = [];
+            this.isSaving = false; // Finalizar el guardado
+            this.articleIdToLoad = null; // Limpiar el ID
 
-        // 🔁 Redirigir a "/dashboard/pending"
-        // 🕒 Mostrar mensaje por 2 segundos y luego redirigir
-        setTimeout(() => {
-          if (this.isAdmin) {
-            this.router.navigate(['/dashboard/published']);
-          } else {
-            this.router.navigate(['/user-dashboard/pending']);
-          }
-        }, 2000);
-      },
-      error: (err: HttpErrorResponse) => {
-        console.error('Error guardando el artículo:', err);
-        const errorMessage =
-          err.error?.message || err.statusText || 'Error desconocido';
-        this.setErrorMessage(
-          `Error al guardar: ${err.status} - ${errorMessage}`
-        );
-        this.isSaving = false; // Finalizar el guardado en caso de error
-      },
-    });
+            // Redirigir después de 2 segundos
+            setTimeout(() => {
+              if (this.isAdmin) {
+                this.router.navigate(['/dashboard/published']);
+              } else {
+                this.router.navigate(['/user-dashboard/pending']);
+              }
+            }, 2000);
+          },
+          error: (err: HttpErrorResponse) => {
+            console.error('Error actualizando el artículo:', err);
+            const errorMessage =
+              err.error?.message || err.statusText || 'Error desconocido';
+            this.setErrorMessage(
+              `Error al actualizar: ${err.status} - ${errorMessage}`
+            );
+            this.isSaving = false; // Finalizar el guardado en caso de error
+          },
+        });
+    } else {
+      // Crear un nuevo artículo si no hay borrador
+      this.articleService.createArticle(articlePayload).subscribe({
+        next: (response: any) => {
+          this.setSuccessMessage(
+            this.isAdmin
+              ? 'Artículo publicado exitosamente.'
+              : 'Artículo enviado para aprobación exitosamente.'
+          );
+          this.articleForm.reset({
+            publishDate: new Date().toISOString().split('T')[0],
+            promoteVideo: false,
+          });
+          this.previewArticle = null;
+          this.insertedImages = [];
+          this.isSaving = false; // Finalizar el guardado
+
+          // Redirigir después de 2 segundos
+          setTimeout(() => {
+            if (this.isAdmin) {
+              this.router.navigate(['/dashboard/published']);
+            } else {
+              this.router.navigate(['/user-dashboard/pending']);
+            }
+          }, 2000);
+        },
+        error: (err: HttpErrorResponse) => {
+          console.error('Error creando el artículo:', err);
+          const errorMessage =
+            err.error?.message || err.statusText || 'Error desconocido';
+          this.setErrorMessage(
+            `Error al guardar: ${err.status} - ${errorMessage}`
+          );
+          this.isSaving = false; // Finalizar el guardado en caso de error
+        },
+      });
+    }
   }
 
   openHeaderImageWidget(): void {
@@ -705,20 +724,18 @@ export class CreateArticleComponent implements AfterViewInit {
     this.articleForm.get('promoVideoUploadDate')?.setValue('');
   }
 
-  get promoteTypeValue(): string {
-    const value = this.articleForm.get('promoteType')?.value || 'NONE';
-    switch (value) {
-      case 'MAIN':
+  get promoteTypeLabel(): string {
+    switch (this.promoteTypeValue) {
       case 'MAIN_SLIDER':
-        return 'MAIN_SLIDER';
-      case 'CATEGORY':
+        return 'Main slider';
       case 'CATEGORY_SLIDER':
-        return 'CATEGORY_SLIDER';
-      case 'NONE':
-      case 'STANDARD':
-        return 'NONE';
+        return 'Category slider';
       default:
-        return 'NONE';
+        return 'No slider (Standard plan)';
     }
+  }
+
+  get promoteTypeValue(): string {
+    return this.articleForm.get('promoteType')?.value || 'STANDARD';
   }
 }

@@ -39,19 +39,24 @@
         class="w-full max-w-2xl rounded-md shadow-md"
       ></video>
     </div>
-
     <footer class="mt-8">
-      <div *ngIf="article.promoteType !== 'NONE'" class="text-sm text-gray-700">
+      <div
+        *ngIf="article.promoteType !== 'STANDARD'"
+        class="text-sm text-gray-700"
+      >
         This article includes a promoted video in
         <strong>
           {{
-            article.promoteType === "MAIN"
+            article.promoteType === "MAIN_SLIDER"
               ? "the main slider"
               : "the category slider"
           }}.
         </strong>
       </div>
-      <div *ngIf="article.promoteType === 'NONE'" class="text-sm text-gray-700">
+      <div
+        *ngIf="article.promoteType === 'STANDARD'"
+        class="text-sm text-gray-700"
+      >
         No video promotion.
       </div>
     </footer>

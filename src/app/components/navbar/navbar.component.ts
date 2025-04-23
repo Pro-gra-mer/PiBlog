@@ -9,6 +9,7 @@ import {
 import { Router, RouterLink, NavigationEnd } from '@angular/router';
 import { PiAuthService } from '../../services/pi-auth.service';
 import { CategoryService, Category } from '../../services/category.service';
+import { PromoteType } from '../../models/PromoteType';
 
 @Component({
   selector: 'app-navbar',
@@ -132,7 +133,10 @@ export class NavbarComponent implements OnInit {
     }
 
     this.piAuthService.getActivePlan().subscribe((planType) => {
-      this.hasActivePlan = planType !== 'NONE';
+      this.hasActivePlan =
+        planType === PromoteType.CATEGORY_SLIDER ||
+        planType === PromoteType.MAIN_SLIDER ||
+        planType === PromoteType.STANDARD;
       this.cdr.detectChanges();
     });
   }

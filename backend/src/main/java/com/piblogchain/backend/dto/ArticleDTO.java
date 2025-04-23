@@ -58,8 +58,8 @@ public class ArticleDTO {
   @Schema(description = "Publication date of the article", example = "2025-03-16")
   private LocalDate publishDate;
 
-  @Schema(description = "Where the promotional video will appear", example = "CATEGORY")
-  private PromoteType promoteType = PromoteType.NONE;
+  @Schema(description = "Where the promotional video will appear", example = "CATEGORY_SLIDER")
+  private PromoteType promoteType;
 
   @Schema(description = "Status of the article", example = "DRAFT")
   private ArticleStatus status;

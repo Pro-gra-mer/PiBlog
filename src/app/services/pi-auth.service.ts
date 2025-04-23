@@ -9,8 +9,8 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { BehaviorSubject, map, Observable, of } from 'rxjs';
 import { isPlatformBrowser } from '@angular/common';
-import { PlanType } from '../models/PlanType.model';
 import { environment } from '../environments/environment.dev';
+import { PromoteType } from '../models/PromoteType';
 
 declare let Pi: any;
 
@@ -103,7 +103,7 @@ export class PiAuthService {
 
                     // 👇 Consultar si tiene plan activo antes de redirigir
                     this.getActivePlan().subscribe((planType) => {
-                      const hasPlan = planType !== 'NONE';
+                      const hasPlan = planType !== PromoteType.STANDARD;
 
                       if (response.role === 'ADMIN') {
                         this.router.navigate(['/admin-dashboard']);
@@ -163,9 +163,10 @@ export class PiAuthService {
     }
     return false;
   }
-  getActivePlan(): Observable<PlanType> {
+
+  getActivePlan(): Observable<PromoteType> {
     const storedUser = localStorage.getItem('user');
-    if (!storedUser) return of(PlanType.NONE); // Asegura tipo PlanType
+    if (!storedUser) return of(PromoteType.STANDARD); // o null si prefieres
 
     const { username } = JSON.parse(storedUser);
     return this.http
@@ -175,8 +176,9 @@ export class PiAuthService {
       .pipe(
         map((response) => {
           const plan = response.planType;
-          // Asegura que devuelve un PlanType válido
-          return plan in PlanType ? (plan as PlanType) : PlanType.NONE;
+          return Object.values(PromoteType).includes(plan)
+            ? (plan as PromoteType)
+            : PromoteType.STANDARD;
         })
       );
   }

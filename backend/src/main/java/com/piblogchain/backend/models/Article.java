@@ -81,8 +81,8 @@ public class Article {
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
-  @Schema(description = "Where the promotional video will appear", example = "CATEGORY")
-  private PromoteType promoteType = PromoteType.NONE;
+  @Schema(description = "Where the promotional video will appear", example = "CATEGORY_SLIDER")
+  private PromoteType promoteType;
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
