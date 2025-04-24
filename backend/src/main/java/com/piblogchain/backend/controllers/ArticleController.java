@@ -243,10 +243,20 @@ public class ArticleController {
   public ResponseEntity<List<String>> getPromotedVideosByType(@RequestParam("type") String type) {
     try {
       PromoteType promoteType = PromoteType.valueOf(type.toUpperCase());
-      List<String> videoUrls = articleService.getPromotedVideosByType(promoteType).stream()
+
+      List<Article> articles = switch (promoteType) {
+        case MAIN_SLIDER -> articleService.getPromotedVideosForMainSlider();
+        case CATEGORY_SLIDER -> throw new IllegalArgumentException("Use /promoted-videos/category/{slug} for CATEGORY_SLIDER");
+
+        default -> List.of();
+      };
+
+      List<String> videoUrls = articles.stream()
         .map(Article::getPromoVideo)
         .toList();
+
       return ResponseEntity.ok(videoUrls);
+
     } catch (IllegalArgumentException e) {
       return ResponseEntity.badRequest().body(List.of("Invalid promote type: " + type));
     }
@@ -260,8 +270,6 @@ public class ArticleController {
 
     return ResponseEntity.ok(videoUrls);
   }
-
-
 
 
 }

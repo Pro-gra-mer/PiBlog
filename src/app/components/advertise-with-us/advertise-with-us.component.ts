@@ -18,11 +18,11 @@ declare let Pi: any;
 export class AdvertiseWithUsComponent {
   private http = inject(HttpClient);
   private router = inject(Router);
-
   readonly PromoteType = PromoteType;
-
   showSuccess = false;
   showLoginMessage = false;
+  selectedPlan: PromoteType | null = null;
+  showConfirmModal = false;
 
   pay(plan: PromoteType): void {
     const storedUser = localStorage.getItem('user');
@@ -180,5 +180,22 @@ export class AdvertiseWithUsComponent {
           console.error('Error al crear el pago:', err);
         },
       });
+  }
+
+  openConfirmModal(plan: PromoteType): void {
+    this.selectedPlan = plan;
+    this.showConfirmModal = true;
+  }
+
+  confirmPayment(): void {
+    if (this.selectedPlan) {
+      this.pay(this.selectedPlan);
+      this.showConfirmModal = false;
+    }
+  }
+
+  cancelPayment(): void {
+    this.showConfirmModal = false;
+    this.selectedPlan = null;
   }
 }

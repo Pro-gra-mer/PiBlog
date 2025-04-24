@@ -6,7 +6,6 @@ import { UserDashboardComponent } from './dashboards/user/user-dashboard/user-da
 import { CreateArticleComponent } from './dashboards/user/create-article/create-article.component';
 import { MyArticlesComponent } from './dashboards/user/my-articles/my-articles.component';
 import { DraftsComponent } from './dashboards/user/drafts/drafts.component';
-import { SubscriptionComponent } from './dashboards/user/subscription/subscription.component';
 import { AdminDashboardComponent } from './dashboards/admin/admin-dashboard/admin-dashboard.component'; // Importa el nuevo componente
 import { ArticleDetailComponent } from './components/article-detail/article-detail.component';
 import { PendingComponent } from './dashboards/user/pending/pending.component';
@@ -34,7 +33,6 @@ export const routes: Routes = [
       { path: 'drafts', component: DraftsComponent },
       { path: 'pending', component: PendingComponent },
       { path: 'rejected', component: RejectedComponent },
-      { path: 'subscription', component: SubscriptionComponent },
       { path: '', redirectTo: 'my-articles', pathMatch: 'full' },
     ],
   },

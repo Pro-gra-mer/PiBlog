@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -302,16 +303,49 @@ public class ArticleService {
   }
 
   public List<Article> getPromotedVideosByType(PromoteType type) {
-    return articleRepository.findByPromoteTypeAndStatus(type, ArticleStatus.PUBLISHED);
+    return articleRepository.findByPromoteTypeAndStatus(type, ArticleStatus.PUBLISHED).stream()
+      .filter(article -> {
+        return paymentRepository.findByArticle(article).stream()
+          .anyMatch(payment ->
+            "COMPLETED".equals(payment.getStatus()) &&
+              (payment.getExpirationAt() == null || payment.getExpirationAt().isAfter(LocalDateTime.now()))
+          );
+      })
+      .toList();
   }
 
+
   public List<Article> getPromotedVideosByCategorySlug(String slug) {
-    return articleRepository.findByPromoteTypeAndCategory_SlugIgnoreCaseAndStatus(
+    List<Article> articles = articleRepository.findByPromoteTypeAndCategory_SlugIgnoreCaseAndStatus(
       PromoteType.CATEGORY_SLIDER,
       slug,
       ArticleStatus.PUBLISHED
     );
+
+    return articles.stream()
+      .filter(article -> paymentRepository.findByArticle(article).stream()
+        .anyMatch(payment ->
+          "COMPLETED".equals(payment.getStatus()) &&
+            (payment.getExpirationAt() == null || payment.getExpirationAt().isAfter(LocalDateTime.now()))
+        )
+      )
+      .toList();
   }
+
+  public List<Article> getPromotedVideosForMainSlider() {
+    return articleRepository.findByPromoteTypeAndStatus(
+        PromoteType.MAIN_SLIDER,
+        ArticleStatus.PUBLISHED
+      ).stream()
+      .filter(article -> paymentRepository.findByArticle(article).stream()
+        .anyMatch(payment ->
+          "COMPLETED".equals(payment.getStatus()) &&
+            (payment.getExpirationAt() == null || payment.getExpirationAt().isAfter(LocalDateTime.now()))
+        )
+      )
+      .toList();
+  }
+
 
   private ArticleDTO mapToDTO(Article article) {
     ArticleDTO dto = new ArticleDTO();

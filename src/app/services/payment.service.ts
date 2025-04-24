@@ -15,6 +15,7 @@ export class PaymentService {
   renewalCompleted$ = new Subject<{
     articleId: number;
     expirationAt: string;
+    planType: string;
   }>();
 
   constructor(private http: HttpClient, private piAuthService: PiAuthService) {}
@@ -102,6 +103,7 @@ export class PaymentService {
                               this.renewalCompleted$.next({
                                 articleId,
                                 expirationAt: realExpiration,
+                                planType,
                               });
                             },
                             error: (err) => {
@@ -235,6 +237,7 @@ export class PaymentService {
                             this.renewalCompleted$.next({
                               articleId,
                               expirationAt: realExpiration,
+                              planType,
                             });
                           },
                           error: (err) => {
@@ -277,5 +280,159 @@ export class PaymentService {
       console.error('Error al decodificar el token:', e);
       return null;
     }
+  }
+  promoteArticle(articleId: number, planType: string): void {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!user.accessToken || !user.username) {
+      alert('You must be logged in with Pi to make payments.');
+      this.piAuthService.forceReauthentication();
+      return;
+    }
+
+    const timestamp = Date.now();
+    const fakePaymentId = 'sandbox-' + timestamp;
+    const fakeTxId = 'sandbox-tx-' + timestamp;
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${user.accessToken}`,
+      'Content-Type': 'application/json',
+    });
+
+    const payload = {
+      articleId,
+      planType,
+      username: user.username,
+      paymentId: fakePaymentId,
+    };
+
+    if (environment.sandbox || user.username === 'sandbox-user') {
+      console.log('🧪 Simulando promoción para:', articleId);
+
+      this.http
+        .post(`${environment.apiUrl}/api/payments/create`, payload, { headers })
+        .subscribe({
+          next: () => {
+            this.http
+              .post(
+                `${environment.apiUrl}/api/payments/approve`,
+                { paymentId: fakePaymentId, planType },
+                { headers }
+              )
+              .subscribe({
+                next: () => {
+                  this.http
+                    .post(
+                      `${environment.apiUrl}/api/payments/complete`,
+                      { paymentId: fakePaymentId, txid: fakeTxId, articleId },
+                      { headers }
+                    )
+                    .subscribe({
+                      next: () => {
+                        alert(`✅ Video promocionado con plan ${planType}`);
+                        this.http
+                          .get(
+                            `${environment.apiUrl}/api/payments/by-article/${articleId}`,
+                            { headers }
+                          )
+                          .subscribe({
+                            next: (payment: any) => {
+                              const realExpiration = payment.expirationAt;
+                              this.renewalCompleted$.next({
+                                articleId,
+                                expirationAt: realExpiration,
+                                planType,
+                              });
+                            },
+                          });
+                      },
+                    });
+                },
+              });
+          },
+        });
+      return;
+    }
+
+    // Producción con Pi SDK
+    this.http
+      .post(
+        `${environment.apiUrl}/api/payments/create`,
+        {
+          articleId,
+          planType,
+          username: user.username,
+        },
+        { headers }
+      )
+      .pipe(
+        map((res: any) => ({
+          amount: res.amount,
+          memo: res.memo,
+          paymentId: res.paymentId,
+        }))
+      )
+      .subscribe({
+        next: ({ amount, memo, paymentId }) => {
+          Pi.createPayment(
+            {
+              amount,
+              memo,
+              metadata: { paymentId },
+            },
+            {
+              onReadyForServerApproval: (piPaymentId: string) => {
+                this.http
+                  .post(
+                    `${environment.apiUrl}/api/payments/approve`,
+                    { piPaymentId, paymentId },
+                    { headers }
+                  )
+                  .subscribe();
+              },
+              onReadyForServerCompletion: (
+                piPaymentId: string,
+                txid: string
+              ) => {
+                this.http
+                  .post(
+                    `${environment.apiUrl}/api/payments/complete`,
+                    {
+                      piPaymentId,
+                      paymentId,
+                      txid,
+                      articleId,
+                    },
+                    { headers }
+                  )
+                  .subscribe({
+                    next: () => {
+                      alert(`✅ Promoción completada con plan ${planType}`);
+                      this.http
+                        .get(
+                          `${environment.apiUrl}/api/payments/by-article/${articleId}`,
+                          { headers }
+                        )
+                        .subscribe({
+                          next: (payment: any) => {
+                            this.renewalCompleted$.next({
+                              articleId,
+                              expirationAt: payment.expirationAt,
+                              planType,
+                            });
+                          },
+                        });
+                    },
+                  });
+              },
+              onCancel: () => alert('⚠️ Pago cancelado'),
+              onError: () => alert('❌ Error en el pago'),
+            }
+          );
+        },
+        error: (err) => {
+          console.error('❌ Error al iniciar la promoción:', err);
+          alert('❌ Error al iniciar la promoción');
+        },
+      });
   }
 }

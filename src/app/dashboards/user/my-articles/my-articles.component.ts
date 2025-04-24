@@ -18,6 +18,10 @@ export class MyArticlesComponent implements OnInit {
   error = '';
   showDeleteModal = false;
   articleIdToDelete: number | null = null;
+  today = new Date();
+  showPlanModal = false;
+  isPromoteMode = false;
+  selectedArticleId: number | null = null;
 
   constructor(
     private articleService: ArticleService,
@@ -43,14 +47,15 @@ export class MyArticlesComponent implements OnInit {
 
     // Escuchar el evento para actualizar expirationAt
     this.paymentService.renewalCompleted$.subscribe(
-      ({ articleId, expirationAt }) => {
+      ({ articleId, expirationAt, planType }) => {
         const updatedArticle = this.articles.find((a) => a.id === articleId);
         if (updatedArticle) {
           updatedArticle.expirationAt = expirationAt;
           console.log(
             `✅ Expiration actualizada para artículo ${articleId}: ${expirationAt}`
           );
-          this.cdr.detectChanges(); // Forzar detección de cambios
+          updatedArticle.planType = planType;
+          this.cdr.detectChanges();
         } else {
           console.warn(`Artículo con ID ${articleId} no encontrado`);
         }
@@ -98,5 +103,38 @@ export class MyArticlesComponent implements OnInit {
     }
 
     this.paymentService.renewSubscription(articleId, planType);
+  }
+
+  isExpired(expirationAt: string | null | undefined): boolean {
+    return expirationAt ? new Date(expirationAt) < new Date() : false;
+  }
+
+  openPromoteModal(article: Article): void {
+    this.selectedArticleId = article.id!;
+    this.isPromoteMode = true;
+    this.showPlanModal = true;
+  }
+
+  openRenewModal(article: Article): void {
+    this.selectedArticleId = article.id!;
+    this.isPromoteMode = false;
+    this.showPlanModal = true;
+  }
+
+  handlePlanSelection(planType: string): void {
+    if (!this.selectedArticleId) return;
+
+    if (this.isPromoteMode) {
+      this.paymentService.promoteArticle(this.selectedArticleId, planType);
+    } else {
+      this.paymentService.renewSubscription(this.selectedArticleId, planType);
+    }
+
+    this.closePlanModal();
+  }
+
+  closePlanModal(): void {
+    this.showPlanModal = false;
+    this.selectedArticleId = null;
   }
 }
