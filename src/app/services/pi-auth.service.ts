@@ -182,4 +182,16 @@ export class PiAuthService {
         })
       );
   }
+
+  forceReauthentication(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      this.isAuthenticatedSubject.next(false);
+      this.usernameSubject.next(null);
+      this.ngZone.run(() => {
+        this.loginWithPi();
+      });
+    }
+  }
 }

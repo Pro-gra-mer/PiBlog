@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -57,7 +58,7 @@ public class PaymentService {
 
     System.out.println("Creando pago con paymentId: " + paymentId);
     Payment savedPayment = paymentRepository.save(payment);
-    System.out.println("Pago guardado: " + savedPayment.getPaymentId() + ", ID: " + savedPayment.id());
+    System.out.println("Pago guardado: " + savedPayment.getPaymentId() + ", ID: " + savedPayment.getId());
 
     Map<String, Object> response = new HashMap<>();
     response.put("amount", amount);
@@ -91,18 +92,35 @@ public class PaymentService {
 
     PlanType plan = PlanType.valueOf(payment.getPlanType());
 
-    if (plan == PlanType.STANDARD) {
-      payment.setExpirationAt(null);
-    } else {
-      payment.setExpirationAt(LocalDateTime.now().plusDays(30));
-    }
+    // ✅ Caso: renovación
+    if (request.getArticleId() != null) {
+      Article article = articleRepository.findById(request.getArticleId())
+        .orElseThrow(() -> new RuntimeException("Article not found"));
 
-    if (payment.getArticle() == null) {
+      payment.setArticle(article);
+
+      if (plan != PlanType.STANDARD) {
+        Payment previous = paymentRepository.findTopByArticleAndStatusOrderByExpirationAtDesc(article, "COMPLETED");
+
+        LocalDateTime baseDate = LocalDateTime.now();
+
+        if (previous != null && previous.getExpirationAt() != null && previous.getExpirationAt().isAfter(LocalDateTime.now())) {
+          System.out.println("📦 Último pago vigente hasta: " + previous.getExpirationAt());
+          baseDate = previous.getExpirationAt();
+        } else {
+          System.out.println("🔁 No hay expiración previa válida. BaseDate será ahora.");
+        }
+
+        LocalDateTime newExpiration = baseDate.plusDays(30);
+        System.out.println("📅 Nueva fecha de expiración: " + newExpiration);
+        payment.setExpirationAt(newExpiration);
+      }
+    } else {
+      // ✅ Caso: nueva compra
       Article article = new Article();
       article.setCreatedBy(payment.getUsername());
       article.setStatus(ArticleStatus.DRAFT);
       article.setPublishDate(LocalDate.now());
-
       article.setApp("");
       article.setCompany("");
       article.setTitle("");
@@ -113,19 +131,24 @@ public class PaymentService {
         .orElseThrow(() -> new RuntimeException("Default category not found"));
       article.setCategory(defaultCategory);
 
-      // ✅ Asignar promoteType como enum
-      switch (plan) {
-        case STANDARD -> article.setPromoteType(PromoteType.STANDARD);
-        case CATEGORY_SLIDER -> article.setPromoteType(PromoteType.CATEGORY_SLIDER);
-        case MAIN_SLIDER -> article.setPromoteType(PromoteType.MAIN_SLIDER);
-      }
+      article.setPromoteType(switch (plan) {
+        case STANDARD -> PromoteType.STANDARD;
+        case CATEGORY_SLIDER -> PromoteType.CATEGORY_SLIDER;
+        case MAIN_SLIDER -> PromoteType.MAIN_SLIDER;
+      });
 
       articleRepository.save(article);
       payment.setArticle(article);
+
+      if (plan != PlanType.STANDARD) {
+        payment.setExpirationAt(LocalDateTime.now().plusDays(30));
+      }
     }
 
     paymentRepository.save(payment);
   }
+
+
 
 
   public void attachArticleToPayment(String paymentId, Long articleId) {
@@ -180,5 +203,27 @@ public class PaymentService {
   public Payment getByPaymentId(String paymentId) {
     return findPaymentOrThrow(paymentId);
   }
+
+  public Map<String, Object> getPaymentByArticleId(Long articleId) {
+    List<Payment> payments = paymentRepository.findByArticleId(articleId);
+
+    if (payments.isEmpty()) {
+      throw new RuntimeException("No se encontró un pago para el artículo con ID " + articleId);
+    }
+
+    // Buscar el pago más reciente COMPLETADO
+    Payment latest = payments.stream()
+      .filter(p -> "COMPLETED".equals(p.getStatus()))
+      .max((p1, p2) -> p1.getCompletedAt().compareTo(p2.getCompletedAt()))
+      .orElseThrow(() -> new RuntimeException("No hay pagos completados para este artículo."));
+
+    Map<String, Object> response = new HashMap<>();
+    response.put("planType", latest.getPlanType());
+    response.put("expirationAt", latest.getExpirationAt());
+
+    return response;
+  }
+
+
 
 }

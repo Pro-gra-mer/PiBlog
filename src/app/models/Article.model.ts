@@ -25,8 +25,11 @@ export interface Article {
   headerImagePublicId?: string;
   headerImageUploadDate?: string;
 
-  // ✅ Video promo
+  // Promo video
   promoVideo?: string;
   promoVideoPublicId?: string;
   promoVideoUploadDate?: string;
+
+  planType?: string;
+  expirationAt?: string; // o Date si prefieres formatearlo mejor
 }

@@ -12,6 +12,9 @@ import com.piblogchain.backend.enums.PromoteType;
 
 public class ArticleDTO {
 
+  @Schema(description = "Unique identifier of the article", example = "1")
+  private Long id;
+
   @NotBlank(message = "Company is required")
   @Schema(description = "Name of the company", example = "TechCorp")
   private String company;
@@ -81,16 +84,21 @@ public class ArticleDTO {
 
   private String paymentId;
 
+  private String planType;
+  private LocalDateTime expirationAt;
+
+
 
   // Constructor vacío
   public ArticleDTO() {}
 
   // Constructor completo (opcional)
-  public ArticleDTO(String company, String app, String title, String description, String headerImage,
+  public ArticleDTO(Long id, String company, String app, String title, String description, String headerImage,
                     String headerImagePublicId, LocalDateTime headerImageUploadDate, CategoryDTO category,
                     String content, LocalDate publishDate, PromoteType promoteType    ,
                     String promoVideo, String promoVideoPublicId, LocalDateTime promoVideoUploadDate,
-                    ArticleStatus status, String createdBy, String rejectionReason) {
+                    ArticleStatus status, String createdBy, String rejectionReason, String planType, LocalDateTime expirationAt) {
+    this.id = id;
     this.company = company;
     this.app = app;
     this.title = title;
@@ -108,10 +116,20 @@ public class ArticleDTO {
     this.status = status;
     this.createdBy = createdBy;
     this.rejectionReason = rejectionReason;
+    this.planType = planType;
+    this.expirationAt = expirationAt;
   }
 
 
   // Getters y Setters
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
+  }
+
   public String getCompany() {
     return company;
   }
@@ -256,6 +274,23 @@ public class ArticleDTO {
   public void setPaymentId(String paymentId) {
     this.paymentId = paymentId;
   }
+
+  public String getPlanType() {
+    return planType;
+  }
+
+  public void setPlanType(String planType) {
+    this.planType = planType;
+  }
+
+  public LocalDateTime getExpirationAt() {
+    return expirationAt;
+  }
+
+  public void setExpirationAt(LocalDateTime expirationAt) {
+    this.expirationAt = expirationAt;
+  }
+
 
 
 }

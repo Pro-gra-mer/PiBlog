@@ -25,14 +25,14 @@ public class Payment {
   private String paymentId;
 
 
-  @OneToOne
+  @ManyToOne
   @JoinColumn(name = "article_id")
   private Article article;
 
 
   public Payment() {}
 
-  public Long id() {
+  public Long getId() {
     return id;
   }
 

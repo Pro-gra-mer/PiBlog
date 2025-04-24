@@ -144,11 +144,12 @@ public class ArticleController {
   @Operation(summary = "Get published articles of the current user", security = @SecurityRequirement(name = "BearerAuth"))
   @GetMapping("/articles/published")
   @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-  public ResponseEntity<List<Article>> getUserPublishedArticles() {
+  public ResponseEntity<List<ArticleDTO>> getUserPublishedArticles() {
     String username = SecurityContextHolder.getContext().getAuthentication().getName();
-    List<Article> articles = articleService.getPublishedArticlesByUser(username);
+    List<ArticleDTO> articles = articleService.getPublishedArticlesByUser(username);
     return ResponseEntity.ok(articles);
   }
+
 
   @Operation(summary = "Delete an image from Cloudinary", security = @SecurityRequirement(name = "BearerAuth"))
   @DeleteMapping("/cleanup/{publicId}")

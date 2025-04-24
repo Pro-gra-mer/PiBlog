@@ -56,6 +56,9 @@ public class SecurityConfig {
         // Estado de artículos
         .requestMatchers(HttpMethod.GET, "/api/articles/status/**").hasAnyRole("USER", "ADMIN")
 
+        .requestMatchers(HttpMethod.GET, "/api/payments/by-article/{articleId:[\\d]+}").hasAnyRole("USER", "ADMIN")
+
+
         // ⚠️ Esta línea debe ir DESPUÉS
         .requestMatchers("/api/articles/**", "/api/upload-image").hasAnyRole("USER", "ADMIN")
 

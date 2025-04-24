@@ -90,5 +90,11 @@ public class PaymentController {
     return ResponseEntity.ok("Article attached to payment successfully.");
   }
 
+  @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+  @GetMapping("/by-article/{articleId}")
+  public ResponseEntity<?> getPaymentByArticleId(@PathVariable Long articleId) {
+    return ResponseEntity.ok(paymentService.getPaymentByArticleId(articleId));
+  }
+
 
 }

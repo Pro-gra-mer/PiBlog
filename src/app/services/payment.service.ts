@@ -1,91 +1,281 @@
-import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { map } from 'rxjs/operators';
+import { PiAuthService } from './pi-auth.service';
+import { environment } from '../environments/environment.dev';
+import { Subject } from 'rxjs';
 
-@Injectable({ providedIn: 'root' })
+declare let Pi: any;
+
+@Injectable({
+  providedIn: 'root',
+})
 export class PaymentService {
-  constructor(private http: HttpClient) {}
+  // Observable para notificar cuando se completa una renovación
+  renewalCompleted$ = new Subject<{
+    articleId: number;
+    expirationAt: string;
+  }>();
 
-  startPayment(plan: string) {
+  constructor(private http: HttpClient, private piAuthService: PiAuthService) {}
+
+  renewSubscription(articleId: number, planType: string): void {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!user.accessToken || !user.username) {
+      console.error('No se encontró un token o usuario válido');
+      alert('You must be logged in with Pi to make payments.');
+      this.piAuthService.forceReauthentication();
+      return;
+    }
 
-    // Paso 1: Crear el pago en el backend
-    this.http
-      .post<any>('/api/payments/create', {
+    // Generar IDs para modo sandbox
+    const timestamp = Date.now();
+    const fakePaymentId = 'sandbox-' + timestamp;
+    const fakeTxId = 'sandbox-tx-' + timestamp;
+
+    // Configurar headers con el token
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${user.accessToken}`,
+      'Content-Type': 'application/json',
+    });
+
+    // Detectar modo sandbox
+    if (environment.sandbox || user.username === 'sandbox-user') {
+      console.log(
+        '🧪 Modo sandbox activo. Simulando pago para articleId:',
+        articleId
+      );
+
+      const payload = {
+        articleId,
+        planType,
         username: user.username,
-        planType: plan,
-      })
+        paymentId: fakePaymentId,
+      };
+
+      this.http
+        .post(`${environment.apiUrl}/api/payments/create`, payload, { headers })
+        .subscribe({
+          next: () => {
+            console.log('✔ Pago creado en modo sandbox:', fakePaymentId);
+            // Aprobar el pago
+            this.http
+              .post(
+                `${environment.apiUrl}/api/payments/approve`,
+                {
+                  paymentId: fakePaymentId,
+                  planType,
+                },
+                { headers }
+              )
+              .subscribe({
+                next: () => {
+                  console.log('✔ Pago aprobado en modo sandbox');
+                  // Completar el pago
+                  this.http
+                    .post(
+                      `${environment.apiUrl}/api/payments/complete`,
+                      {
+                        paymentId: fakePaymentId,
+                        txid: fakeTxId,
+                        articleId,
+                      },
+                      { headers }
+                    )
+                    .subscribe({
+                      next: () => {
+                        console.log('✔ Pago completado en modo sandbox');
+                        alert(
+                          '✅ Pago simulado completado con éxito para el plan ' +
+                            planType
+                        );
+
+                        // ✅ Obtener la fecha real desde el backend
+                        this.http
+                          .get(
+                            `${environment.apiUrl}/api/payments/by-article/${articleId}`,
+                            { headers }
+                          )
+                          .subscribe({
+                            next: (payment: any) => {
+                              const realExpiration = payment.expirationAt;
+                              this.renewalCompleted$.next({
+                                articleId,
+                                expirationAt: realExpiration,
+                              });
+                            },
+                            error: (err) => {
+                              console.error(
+                                '❌ Error al obtener la fecha de expiración real:',
+                                err
+                              );
+                            },
+                          });
+                      },
+                      error: (err) => {
+                        console.error(
+                          '❌ Error al completar el pago simulado:',
+                          err
+                        );
+                        alert('❌ Error al simular el pago.');
+                      },
+                    });
+                },
+                error: (err) => {
+                  console.error('❌ Error al aprobar el pago simulado:', err);
+                  alert('❌ Error al simular el pago.');
+                },
+              });
+          },
+          error: (err) => {
+            console.error('❌ Error al crear el pago simulado:', err);
+            alert('❌ Error al simular el pago.');
+          },
+        });
+      return;
+    }
+
+    // Modo producción
+    // Verificar los scopes del token
+    const decodedToken = this.decodeJwt(user.accessToken);
+    const scopes = decodedToken?.scope?.split(' ') || [];
+    console.log('Scopes del token:', scopes);
+    if (!scopes.includes('payments')) {
+      console.error('El token no incluye el scope "payments":', scopes);
+      alert(
+        'Error: No tienes permisos de pago. Por favor, vuelve a iniciar sesión.'
+      );
+      this.piAuthService.forceReauthentication();
+      return;
+    }
+
+    console.log('🧾 Renewing for articleId:', articleId, 'planType:', planType);
+
+    this.http
+      .post(
+        `${environment.apiUrl}/api/payments/create`,
+        {
+          articleId,
+          planType,
+          username: user.username,
+        },
+        { headers }
+      )
+      .pipe(
+        map((response: any) => ({
+          amount: response.amount,
+          memo: response.memo,
+          paymentId: response.paymentId,
+        }))
+      )
       .subscribe({
-        next: (createResponse) => {
-          const amount = createResponse.amount;
-          const memo = createResponse.memo;
-          const paymentId = createResponse.paymentId;
-
-          console.log('🧾 Backend creó el pago con ID:', paymentId);
-
-          // Paso 2: Iniciar pago con el Pi SDK
+        next: ({ amount, memo, paymentId }) => {
           if (typeof Pi === 'undefined') {
             console.error('❌ Pi SDK no disponible.');
+            alert('Error: Pi SDK no está disponible.');
             return;
           }
 
-          Pi.createPayment({
-            amount: amount.toString(),
-            memo,
-            metadata: {
-              planType: plan,
-              username: user.username,
+          Pi.createPayment(
+            {
+              amount,
+              memo,
+              metadata: { paymentId },
             },
-            paymentId, // 👈 este ID ya está registrado en la base de datos
+            {
+              onReadyForServerApproval: (piPaymentId: string) => {
+                console.log('onReadyForServerApproval', piPaymentId);
+                this.http
+                  .post(
+                    `${environment.apiUrl}/api/payments/approve`,
+                    {
+                      piPaymentId,
+                      paymentId,
+                    },
+                    { headers }
+                  )
+                  .subscribe({
+                    next: () => console.log('✔ Pago aprobado.'),
+                    error: (err) =>
+                      console.error('❌ Error al aprobar el pago:', err),
+                  });
+              },
+              onReadyForServerCompletion: (
+                piPaymentId: string,
+                txid: string
+              ) => {
+                console.log('onReadyForServerCompletion', piPaymentId, txid);
+                this.http
+                  .post(
+                    `${environment.apiUrl}/api/payments/complete`,
+                    {
+                      piPaymentId,
+                      paymentId,
+                      txid,
+                    },
+                    { headers }
+                  )
+                  .subscribe({
+                    next: () => {
+                      console.log('✔ Pago completado en modo sandbox');
+                      alert(
+                        '✅ Pago simulado completado con éxito para el plan ' +
+                          planType
+                      );
 
-            onReadyForServerApproval: (idFromPi: string) => {
-              console.log('🔐 ID del SDK:', idFromPi);
-              console.log('🧾 ID del backend:', paymentId); // Este lo defines arriba
-
-              if (idFromPi !== paymentId) {
-                console.warn('⚠️ ID del SDK no coincide con el del backend');
-                return;
-              }
-              this.http
-                .post('/api/payments/approve', {
-                  paymentId: idFromPi,
-                  username: user.username,
-                  piId: user.piId,
-                  plan,
-                })
-
-                .subscribe({
-                  next: () => console.log('✔ Pago aprobado.'),
-                  error: (err) =>
-                    console.error('❌ Error al aprobar pago:', err),
-                });
-            },
-
-            onReadyForServerCompletion: (idFromPi: string, txid: string) => {
-              console.log('💰 Completando pago:', idFromPi, txid);
-              this.http
-                .post('/api/payments/complete', {
-                  paymentId: idFromPi,
-                  txid,
-                })
-                .subscribe({
-                  next: () => console.log('✅ Pago completado.'),
-                  error: (err) =>
-                    console.error('❌ Error al completar pago:', err),
-                });
-            },
-
-            onCancel: (paymentId: string) => {
-              console.warn('⚠️ Pago cancelado:', paymentId);
-            },
-
-            onError: (error: any) => {
-              console.error('❌ Error en pago:', error);
-            },
-          });
+                      // ✅ Obtener la fecha real desde el backend
+                      this.http
+                        .get(
+                          `${environment.apiUrl}/api/payments/by-article/${articleId}`,
+                          { headers }
+                        )
+                        .subscribe({
+                          next: (payment: any) => {
+                            const realExpiration = payment.expirationAt;
+                            this.renewalCompleted$.next({
+                              articleId,
+                              expirationAt: realExpiration,
+                            });
+                          },
+                          error: (err) => {
+                            console.error(
+                              '❌ Error al obtener la fecha de expiración real:',
+                              err
+                            );
+                          },
+                        });
+                    },
+                    error: (err) => {
+                      console.error('❌ Error al completar el pago:', err);
+                      alert('❌ Error al procesar el pago.');
+                    },
+                  });
+              },
+              onCancel: (piPaymentId: string) => {
+                console.log('onCancel', piPaymentId);
+                alert('⚠️ El pago fue cancelado.');
+              },
+              onError: (error: any, payment: any) => {
+                console.error('onError', error, payment);
+                alert('❌ Error al procesar el pago.');
+              },
+            }
+          );
         },
-        error: (error) => {
-          console.error('❌ Error al crear pago en el backend:', error);
+        error: (err) => {
+          console.error('❌ Error al crear el pago:', err);
+          alert('❌ Error al iniciar el pago.');
         },
       });
+  }
+
+  private decodeJwt(token: string): any {
+    try {
+      const payload = token.split('.')[1];
+      return JSON.parse(atob(payload));
+    } catch (e) {
+      console.error('Error al decodificar el token:', e);
+      return null;
+    }
   }
 }

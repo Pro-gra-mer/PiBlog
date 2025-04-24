@@ -1,6 +1,7 @@
 package com.piblogchain.backend.services;
 
 import com.piblogchain.backend.dto.ArticleDTO;
+import com.piblogchain.backend.dto.CategoryDTO;
 import com.piblogchain.backend.enums.ArticleStatus;
 import com.piblogchain.backend.enums.PromoteType;
 import com.piblogchain.backend.models.*;
@@ -161,8 +162,9 @@ public class ArticleService {
 
     Article article = optionalArticle.get();
 
-    Optional<Payment> paymentOptional = paymentRepository.findByArticle(article);
-    paymentOptional.ifPresent(paymentRepository::delete);
+    List<Payment> payments = paymentRepository.findByArticle(article);
+    payments.forEach(paymentRepository::delete);
+
 
     articleRepository.delete(article);
 
@@ -232,8 +234,27 @@ public class ArticleService {
     return articleRepository.findByStatusAndCreatedBy(ArticleStatus.DRAFT, username);
   }
 
-  public List<Article> getPublishedArticlesByUser(String username) {
-    return articleRepository.findByStatusAndCreatedBy(ArticleStatus.PUBLISHED, username);
+  public List<ArticleDTO> getPublishedArticlesByUser(String username) {
+    List<Article> articles = articleRepository.findByStatusAndCreatedBy(ArticleStatus.PUBLISHED, username);
+
+    return articles.stream().map(article -> {
+      ArticleDTO dto = mapToDTO(article); // Tu método personalizado para convertir Article a ArticleDTO
+
+      // 🔗 Vincula la información del pago si existe
+      paymentRepository.findByArticle(article).stream()
+        .filter(p -> "COMPLETED".equals(p.getStatus()))
+        .max((p1, p2) -> p1.getCompletedAt().compareTo(p2.getCompletedAt()))
+        .ifPresent(payment -> {
+          dto.setPlanType(payment.getPlanType());
+          dto.setExpirationAt(payment.getExpirationAt());
+
+          System.out.println("🔁 Article " + article.getId() +
+            " => planType: " + payment.getPlanType() +
+            ", expires: " + payment.getExpirationAt());
+        });
+
+      return dto;
+    }).toList();
   }
 
   public List<Article> getPendingArticlesByUser(String username) {
@@ -291,4 +312,41 @@ public class ArticleService {
       ArticleStatus.PUBLISHED
     );
   }
+
+  private ArticleDTO mapToDTO(Article article) {
+    ArticleDTO dto = new ArticleDTO();
+
+    dto.setId(article.getId()); // Agregar esta línea
+    dto.setApp(article.getApp());
+    dto.setCompany(article.getCompany());
+    dto.setTitle(article.getTitle());
+    dto.setDescription(article.getDescription());
+    dto.setHeaderImage(article.getHeaderImage());
+    dto.setHeaderImagePublicId(article.getHeaderImagePublicId());
+    dto.setHeaderImageUploadDate(article.getHeaderImageUploadDate());
+
+    dto.setCategory(new CategoryDTO(article.getCategoryName(), article.getCategorySlug()));
+    dto.setContent(article.getContent());
+    dto.setPublishDate(article.getPublishDate());
+    dto.setPromoteType(article.getPromoteType());
+    dto.setPromoVideo(article.getPromoVideo());
+    dto.setPromoVideoPublicId(article.getPromoVideoPublicId());
+    dto.setPromoVideoUploadDate(article.getPromoVideoUploadDate());
+    dto.setStatus(article.getStatus());
+    dto.setCreatedBy(article.getCreatedBy());
+    dto.setRejectionReason(article.getRejectionReason());
+
+    paymentRepository.findByArticle(article).stream()
+      .filter(p -> "COMPLETED".equals(p.getStatus()))
+      .max((p1, p2) -> p1.getCompletedAt().compareTo(p2.getCompletedAt()))
+      .ifPresent(payment -> {
+        dto.setPlanType(payment.getPlanType());
+        dto.setExpirationAt(payment.getExpirationAt());
+        dto.setPaymentId(payment.getId().toString());
+      });
+
+
+    return dto;
+  }
+
 }
