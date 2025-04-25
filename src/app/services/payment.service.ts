@@ -115,11 +115,11 @@ export class PaymentService {
                           });
                       },
                       error: (err) => {
-                        console.error(
-                          '❌ Error al completar el pago simulado:',
-                          err
-                        );
-                        alert('❌ Error al simular el pago.');
+                        console.error('❌ Error al completar el pago:', err);
+                        const message =
+                          err?.error?.message ||
+                          '❌ Error al procesar el pago.';
+                        alert(message);
                       },
                     });
                 },
@@ -138,7 +138,6 @@ export class PaymentService {
     }
 
     // Modo producción
-    // Verificar los scopes del token
     const decodedToken = this.decodeJwt(user.accessToken);
     const scopes = decodedToken?.scope?.split(' ') || [];
     console.log('Scopes del token:', scopes);
@@ -250,7 +249,9 @@ export class PaymentService {
                     },
                     error: (err) => {
                       console.error('❌ Error al completar el pago:', err);
-                      alert('❌ Error al procesar el pago.');
+                      const message =
+                        err?.error?.message || '❌ Error al procesar el pago.';
+                      alert(message);
                     },
                   });
               },
@@ -281,6 +282,7 @@ export class PaymentService {
       return null;
     }
   }
+
   promoteArticle(articleId: number, planType: string): void {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     if (!user.accessToken || !user.username) {
@@ -431,7 +433,9 @@ export class PaymentService {
         },
         error: (err) => {
           console.error('❌ Error al iniciar la promoción:', err);
-          alert('❌ Error al iniciar la promoción');
+          const message =
+            err?.error?.message || '❌ Error al iniciar la promoción.';
+          alert(message);
         },
       });
   }

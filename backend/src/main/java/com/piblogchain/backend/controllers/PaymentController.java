@@ -5,6 +5,7 @@ import com.piblogchain.backend.dto.AttachArticleRequest;
 import com.piblogchain.backend.dto.PaymentApprovalRequest;
 import com.piblogchain.backend.dto.PaymentCompleteRequest;
 import com.piblogchain.backend.dto.PaymentCreateRequest;
+import com.piblogchain.backend.enums.PromoteType;
 import com.piblogchain.backend.models.Payment;
 import com.piblogchain.backend.repositories.PaymentRepository;
 import com.piblogchain.backend.services.PaymentService;
@@ -94,6 +95,15 @@ public class PaymentController {
   @GetMapping("/by-article/{articleId}")
   public ResponseEntity<?> getPaymentByArticleId(@PathVariable Long articleId) {
     return ResponseEntity.ok(paymentService.getPaymentByArticleId(articleId));
+  }
+
+  @GetMapping("/slots")
+  public ResponseEntity<Map<String, Object>> getSlotInfo(
+    @RequestParam PromoteType promoteType,
+    @RequestParam(required = false) String categorySlug
+  ) {
+    Map<String, Object> availability = paymentService.getSlotAvailability(promoteType, categorySlug);
+    return ResponseEntity.ok(availability);
   }
 
 

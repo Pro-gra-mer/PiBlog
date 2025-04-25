@@ -24,4 +24,6 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
     String slug,
     ArticleStatus status
   );
+  List<Article> findByPromoteTypeAndCategory_SlugIgnoreCase(PromoteType promoteType, String slug);
+
 }

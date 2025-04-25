@@ -379,8 +379,8 @@ public class ArticleService {
         dto.setPaymentId(payment.getId().toString());
       });
 
-
     return dto;
   }
+
 
 }

@@ -92,10 +92,21 @@ public class PaymentService {
 
     PlanType plan = PlanType.valueOf(payment.getPlanType());
 
-    // ✅ Caso: renovación
+    // ✅ Caso: renovación (ya existe el artículo)
     if (request.getArticleId() != null) {
       Article article = articleRepository.findById(request.getArticleId())
         .orElseThrow(() -> new RuntimeException("Article not found"));
+
+      PromoteType promoteType = switch (plan) {
+        case STANDARD -> PromoteType.STANDARD;
+        case CATEGORY_SLIDER -> PromoteType.CATEGORY_SLIDER;
+        case MAIN_SLIDER -> PromoteType.MAIN_SLIDER;
+      };
+
+      if (promoteType != PromoteType.STANDARD &&
+        !isSlotAvailable(promoteType, article.getCategory().getSlug())) {
+        throw new RuntimeException("❌ No slots available for: " + promoteType);
+      }
 
       payment.setArticle(article);
 
@@ -103,20 +114,15 @@ public class PaymentService {
         Payment previous = paymentRepository.findTopByArticleAndStatusOrderByExpirationAtDesc(article, "COMPLETED");
 
         LocalDateTime baseDate = LocalDateTime.now();
-
         if (previous != null && previous.getExpirationAt() != null && previous.getExpirationAt().isAfter(LocalDateTime.now())) {
-          System.out.println("📦 Último pago vigente hasta: " + previous.getExpirationAt());
           baseDate = previous.getExpirationAt();
-        } else {
-          System.out.println("🔁 No hay expiración previa válida. BaseDate será ahora.");
         }
 
-        LocalDateTime newExpiration = baseDate.plusDays(30);
-        System.out.println("📅 Nueva fecha de expiración: " + newExpiration);
-        payment.setExpirationAt(newExpiration);
+        payment.setExpirationAt(baseDate.plusDays(30));
       }
+
     } else {
-      // ✅ Caso: nueva compra
+      // ✅ Caso: nueva compra (creamos nuevo artículo)
       Article article = new Article();
       article.setCreatedBy(payment.getUsername());
       article.setStatus(ArticleStatus.DRAFT);
@@ -131,12 +137,18 @@ public class PaymentService {
         .orElseThrow(() -> new RuntimeException("Default category not found"));
       article.setCategory(defaultCategory);
 
-      article.setPromoteType(switch (plan) {
+      PromoteType promoteType = switch (plan) {
         case STANDARD -> PromoteType.STANDARD;
         case CATEGORY_SLIDER -> PromoteType.CATEGORY_SLIDER;
         case MAIN_SLIDER -> PromoteType.MAIN_SLIDER;
-      });
+      };
 
+      if (promoteType != PromoteType.STANDARD &&
+        !isSlotAvailable(promoteType, defaultCategory.getSlug())) {
+        throw new RuntimeException("❌ No slots available for: " + promoteType);
+      }
+
+      article.setPromoteType(promoteType);
       articleRepository.save(article);
       payment.setArticle(article);
 
@@ -147,9 +159,6 @@ public class PaymentService {
 
     paymentRepository.save(payment);
   }
-
-
-
 
   public void attachArticleToPayment(String paymentId, Long articleId) {
     Payment payment = findPaymentOrThrow(paymentId);
@@ -220,6 +229,76 @@ public class PaymentService {
     Map<String, Object> response = new HashMap<>();
     response.put("planType", latest.getPlanType());
     response.put("expirationAt", latest.getExpirationAt());
+
+    return response;
+  }
+
+  public boolean isSlotAvailable(PromoteType promoteType, String categorySlug) {
+    if (promoteType == PromoteType.MAIN_SLIDER) {
+      long count = articleRepository.findByPromoteTypeAndStatus(promoteType, ArticleStatus.PUBLISHED)
+        .stream()
+        .filter(article ->
+          paymentRepository.findByArticle(article).stream().anyMatch(payment ->
+            "COMPLETED".equals(payment.getStatus()) &&
+              (payment.getExpirationAt() == null || payment.getExpirationAt().isAfter(LocalDateTime.now()))
+          )
+        )
+        .count();
+      return count < 5;
+    } else if (promoteType == PromoteType.CATEGORY_SLIDER) {
+      long count = articleRepository.findByPromoteTypeAndCategory_SlugIgnoreCaseAndStatus(promoteType, categorySlug, ArticleStatus.PUBLISHED)
+        .stream()
+        .filter(article ->
+          paymentRepository.findByArticle(article).stream().anyMatch(payment ->
+            "COMPLETED".equals(payment.getStatus()) &&
+              (payment.getExpirationAt() == null || payment.getExpirationAt().isAfter(LocalDateTime.now()))
+          )
+        )
+        .count();
+      return count < 5;
+    }
+
+    return true; // No hay límite para STANDARD
+  }
+
+  public Map<String, Object> getSlotAvailability(PromoteType promoteType, String categorySlug) {
+    final int totalSlots = (promoteType == PromoteType.STANDARD) ? Integer.MAX_VALUE : 5;
+    long usedSlots = 0;
+
+    if (promoteType == PromoteType.MAIN_SLIDER) {
+      usedSlots = articleRepository.findByPromoteType(promoteType)
+        .stream()
+        .filter(article -> paymentRepository.findByArticle(article).stream()
+          .anyMatch(payment ->
+            "COMPLETED".equals(payment.getStatus()) &&
+              (payment.getExpirationAt() == null || payment.getExpirationAt().isAfter(LocalDateTime.now()))
+          )
+        )
+        .count();
+
+    } else if (promoteType == PromoteType.CATEGORY_SLIDER) {
+      if (categorySlug == null || categorySlug.isBlank()) {
+        throw new IllegalArgumentException("Category slug is required for CATEGORY_SLIDER");
+      }
+
+      usedSlots = articleRepository.findByPromoteTypeAndCategory_SlugIgnoreCase(promoteType, categorySlug)
+        .stream()
+        .filter(article -> paymentRepository.findByArticle(article).stream()
+          .anyMatch(payment ->
+            "COMPLETED".equals(payment.getStatus()) &&
+              (payment.getExpirationAt() == null || payment.getExpirationAt().isAfter(LocalDateTime.now()))
+          )
+        )
+        .count();
+    }
+
+    int remainingSlots = (int) Math.max(0, totalSlots - usedSlots);
+
+    Map<String, Object> response = new HashMap<>();
+    response.put("available", remainingSlots > 0);
+    response.put("usedSlots", usedSlots);
+    response.put("remainingSlots", remainingSlots);
+    response.put("totalSlots", totalSlots);
 
     return response;
   }

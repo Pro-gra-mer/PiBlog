@@ -42,6 +42,8 @@ public class SecurityConfig {
         .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/articles/promoted-videos").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/articles/promoted-videos/category/**").permitAll()
+        .requestMatchers(HttpMethod.GET,"/api/payments/slots").permitAll()
+
 
         // Pagos
         .requestMatchers("/api/payments/create", "/api/payments/approve", "/api/payments/complete").hasAnyRole("USER", "ADMIN")

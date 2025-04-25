@@ -5,13 +5,15 @@ import { environment } from '../../environments/environment.dev';
 
 import { Router } from '@angular/router';
 import { PromoteType } from '../../models/PromoteType';
+import { Category, CategoryService } from '../../services/category.service';
+import { FormsModule } from '@angular/forms';
 
 declare let Pi: any;
 
 @Component({
   selector: 'app-advertise-with-us',
   standalone: true,
-  imports: [CommonModule, HttpClientModule],
+  imports: [CommonModule, HttpClientModule, FormsModule],
   templateUrl: './advertise-with-us.component.html',
   styleUrl: './advertise-with-us.component.css',
 })
@@ -23,6 +25,141 @@ export class AdvertiseWithUsComponent {
   showLoginMessage = false;
   selectedPlan: PromoteType | null = null;
   showConfirmModal = false;
+  mainSliderAvailable = true;
+  categorySliderAvailable = true;
+  availableSlots: { [key: string]: number } = {};
+  categories: Category[] = [];
+  selectedCategory: string = '';
+  private categoryService = inject(CategoryService);
+
+  ngOnInit(): void {
+    this.checkSlots();
+    this.categoryService.getAllCategories().subscribe({
+      next: (data) => {
+        this.categories = data;
+        // Establece la primera como predeterminada si quieres
+        if (data.length > 0) {
+          this.selectedCategory = data[0].slug || '';
+          this.checkCategorySliderSlot();
+        }
+      },
+      error: (err) => console.error('Error fetching categories', err),
+    });
+
+    this.checkMainSliderSlot(); // también puedes mover esto a parte
+  }
+
+  checkMainSliderSlot(): void {
+    if (typeof window === 'undefined' || !window.localStorage) return;
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser) return;
+
+    const user = JSON.parse(storedUser);
+    const headers = { Authorization: `Bearer ${user.accessToken}` };
+
+    const url = `${environment.apiUrl}/api/payments/slots?promoteType=${PromoteType.MAIN_SLIDER}`;
+
+    this.http
+      .get<{
+        available: boolean;
+        usedSlots: number;
+        remainingSlots: number;
+        totalSlots: number;
+      }>(url, { headers })
+      .subscribe({
+        next: (res) => {
+          this.mainSliderAvailable = res.remainingSlots > 0;
+          this.availableSlots['MAIN_SLIDER'] = res.remainingSlots;
+          console.log(`✅ MAIN_SLIDER remaining:`, res.remainingSlots);
+        },
+        error: (err) => {
+          console.error(`❌ Error checking MAIN_SLIDER slots:`, err);
+        },
+      });
+  }
+
+  checkCategorySliderSlot(): void {
+    if (typeof window === 'undefined' || !window.localStorage) return;
+
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser || !this.selectedCategory) return;
+
+    const user = JSON.parse(storedUser);
+    const headers = { Authorization: `Bearer ${user.accessToken}` };
+
+    const url = `${environment.apiUrl}/api/payments/slots?promoteType=${PromoteType.CATEGORY_SLIDER}&categorySlug=${this.selectedCategory}`;
+
+    this.http
+      .get<{
+        available: boolean;
+        usedSlots: number;
+        remainingSlots: number;
+        totalSlots: number;
+      }>(url, { headers })
+      .subscribe({
+        next: (res) => {
+          this.categorySliderAvailable = res.remainingSlots > 0;
+          this.availableSlots['CATEGORY_SLIDER'] = res.remainingSlots;
+          console.log(
+            `✅ CATEGORY_SLIDER remaining in ${this.selectedCategory}:`,
+            res.remainingSlots
+          );
+        },
+        error: (err) => {
+          console.error(`❌ Error checking CATEGORY_SLIDER slots:`, err);
+        },
+      });
+  }
+
+  checkSlots(): void {
+    if (typeof window === 'undefined') return;
+
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser) return;
+
+    const user = JSON.parse(storedUser);
+    const headers = {
+      Authorization: `Bearer ${user.accessToken}`,
+    };
+
+    const types: PromoteType[] = [
+      PromoteType.MAIN_SLIDER,
+      PromoteType.CATEGORY_SLIDER,
+    ];
+
+    const categorySlug = 'sin-categoria'; // o el que uses por defecto
+
+    types.forEach((type) => {
+      let url = `${environment.apiUrl}/api/payments/slots?promoteType=${type}`;
+
+      if (type === PromoteType.CATEGORY_SLIDER) {
+        url += `&categorySlug=${categorySlug}`;
+      }
+
+      this.http
+        .get<{
+          available: boolean;
+          usedSlots: number;
+          remainingSlots: number;
+          totalSlots: number;
+        }>(url, { headers })
+        .subscribe({
+          next: (res) => {
+            console.log(`✅ ${type} remaining:`, res.remainingSlots);
+            this.availableSlots[type] = res.remainingSlots;
+            if (type === PromoteType.MAIN_SLIDER) {
+              this.mainSliderAvailable = res.remainingSlots > 0;
+            }
+            if (type === PromoteType.CATEGORY_SLIDER) {
+              this.categorySliderAvailable = res.remainingSlots > 0;
+            }
+          },
+          error: (err) => {
+            console.error(`❌ Error checking slots for ${type}:`, err);
+          },
+        });
+    });
+  }
 
   pay(plan: PromoteType): void {
     const storedUser = localStorage.getItem('user');
