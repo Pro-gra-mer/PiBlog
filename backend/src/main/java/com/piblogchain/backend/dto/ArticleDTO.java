@@ -51,7 +51,7 @@ public class ArticleDTO {
     example = "2025-03-16T12:34:56")
   private LocalDateTime headerImageUploadDate;
 
-  @NotBlank(message = "Category is required")
+  @NotNull(message = "Category is required")
   @Schema(description = "Category of the article", example = "Productivity Tools")
   private CategoryDTO category;
 

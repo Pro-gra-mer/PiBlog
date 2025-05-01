@@ -4,6 +4,7 @@ import { ArticleService } from '../../../services/article.service';
 import { PaymentService } from '../../../services/payment.service';
 import { Article } from '../../../models/Article.model';
 import { Router } from '@angular/router';
+import { PiAuthService } from '../../../services/pi-auth.service';
 
 @Component({
   selector: 'app-my-articles',
@@ -23,6 +24,8 @@ export class MyArticlesComponent implements OnInit {
   selectedPlanType: string | null = null;
   mainSliderInfo: any = null;
   categorySliderInfo: any = null;
+  isAdmin = false;
+  successMessage: string | null = null;
 
   // Modal genérico de confirmación
   confirmationModal = {
@@ -38,10 +41,12 @@ export class MyArticlesComponent implements OnInit {
     private articleService: ArticleService,
     private paymentService: PaymentService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private piAuthService: PiAuthService
   ) {}
 
   ngOnInit(): void {
+    this.isAdmin = this.piAuthService.isAdmin();
     this.articleService.getUserPublishedArticles().subscribe({
       next: (articles) => {
         this.articles = articles.filter((article) => article.id != null);
@@ -127,39 +132,60 @@ export class MyArticlesComponent implements OnInit {
       alert("Error: This article doesn't have a valid category.");
       return;
     }
+    this.successMessage = `✅ ${planType.replace(
+      '_',
+      ' '
+    )} activated successfully!`;
+
+    setTimeout(() => {
+      this.successMessage = null;
+    }, 4000);
+
+    const applyPlanToArticle = (response: any) => {
+      const expirationAt =
+        response?.expirationAt ||
+        new Date(new Date().setDate(new Date().getDate() + 30)).toISOString();
+
+      const newPlan = { planType, expirationAt };
+
+      if (
+        selectedArticle.activePlans &&
+        Array.isArray(selectedArticle.activePlans)
+      ) {
+        const existingIndex = selectedArticle.activePlans.findIndex(
+          (p) => p.planType === planType
+        );
+        if (existingIndex !== -1) {
+          selectedArticle.activePlans[existingIndex] = newPlan;
+        } else {
+          selectedArticle.activePlans.push(newPlan);
+        }
+      } else {
+        selectedArticle.activePlans = [newPlan];
+      }
+
+      this.cdr.detectChanges();
+      this.closePlanModal();
+    };
+
+    if (this.isAdmin) {
+      this.paymentService
+        .activatePlanAsAdmin(this.selectedArticleId, planType, categorySlug)
+        .subscribe({
+          next: applyPlanToArticle,
+          error: () => {
+            alert('Error activating plan as admin');
+            this.closePlanModal();
+          },
+        });
+      return;
+    }
 
     this.paymentService
       .activatePlan(this.selectedArticleId, planType, categorySlug)
       .subscribe({
-        next: (response) => {
-          const expirationAt =
-            response?.expirationAt ||
-            new Date(
-              new Date().setDate(new Date().getDate() + 30)
-            ).toISOString();
-
-          const newPlan = { planType, expirationAt };
-
-          if (
-            selectedArticle.activePlans &&
-            Array.isArray(selectedArticle.activePlans)
-          ) {
-            const existingIndex = selectedArticle.activePlans.findIndex(
-              (p) => p.planType === planType
-            );
-            if (existingIndex !== -1) {
-              selectedArticle.activePlans[existingIndex] = newPlan;
-            } else {
-              selectedArticle.activePlans.push(newPlan);
-            }
-          } else {
-            selectedArticle.activePlans = [newPlan];
-          }
-
-          this.cdr.detectChanges();
-          this.closePlanModal();
-        },
-        error: (err) => {
+        next: applyPlanToArticle,
+        error: () => {
           alert(`Error activating the plan ${planType}.`);
           this.closePlanModal();
         },

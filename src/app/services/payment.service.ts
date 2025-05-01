@@ -64,4 +64,30 @@ export class PaymentService {
       params: { promoteType, categorySlug: categorySlug || '' },
     });
   }
+
+  activatePlanAsAdmin(
+    articleId: number,
+    planType: string,
+    categorySlug: string | null
+  ): Observable<any> {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    const payload = {
+      articleId,
+      planType,
+      username: user.username,
+      categorySlug,
+    };
+
+    return this.http.post(
+      `${environment.apiUrl}/api/payments/activate/admin`,
+      payload,
+      {
+        headers: new HttpHeaders({
+          Authorization: `Bearer ${user.accessToken}`,
+          'Content-Type': 'application/json',
+        }),
+      }
+    );
+  }
 }

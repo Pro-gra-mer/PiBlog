@@ -8,6 +8,7 @@ import com.piblogchain.backend.models.Article;
 import com.piblogchain.backend.models.ArticlePromotion;
 import com.piblogchain.backend.models.Category;
 import com.piblogchain.backend.models.Payment;
+import com.piblogchain.backend.repositories.ArticlePromotionRepository;
 import com.piblogchain.backend.repositories.ArticleRepository;
 import com.piblogchain.backend.repositories.CategoryRepository;
 import com.piblogchain.backend.repositories.PaymentRepository;
@@ -32,15 +33,19 @@ public class PaymentService {
   private final PaymentRepository paymentRepository;
   private final ArticleRepository articleRepository;
   private final CategoryRepository categoryRepository;
+  private final ArticlePromotionRepository articlePromotionRepository;
+
   private boolean cancelled = false;
 
 
 
-  public PaymentService(Environment env, PaymentRepository paymentRepository, ArticleRepository articleRepository, CategoryRepository categoryRepository) {
+  public PaymentService(Environment env, PaymentRepository paymentRepository, ArticleRepository articleRepository, CategoryRepository categoryRepository,  ArticlePromotionRepository articlePromotionRepository) {
     this.env = env;
     this.paymentRepository = paymentRepository;
     this.articleRepository = articleRepository;
     this.categoryRepository = categoryRepository;
+    this.articlePromotionRepository = articlePromotionRepository;
+
   }
 
   public Map<String, Object> createPayment(PaymentCreateRequest request) {
@@ -378,6 +383,21 @@ public class PaymentService {
     articleRepository.save(article);
   }
 
+  public void activateWithoutPayment(ActivatePlanRequest request) {
+    Article article = articleRepository.findById(request.getArticleId())
+      .orElseThrow(() -> new RuntimeException("Article not found"));
+
+    PromoteType promoteType = PromoteType.valueOf(request.getPlanType());
+    LocalDateTime expirationAt = LocalDateTime.now().plusMonths(1);
+
+    ArticlePromotion promotion = new ArticlePromotion();
+    promotion.setArticle(article);
+    promotion.setPromoteType(promoteType);
+    promotion.setExpirationAt(expirationAt);
+    promotion.setCancelled(false);
+
+    articlePromotionRepository.save(promotion);
+  }
 
 
 

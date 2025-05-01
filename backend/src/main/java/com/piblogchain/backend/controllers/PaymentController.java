@@ -9,6 +9,7 @@ import com.piblogchain.backend.models.Payment;
 import com.piblogchain.backend.repositories.ArticleRepository;
 import com.piblogchain.backend.repositories.PaymentRepository;
 import com.piblogchain.backend.services.PaymentService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -155,6 +156,17 @@ public class PaymentController {
     return ResponseEntity.ok("Subscription cancelled successfully.");
   }
 
+  @PreAuthorize("hasRole('ADMIN')")
+  @PostMapping("/activate/admin")
+  public ResponseEntity<?> activatePlanAsAdmin(@RequestBody ActivatePlanRequest request) {
+    try {
+      paymentService.activateWithoutPayment(request);
+      return ResponseEntity.ok().build();
+    } catch (Exception e) {
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .body("Error activating plan as admin");
+    }
+  }
 
 
 
