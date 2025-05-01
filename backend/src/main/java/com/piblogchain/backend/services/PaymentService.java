@@ -1,18 +1,17 @@
 package com.piblogchain.backend.services;
 
-import com.piblogchain.backend.dto.AttachArticleRequest;
-import com.piblogchain.backend.dto.PaymentApprovalRequest;
-import com.piblogchain.backend.dto.PaymentCompleteRequest;
-import com.piblogchain.backend.dto.PaymentCreateRequest;
+import com.piblogchain.backend.dto.*;
 import com.piblogchain.backend.enums.ArticleStatus;
 import com.piblogchain.backend.enums.PlanType;
 import com.piblogchain.backend.enums.PromoteType;
 import com.piblogchain.backend.models.Article;
+import com.piblogchain.backend.models.ArticlePromotion;
 import com.piblogchain.backend.models.Category;
 import com.piblogchain.backend.models.Payment;
 import com.piblogchain.backend.repositories.ArticleRepository;
 import com.piblogchain.backend.repositories.CategoryRepository;
 import com.piblogchain.backend.repositories.PaymentRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
@@ -33,6 +32,8 @@ public class PaymentService {
   private final PaymentRepository paymentRepository;
   private final ArticleRepository articleRepository;
   private final CategoryRepository categoryRepository;
+  private boolean cancelled = false;
+
 
 
   public PaymentService(Environment env, PaymentRepository paymentRepository, ArticleRepository articleRepository, CategoryRepository categoryRepository) {
@@ -92,8 +93,8 @@ public class PaymentService {
 
     PlanType plan = PlanType.valueOf(payment.getPlanType());
 
-    // ✅ Caso: renovación (ya existe el artículo)
     if (request.getArticleId() != null) {
+      // ✅ Caso: renovación (ya existe el artículo)
       Article article = articleRepository.findById(request.getArticleId())
         .orElseThrow(() -> new RuntimeException("Article not found"));
 
@@ -110,6 +111,11 @@ public class PaymentService {
 
       payment.setArticle(article);
 
+      // Crear nueva promoción para el artículo
+      ArticlePromotion promotion = new ArticlePromotion();
+      promotion.setArticle(article);
+      promotion.setPromoteType(promoteType);
+
       if (plan != PlanType.STANDARD) {
         Payment previous = paymentRepository.findTopByArticleAndStatusOrderByExpirationAtDesc(article, "COMPLETED");
 
@@ -119,7 +125,10 @@ public class PaymentService {
         }
 
         payment.setExpirationAt(baseDate.plusDays(30));
+        promotion.setExpirationAt(baseDate.plusDays(30));
       }
+
+      article.getPromotions().add(promotion);
 
     } else {
       // ✅ Caso: nueva compra (creamos nuevo artículo)
@@ -148,17 +157,25 @@ public class PaymentService {
         throw new RuntimeException("❌ No slots available for: " + promoteType);
       }
 
-      article.setPromoteType(promoteType);
       articleRepository.save(article);
       payment.setArticle(article);
 
+      // Crear nueva promoción
+      ArticlePromotion promotion = new ArticlePromotion();
+      promotion.setArticle(article);
+      promotion.setPromoteType(promoteType);
+
       if (plan != PlanType.STANDARD) {
+        promotion.setExpirationAt(LocalDateTime.now().plusDays(30));
         payment.setExpirationAt(LocalDateTime.now().plusDays(30));
       }
+
+      article.getPromotions().add(promotion);
     }
 
     paymentRepository.save(payment);
   }
+
 
   public void attachArticleToPayment(String paymentId, Long articleId) {
     Payment payment = findPaymentOrThrow(paymentId);
@@ -235,24 +252,26 @@ public class PaymentService {
 
   public boolean isSlotAvailable(PromoteType promoteType, String categorySlug) {
     if (promoteType == PromoteType.MAIN_SLIDER) {
-      long count = articleRepository.findByPromoteTypeAndStatus(promoteType, ArticleStatus.PUBLISHED)
+      long count = articleRepository.findByStatus(ArticleStatus.PUBLISHED)
         .stream()
         .filter(article ->
-          paymentRepository.findByArticle(article).stream().anyMatch(payment ->
-            "COMPLETED".equals(payment.getStatus()) &&
-              (payment.getExpirationAt() == null || payment.getExpirationAt().isAfter(LocalDateTime.now()))
-          )
+          article.getPromotions().stream()
+            .anyMatch(promotion ->
+              promotion.getPromoteType() == PromoteType.MAIN_SLIDER &&
+                (promotion.getExpirationAt() == null || promotion.getExpirationAt().isAfter(LocalDateTime.now()))
+            )
         )
         .count();
       return count < 5;
     } else if (promoteType == PromoteType.CATEGORY_SLIDER) {
-      long count = articleRepository.findByPromoteTypeAndCategory_SlugIgnoreCaseAndStatus(promoteType, categorySlug, ArticleStatus.PUBLISHED)
+      long count = articleRepository.findByCategorySlugIgnoreCaseAndStatus(categorySlug, ArticleStatus.PUBLISHED)
         .stream()
         .filter(article ->
-          paymentRepository.findByArticle(article).stream().anyMatch(payment ->
-            "COMPLETED".equals(payment.getStatus()) &&
-              (payment.getExpirationAt() == null || payment.getExpirationAt().isAfter(LocalDateTime.now()))
-          )
+          article.getPromotions().stream()
+            .anyMatch(promotion ->
+              promotion.getPromoteType() == PromoteType.CATEGORY_SLIDER &&
+                (promotion.getExpirationAt() == null || promotion.getExpirationAt().isAfter(LocalDateTime.now()))
+            )
         )
         .count();
       return count < 5;
@@ -261,35 +280,42 @@ public class PaymentService {
     return true; // No hay límite para STANDARD
   }
 
+
   public Map<String, Object> getSlotAvailability(PromoteType promoteType, String categorySlug) {
     final int totalSlots = (promoteType == PromoteType.STANDARD) ? Integer.MAX_VALUE : 5;
     long usedSlots = 0;
+    String categoryName = null;
+
+    // Convierte PromoteType a PlanType y obtiene el precio dinámico
+    PlanType planType = PlanType.valueOf(promoteType.name());
+    double price = getPlanPrice(planType);
 
     if (promoteType == PromoteType.MAIN_SLIDER) {
-      usedSlots = articleRepository.findByPromoteType(promoteType)
-        .stream()
-        .filter(article -> paymentRepository.findByArticle(article).stream()
-          .anyMatch(payment ->
-            "COMPLETED".equals(payment.getStatus()) &&
-              (payment.getExpirationAt() == null || payment.getExpirationAt().isAfter(LocalDateTime.now()))
+      usedSlots = articleRepository.findByStatus(ArticleStatus.PUBLISHED).stream()
+        .filter(article -> article.getPromotions().stream()
+          .anyMatch(promotion ->
+            promotion.getPromoteType() == promoteType &&
+              (promotion.getExpirationAt() == null || promotion.getExpirationAt().isAfter(LocalDateTime.now()))
           )
         )
         .count();
-
     } else if (promoteType == PromoteType.CATEGORY_SLIDER) {
       if (categorySlug == null || categorySlug.isBlank()) {
         throw new IllegalArgumentException("Category slug is required for CATEGORY_SLIDER");
       }
 
-      usedSlots = articleRepository.findByPromoteTypeAndCategory_SlugIgnoreCase(promoteType, categorySlug)
-        .stream()
-        .filter(article -> paymentRepository.findByArticle(article).stream()
-          .anyMatch(payment ->
-            "COMPLETED".equals(payment.getStatus()) &&
-              (payment.getExpirationAt() == null || payment.getExpirationAt().isAfter(LocalDateTime.now()))
+      usedSlots = articleRepository.findByCategorySlugIgnoreCaseAndStatus(categorySlug, ArticleStatus.PUBLISHED).stream()
+        .filter(article -> article.getPromotions().stream()
+          .anyMatch(promotion ->
+            promotion.getPromoteType() == promoteType &&
+              (promotion.getExpirationAt() == null || promotion.getExpirationAt().isAfter(LocalDateTime.now()))
           )
         )
         .count();
+
+      Category category = categoryRepository.findBySlug(categorySlug)
+        .orElseThrow(() -> new IllegalArgumentException("Category not found"));
+      categoryName = category.getName();
     }
 
     int remainingSlots = (int) Math.max(0, totalSlots - usedSlots);
@@ -299,9 +325,59 @@ public class PaymentService {
     response.put("usedSlots", usedSlots);
     response.put("remainingSlots", remainingSlots);
     response.put("totalSlots", totalSlots);
+    response.put("categoryName", categoryName);
+    response.put("price", price);
 
     return response;
   }
+
+
+  public void activatePlan(ActivatePlanRequest request) {
+    // Validar que existan articleId, username, planType
+    Article article = articleRepository.findById(request.getArticleId())
+      .orElseThrow(() -> new RuntimeException("Article not found"));
+
+    PromoteType promoteType = PromoteType.valueOf(request.getPlanType());
+
+    if (promoteType != PromoteType.STANDARD) {
+      if (!isSlotAvailable(promoteType, request.getCategorySlug())) {
+        throw new RuntimeException("No slots available for this plan.");
+      }
+    }
+
+    // Crear una nueva promoción en lugar de actualizar promoteType en Article
+    ArticlePromotion promotion = new ArticlePromotion();
+    promotion.setArticle(article);
+    promotion.setPromoteType(promoteType);
+
+    // Como es activatePlan manual, normalmente no tendrá expiración
+    // pero si quieres agregar expiración, puedes ponerlo aquí:
+    // promotion.setExpirationAt(LocalDateTime.now().plusDays(30));
+
+    article.getPromotions().add(promotion);
+
+    articleRepository.save(article);
+
+    // (Opcional) Si quieres guardar también la promoción explícitamente:
+    // articlePromotionRepository.save(promotion);
+  }
+
+  @Transactional
+  public void cancelSubscription(Long articleId, String planType) {
+    Article article = articleRepository.findById(articleId)
+      .orElseThrow(() -> new RuntimeException("Article not found"));
+
+    PromoteType promoteType = PromoteType.valueOf(planType);
+
+    article.getPromotions().forEach(promotion -> {
+      if (promotion.getPromoteType() == promoteType) {
+        promotion.setCancelled(true);
+      }
+    });
+
+    articleRepository.save(article);
+  }
+
 
 
 

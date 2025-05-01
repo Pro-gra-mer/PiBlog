@@ -7,6 +7,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+
 import com.piblogchain.backend.enums.PromoteType;
 
 
@@ -87,10 +89,14 @@ public class ArticleDTO {
   private String planType;
   private LocalDateTime expirationAt;
 
-
+  private List<ActivePlanDTO> activePlans;
 
   // Constructor vacío
   public ArticleDTO() {}
+
+  public ArticleDTO(List<ActivePlanDTO> activePlans) {
+    this.activePlans = activePlans;
+  }
 
   // Constructor completo (opcional)
   public ArticleDTO(Long id, String company, String app, String title, String description, String headerImage,
@@ -118,6 +124,7 @@ public class ArticleDTO {
     this.rejectionReason = rejectionReason;
     this.planType = planType;
     this.expirationAt = expirationAt;
+
   }
 
 
@@ -291,6 +298,11 @@ public class ArticleDTO {
     this.expirationAt = expirationAt;
   }
 
+  public List<ActivePlanDTO> getActivePlans() {
+    return activePlans;
+  }
 
-
+  public void setActivePlans(List<ActivePlanDTO> activePlans) {
+    this.activePlans = activePlans;
+  }
 }

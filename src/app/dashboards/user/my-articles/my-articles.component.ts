@@ -10,33 +10,43 @@ import { Router } from '@angular/router';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './my-articles.component.html',
-  styleUrl: './my-articles.component.css',
+  styleUrls: ['./my-articles.component.css'],
 })
 export class MyArticlesComponent implements OnInit {
   articles: Article[] = [];
   loading = true;
   error = '';
-  showDeleteModal = false;
-  articleIdToDelete: number | null = null;
   today = new Date();
   showPlanModal = false;
   isPromoteMode = false;
   selectedArticleId: number | null = null;
+  selectedPlanType: string | null = null;
+  mainSliderInfo: any = null;
+  categorySliderInfo: any = null;
+
+  // Modal genérico de confirmación
+  confirmationModal = {
+    visible: false,
+    title: '',
+    message: '',
+    confirmLabel: 'Confirm',
+    cancelLabel: 'Cancel',
+    onConfirm: () => {},
+  };
 
   constructor(
     private articleService: ArticleService,
     private paymentService: PaymentService,
     private router: Router,
-    private cdr: ChangeDetectorRef // Para forzar detección de cambios
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.articleService.getUserPublishedArticles().subscribe({
       next: (articles) => {
         this.articles = articles.filter((article) => article.id != null);
-        console.log('Artículos publicados:', this.articles);
         this.loading = false;
-        this.cdr.detectChanges(); // Forzar detección de cambios
+        this.cdr.detectChanges();
       },
       error: () => {
         this.error = 'Error loading your published articles.';
@@ -44,97 +54,208 @@ export class MyArticlesComponent implements OnInit {
         this.cdr.detectChanges();
       },
     });
-
-    // Escuchar el evento para actualizar expirationAt
-    this.paymentService.renewalCompleted$.subscribe(
-      ({ articleId, expirationAt, planType }) => {
-        const updatedArticle = this.articles.find((a) => a.id === articleId);
-        if (updatedArticle) {
-          updatedArticle.expirationAt = expirationAt;
-          console.log(
-            `✅ Expiration actualizada para artículo ${articleId}: ${expirationAt}`
-          );
-          updatedArticle.planType = planType;
-          this.cdr.detectChanges();
-        } else {
-          console.warn(`Artículo con ID ${articleId} no encontrado`);
-        }
-      }
-    );
   }
 
-  openDeleteModal(id: number): void {
-    this.articleIdToDelete = id;
-    this.showDeleteModal = true;
+  openModal(article: Article, action: string): void {
+    this.selectedArticleId = article.id!;
+    this.isPromoteMode = action === 'promote';
+
+    const categorySlug = article.category.slug || null;
+
+    this.paymentService
+      .getSlotInfo('MAIN_SLIDER', null)
+      .subscribe((mainSliderData) => {
+        this.mainSliderInfo = mainSliderData;
+        this.paymentService
+          .getSlotInfo('CATEGORY_SLIDER', categorySlug)
+          .subscribe((categorySliderData) => {
+            this.categorySliderInfo = categorySliderData;
+            this.showPlanModal = true;
+          });
+      });
   }
 
-  confirmDelete(): void {
-    if (this.articleIdToDelete !== null) {
-      this.articleService
-        .deleteArticleWithCleanup(this.articleIdToDelete)
-        .subscribe({
-          next: () => {
-            this.articles = this.articles.filter(
-              (a) => a.id !== this.articleIdToDelete
-            );
-            this.showDeleteModal = false;
-            this.articleIdToDelete = null;
-            this.cdr.detectChanges();
-          },
-          error: () => {
-            this.error = 'Could not delete the article.';
-            this.showDeleteModal = false;
-            this.cdr.detectChanges();
-          },
-        });
-    }
-  }
+  openActivateModal(article: Article, planType: string): void {
+    this.selectedArticleId = article.id!;
+    this.selectedPlanType = planType;
 
-  cancelDelete(): void {
-    this.showDeleteModal = false;
-    this.articleIdToDelete = null;
-  }
-
-  renewSubscription(articleId: number, planType: string): void {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    if (!user.accessToken) {
-      alert('You must be logged in with Pi to make payments.');
+    if (planType === 'CATEGORY_SLIDER' && !article.category?.slug) {
+      alert('Error: Este artículo no tiene una categoría asignada.');
       return;
     }
 
-    this.paymentService.renewSubscription(articleId, planType);
-  }
-
-  isExpired(expirationAt: string | null | undefined): boolean {
-    return expirationAt ? new Date(expirationAt) < new Date() : false;
-  }
-
-  openPromoteModal(article: Article): void {
-    this.selectedArticleId = article.id!;
-    this.isPromoteMode = true;
     this.showPlanModal = true;
-  }
-
-  openRenewModal(article: Article): void {
-    this.selectedArticleId = article.id!;
     this.isPromoteMode = false;
-    this.showPlanModal = true;
+    this.loadPlanInfo(planType);
+  }
+
+  loadPlanInfo(planType: string): void {
+    const article = this.articles.find((a) => a.id === this.selectedArticleId);
+    const categorySlug = article?.category?.slug || null;
+
+    if (!categorySlug && planType === 'CATEGORY_SLIDER') {
+      alert('Error: No se encontró la categoría para este artículo.');
+      return;
+    }
+
+    this.paymentService.getSlotInfo(planType, categorySlug).subscribe({
+      next: (response) => {
+        if (planType === 'MAIN_SLIDER') {
+          this.mainSliderInfo = response;
+        } else if (planType === 'CATEGORY_SLIDER') {
+          this.categorySliderInfo = response;
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        alert('Error loading plan information. Please try again.');
+      },
+    });
   }
 
   handlePlanSelection(planType: string): void {
     if (!this.selectedArticleId) return;
 
-    if (this.isPromoteMode) {
-      this.paymentService.promoteArticle(this.selectedArticleId, planType);
-    } else {
-      this.paymentService.renewSubscription(this.selectedArticleId, planType);
+    const selectedArticle = this.articles.find(
+      (a) => a.id === this.selectedArticleId
+    );
+    if (!selectedArticle) return;
+
+    const categorySlug = selectedArticle.category?.slug?.trim() || null;
+
+    if (!categorySlug && planType === 'CATEGORY_SLIDER') {
+      alert("Error: This article doesn't have a valid category.");
+      return;
     }
 
-    this.closePlanModal();
+    this.paymentService
+      .activatePlan(this.selectedArticleId, planType, categorySlug)
+      .subscribe({
+        next: (response) => {
+          const expirationAt =
+            response?.expirationAt ||
+            new Date(
+              new Date().setDate(new Date().getDate() + 30)
+            ).toISOString();
+
+          const newPlan = { planType, expirationAt };
+
+          if (
+            selectedArticle.activePlans &&
+            Array.isArray(selectedArticle.activePlans)
+          ) {
+            const existingIndex = selectedArticle.activePlans.findIndex(
+              (p) => p.planType === planType
+            );
+            if (existingIndex !== -1) {
+              selectedArticle.activePlans[existingIndex] = newPlan;
+            } else {
+              selectedArticle.activePlans.push(newPlan);
+            }
+          } else {
+            selectedArticle.activePlans = [newPlan];
+          }
+
+          this.cdr.detectChanges();
+          this.closePlanModal();
+        },
+        error: (err) => {
+          alert(`Error activating the plan ${planType}.`);
+          this.closePlanModal();
+        },
+      });
   }
 
   closePlanModal(): void {
     this.showPlanModal = false;
     this.selectedArticleId = null;
+    this.selectedPlanType = null;
+  }
+
+  // ✅ Modal de confirmación genérico
+  openConfirmationModal(
+    title: string,
+    message: string,
+    onConfirm: () => void,
+    confirmLabel: string = 'Confirm'
+  ): void {
+    this.confirmationModal = {
+      visible: true,
+      title,
+      message,
+      confirmLabel,
+      cancelLabel: 'Cancel',
+      onConfirm,
+    };
+  }
+
+  // ✅ Abrir modal para eliminar
+  openDeleteModal(id: number): void {
+    this.openConfirmationModal(
+      'Delete Article',
+      'Are you sure you want to delete this published article?',
+      () => this.confirmDelete(id),
+      'Yes, delete'
+    );
+  }
+
+  // ✅ Confirmar eliminar
+  confirmDelete(id: number): void {
+    this.articleService.deleteArticleWithCleanup(id).subscribe({
+      next: () => {
+        this.articles = this.articles.filter((a) => a.id !== id);
+        this.confirmationModal.visible = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.error = 'Could not delete the article.';
+        this.confirmationModal.visible = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  // ✅ Abrir modal para cancelar suscripción
+  openCancelModal(article: Article, planType: string): void {
+    const plan = article.activePlans?.find((p) => p.planType === planType);
+    if (!plan) return;
+
+    const date = new Date(plan.expirationAt).toLocaleDateString();
+    this.openConfirmationModal(
+      'Cancel Subscription',
+      `Your subscription will remain active until ${date}.`,
+      () => this.confirmCancel(article, planType)
+    );
+  }
+
+  // ✅ Confirmar cancelación de suscripción
+  confirmCancel(article: Article, planType: string): void {
+    this.articleService.cancelSubscription(article.id, planType).subscribe({
+      next: () => {
+        const plan = article.activePlans?.find((p) => p.planType === planType);
+        if (plan) plan.cancelled = true;
+        this.confirmationModal.visible = false;
+      },
+      error: () => {
+        alert('Failed to cancel the subscription.');
+        this.confirmationModal.visible = false;
+      },
+    });
+  }
+
+  // Utilidades
+  isExpired(expirationAt: string | null | undefined): boolean {
+    if (!expirationAt) return false;
+    const expirationDate = new Date(expirationAt);
+    return expirationDate < new Date();
+  }
+
+  hasActivePlanType(article: Article, planType: string): boolean {
+    return (
+      article.activePlans?.some(
+        (plan) =>
+          plan.planType === planType && !this.isExpired(plan.expirationAt)
+      ) || false
+    );
   }
 }

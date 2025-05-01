@@ -141,4 +141,17 @@ export class ArticleService {
   rejectArticle(id: number, reason: string): Observable<any> {
     return this.http.put(`${this.apiUrl}/${id}/reject`, { reason });
   }
+
+  cancelSubscription(articleId: number, planType: string): Observable<any> {
+    return this.http.delete(
+      `${environment.apiUrl}/api/payments/cancel-subscription`,
+      {
+        params: {
+          articleId: articleId.toString(),
+          planType,
+        },
+        responseType: 'text',
+      }
+    );
+  }
 }

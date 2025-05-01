@@ -13,69 +13,75 @@
         <div>
           <h3 class="text-lg font-bold text-primary">{{ article.title }}</h3>
           <p class="text-sm text-gray-500">
-            {{ article.app }} —
-            <span class="italic">{{ article.category.name }}</span>
+            {{ article.company }} - {{ article.app }} -
+            {{ article.category.name }}
           </p>
+
           <span
             class="inline-block mt-1 text-xs font-semibold px-2 py-1 rounded bg-green-100 text-green-800 uppercase tracking-wide"
           >
             {{ article.status }}
           </span>
-
-          <!-- Plan and expiration -->
-          <div
-            *ngIf="article.planType"
-            class="text-sm text-gray-600 mt-2 flex flex-wrap items-center gap-2"
-          >
-            <span
-              class="inline-block px-2 py-1 text-xs font-medium rounded-full"
-              [ngClass]="{
-                'bg-blue-100 text-blue-800': article.planType === 'STANDARD',
-                'bg-purple-100 text-purple-800':
-                  article.planType === 'CATEGORY_SLIDER',
-                'bg-pink-100 text-pink-800': article.planType === 'MAIN_SLIDER'
-              }"
+          <!-- Planes activos -->
+          <div class="text-sm text-gray-600 mt-4 flex flex-col gap-2">
+            <div
+              *ngFor="let plan of article.activePlans"
+              class="flex items-center gap-2 flex-wrap"
             >
-              {{ article.planType }}
-            </span>
+              <ng-container *ngIf="plan.planType !== 'STANDARD'">
+                <span
+                  class="inline-block px-2 py-1 text-xs font-medium rounded-full"
+                  [ngClass]="{
+                    'bg-pink-100 text-pink-800':
+                      plan.planType === 'MAIN_SLIDER',
+                    'bg-purple-100 text-purple-800':
+                      plan.planType === 'CATEGORY_SLIDER'
+                  }"
+                >
+                  {{ plan.planType }}
+                </span>
 
-            <span
-              *ngIf="
-                article.expirationAt && !isExpired(article.expirationAt);
-                else expired
-              "
-              class="text-xs text-gray-500"
+                <ng-container *ngIf="!plan.cancelled; else cancelledInfo">
+                  <a
+                    href="javascript:void(0)"
+                    (click)="openCancelModal(article, plan.planType)"
+                    class="text-black hover:underline text-xs"
+                  >
+                    Cancel Subscription
+                  </a>
+                </ng-container>
+                <ng-template #cancelledInfo>
+                  <span class="text-xs text-gray-500">
+                    Expires on {{ plan.expirationAt | date : "mediumDate" }}
+                  </span>
+                </ng-template>
+              </ng-container>
+            </div>
+          </div>
+
+          <!-- Enlaces para activar planes -->
+          <div class="mt-4 text-sm text-gray-600 flex flex-wrap gap-4">
+            <a
+              *ngIf="!hasActivePlanType(article, 'CATEGORY_SLIDER')"
+              href="javascript:void(0)"
+              (click)="openActivateModal(article, 'CATEGORY_SLIDER')"
+              class="text-purple-800 hover:underline"
             >
-              Expires on {{ article.expirationAt | date : "mediumDate" }}
-            </span>
-
-            <ng-template #expired>
-              <span class="text-xs text-red-500 font-medium"
-                >No subscription</span
-              >
-            </ng-template>
+              Activate Category Slider
+            </a>
+            <a
+              *ngIf="!hasActivePlanType(article, 'MAIN_SLIDER')"
+              href="javascript:void(0)"
+              (click)="openActivateModal(article, 'MAIN_SLIDER')"
+              class="text-pink-800 hover:underline"
+            >
+              Activate Main Slider
+            </a>
           </div>
         </div>
 
-        <!-- Action buttons -->
+        <!-- Botón eliminar -->
         <div class="flex flex-col gap-2 items-end sm:ml-4 mt-2 sm:mt-0">
-          <!-- Solo muestra "Renew" si el plan no es STANDARD -->
-          <button
-            *ngIf="article.planType"
-            class="px-4 py-2 bg-green-600 text-sm text-white rounded hover:bg-yellow-500"
-            (click)="openRenewModal(article)"
-          >
-            Renew
-          </button>
-
-          <button
-            *ngIf="article.planType === 'STANDARD'"
-            class="px-4 py-2 bg-blue-600 text-sm text-white rounded hover:bg-blue-700"
-            (click)="openPromoteModal(article)"
-          >
-            Promote
-          </button>
-
           <button
             (click)="openDeleteModal(article.id)"
             class="px-6 py-2 bg-red-600 text-sm text-white rounded hover:bg-red-700"
@@ -95,60 +101,60 @@
   </div>
 </section>
 
-<div
-  *ngIf="showDeleteModal"
-  class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
->
-  <div class="bg-white p-6 rounded-lg shadow-lg w-80 text-center">
-    <h3 class="text-lg font-semibold text-red-600 mb-4">Delete Article</h3>
-    <p class="text-gray-700 mb-6">
-      Are you sure you want to delete this published article?
-    </p>
-    <div class="flex justify-center space-x-4">
-      <button
-        (click)="confirmDelete()"
-        class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-      >
-        Yes, delete
-      </button>
-      <button
-        (click)="cancelDelete()"
-        class="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
-      >
-        Cancel
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Renew/Promote -->
+<!-- Modal Activación Plan -->
 <div
   *ngIf="showPlanModal"
   class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
 >
   <div class="bg-white p-6 rounded-lg shadow-lg w-96">
     <h2 class="text-xl font-semibold text-center mb-4 text-primary">
+      Activate plan
       {{
-        isPromoteMode ? "Promote article in featured apps" : "Renew your plan"
+        selectedPlanType === "MAIN_SLIDER" ? "Main Slider" : "Category Slider"
       }}
     </h2>
 
     <p class="text-sm text-gray-600 text-center mb-4">
-      Choose a plan to {{ isPromoteMode ? "promote" : "renew" }} your article.
+      Promote your article in the
+      {{
+        selectedPlanType === "MAIN_SLIDER" ? "Main Slider" : "Category Slider"
+      }}.
     </p>
+
+    <div *ngIf="selectedPlanType === 'MAIN_SLIDER'">
+      <p class="text-sm mb-2 text-gray-700">
+        Available Slots for Main Slider:
+        {{ mainSliderInfo?.remainingSlots }} of {{ mainSliderInfo?.totalSlots }}
+      </p>
+    </div>
+
+    <div *ngIf="selectedPlanType === 'CATEGORY_SLIDER'">
+      <p class="text-sm mb-2 text-gray-700">
+        Available Slots for
+        <span *ngIf="categorySliderInfo?.categoryName">
+          ({{ categorySliderInfo?.categoryName }})</span
+        >: {{ categorySliderInfo?.remainingSlots }} of
+        {{ categorySliderInfo?.totalSlots }}
+      </p>
+    </div>
 
     <div class="flex flex-col gap-3">
       <button
+        *ngIf="selectedPlanType === 'MAIN_SLIDER'"
         (click)="handlePlanSelection('MAIN_SLIDER')"
         class="px-4 py-2 bg-pink-600 text-white rounded hover:bg-pink-700"
+        [disabled]="mainSliderInfo?.remainingSlots === 0"
       >
-        Main Slider
+        Main Slider - ${{ mainSliderInfo?.price }}/mo
       </button>
+
       <button
+        *ngIf="selectedPlanType === 'CATEGORY_SLIDER'"
         (click)="handlePlanSelection('CATEGORY_SLIDER')"
         class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+        [disabled]="categorySliderInfo?.remainingSlots === 0"
       >
-        Category Slider
+        Category Slider - ${{ categorySliderInfo?.price }}/mo
       </button>
     </div>
 
@@ -158,6 +164,33 @@
         class="text-sm text-gray-500 hover:text-gray-700"
       >
         Cancel
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ Modal Genérico de Confirmación -->
+<div
+  *ngIf="confirmationModal.visible"
+  class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
+>
+  <div class="bg-white p-6 rounded-lg shadow-lg w-96 text-center">
+    <h3 class="text-lg font-semibold text-red-600 mb-4">
+      {{ confirmationModal.title }}
+    </h3>
+    <p class="text-gray-700 mb-4">{{ confirmationModal.message }}</p>
+    <div class="flex justify-center space-x-4">
+      <button
+        (click)="confirmationModal.onConfirm()"
+        class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+      >
+        {{ confirmationModal.confirmLabel }}
+      </button>
+      <button
+        (click)="confirmationModal.visible = false"
+        class="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
+      >
+        {{ confirmationModal.cancelLabel }}
       </button>
     </div>
   </div>

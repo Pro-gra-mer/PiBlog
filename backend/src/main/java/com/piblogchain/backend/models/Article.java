@@ -1,9 +1,13 @@
 package com.piblogchain.backend.models;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.piblogchain.backend.enums.ArticleStatus;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import com.piblogchain.backend.enums.PromoteType;
 
@@ -81,11 +85,6 @@ public class Article {
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
-  @Schema(description = "Where the promotional video will appear", example = "CATEGORY_SLIDER")
-  private PromoteType promoteType;
-
-  @Enumerated(EnumType.STRING)
-  @Column(nullable = false)
   @Schema(
     description = "Indicates the status of the article",
     example = "DRAFT"
@@ -112,6 +111,13 @@ public class Article {
   @Schema(description = "Reason for article rejection", example = "The article did not meet quality standards.")
   private String rejectionReason;
 
+  @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<ArticlePromotion> promotions = new ArrayList<>();
+
+  @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
+  @JsonManagedReference
+  private List<ArticlePromotion> activePlans = new ArrayList<>();
+
 
   // Constructor por defecto
   public Article() {}
@@ -119,7 +125,7 @@ public class Article {
   // Constructor con parámetros
   public Article(String company, String app, String title, String description,
                  String headerImage, String headerImagePublicId, LocalDateTime headerImageUploadDate,
-                 Category category, String content, LocalDate publishDate, PromoteType  promoteType ,
+                 Category category, String content, LocalDate publishDate,
                  String promoVideo, String promoVideoPublicId, LocalDateTime promoVideoUploadDate,
                  ArticleStatus status, String createdBy, String rejectionReason) {
     this.company = company;
@@ -134,7 +140,6 @@ public class Article {
     this.categorySlug = (category != null) ? category.getSlug() : null;
     this.content = content;
     this.publishDate = publishDate;
-    this.promoteType  = promoteType ;
     this.promoVideo = promoVideo;
     this.promoVideoPublicId = promoVideoPublicId;
     this.promoVideoUploadDate = promoVideoUploadDate;
@@ -251,14 +256,6 @@ public class Article {
     this.publishDate = publishDate;
   }
 
-  public PromoteType getPromoteType() {
-    return promoteType;
-  }
-
-  public void setPromoteType(PromoteType promoteType) {
-    this.promoteType = promoteType;
-  }
-
   public ArticleStatus getStatus() {
     return status;
   }
@@ -305,6 +302,22 @@ public class Article {
 
   public void setRejectionReason(String rejectionReason) {
     this.rejectionReason = rejectionReason;
+  }
+
+  public List<ArticlePromotion> getPromotions() {
+    return promotions;
+  }
+
+  public void setPromotions(List<ArticlePromotion> promotions) {
+    this.promotions = promotions;
+  }
+
+  public List<ArticlePromotion> getActivePlans() {
+    return activePlans;
+  }
+
+  public void setActivePlans(List<ArticlePromotion> activePlans) {
+    this.activePlans = activePlans;
   }
 
 }

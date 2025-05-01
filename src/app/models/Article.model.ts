@@ -32,4 +32,11 @@ export interface Article {
 
   planType?: string;
   expirationAt?: string; // o Date si prefieres formatearlo mejor
+
+  // Nuevas propiedades para manejar múltiples planes
+  activePlans?: Array<{
+    planType: string;
+    expirationAt: string;
+    cancelled?: boolean;
+  }>;
 }

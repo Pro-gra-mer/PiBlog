@@ -73,7 +73,7 @@ export class CreateArticleComponent implements AfterViewInit {
         new Date().toISOString().split('T')[0],
         Validators.required,
       ],
-      promoteType: ['NONE'],
+      promoteType: ['STANDARD'],
 
       promoVideo: [''],
       promoVideoPublicId: [''],
@@ -256,17 +256,22 @@ export class CreateArticleComponent implements AfterViewInit {
     }
 
     const formValues = this.articleForm.value;
+
+    // Eliminar promoteType si es STANDARD o undefined
+    if (!formValues.promoteType || formValues.promoteType === 'STANDARD') {
+      delete formValues.promoteType;
+    }
+
     const articlePayload: Article = {
       ...formValues,
       content: sanitizedContent,
       approved: false,
       status: this.isAdmin ? 'PUBLISHED' : 'PENDING_APPROVAL',
-      promoteType: formValues.promoteType,
       category: formValues.category ? { name: formValues.category.name } : null,
       headerImageUploadDate: formValues.headerImageUploadDate
         ? new Date(formValues.headerImageUploadDate).toISOString()
         : null,
-      promoビデオUploadDate: formValues.promoVideoUploadDate
+      promoVideoUploadDate: formValues.promoVideoUploadDate
         ? new Date(formValues.promoVideoUploadDate).toISOString()
         : null,
     };

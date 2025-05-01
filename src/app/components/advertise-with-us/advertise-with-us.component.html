@@ -1,80 +1,50 @@
-<div
-  *ngIf="showSuccess"
-  class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-4 rounded-xl shadow-lg z-50 animate-fade-in-out transition duration-300"
->
-  🎉 Payment completed successfully!
-</div>
-
-<div
-  *ngIf="showLoginMessage"
-  class="mt-24 bg-red-600 text-white px-6 py-4 rounded-xl shadow-lg animate-fade-in-out transition duration-300 max-w-2xl mx-auto"
->
-  ⚠️ You must <strong>sign in</strong> to publish or promote your app.
-</div>
-
-<!-- Advertise with Us Component (Pricing Cards) -->
 <section class="container mx-auto py-20 mt-6 text-center">
-  <h2 class="text-4xl font-bold text-primary mb-10">Advertise with Us</h2>
+  <h2 class="text-4xl font-bold text-primary mb-6">Advertise with Us</h2>
+
   <p class="text-secondary max-w-2xl mx-auto mb-12">
-    Promote your Pi Network app with an article, video, and exclusive slider
-    exposure. Get noticed by thousands of users looking for the next great app!
+    Pay once to publish an article about your Pi Network app. After publication,
+    you can choose to promote it further in our sliders.
   </p>
 
-  <div class="flex flex-wrap justify-center gap-6">
-    <!-- Standard Plan -->
-    <div
-      class="p-6 border border-accent rounded-lg shadow-lg shadow-gradientEnd flex flex-col items-start text-left max-w-md"
-    >
-      <h3 class="text-2xl font-bold text-accent text-center w-full">
-        Standard
-      </h3>
-      <p class="text-secondary mt-4">
-        <span class="block"
-          >✔ Publish <strong>1 article</strong> featuring your app.</span
-        >
-        <span class="block"
-          >✔ Include <strong>1 video</strong> in your article.</span
-        >
-        <span class="block"
-          >✔ <span class="text-primary font-bold">One-time fee</span>, no
-          subscription.</span
-        >
-        <span class="block">✔ You can delete your article at any time.</span>
-        <span class="block text-sm text-gray-500 mt-2"
-          >🚫 No slider exposure included.</span
-        >
-      </p>
-      <div class="mt-4 flex items-center justify-center w-full">
-        <p class="text-primary font-bold text-xl">3€ (One-time)</p>
-      </div>
-      <button
-        class="mt-6 bg-accent text-background py-2 px-6 rounded-lg hover:bg-opacity-80 w-full"
-        (click)="openConfirmModal(PromoteType.STANDARD)"
-      >
-        Publish Now
-      </button>
-    </div>
+  <!-- Publicar artículo -->
 
-    <!-- Category Slider Plan -->
-    <!-- Category Slider Plan -->
-    <div
-      class="p-6 border-2 border-accent rounded-lg shadow-lg shadow-gradientEnd flex flex-col items-start text-left max-w-md"
-    >
-      <h3 class="text-2xl font-bold text-accent text-center w-full">
-        Category Slider
-      </h3>
+  <div
+    class="max-w-md mx-auto p-6 border border-accent rounded-xl shadow-lg shadow-gradientEnd mb-12"
+  >
+    <h3 class="text-2xl font-bold text-accent">Publish an Article</h3>
 
-      <p class="text-secondary mt-4">
-        <span class="block"
-          >✔ Publish <strong>1 article</strong> featuring your app.</span
-        >
-        <span class="block"
-          >✔ Video <strong>featured in the category slider</strong>.</span
-        >
-        <span class="block text-sm text-secondary">
-          ✔ Videos rotate every <strong>15–30 seconds</strong>.
-        </span>
-        <span class="block">✔ You can delete your article at any time.</span>
+    <p class="mt-4 text-secondary">
+      ✔ Write and submit an article about your app. <br />
+
+      ✔ Add a video, images, and choose a category. <br />
+
+      ✔ One-time payment, no subscription.
+    </p>
+
+    <p class="mt-4 text-primary font-bold text-xl">3€ (One-time)</p>
+
+    <button
+      class="mt-6 bg-accent text-background py-2 px-6 rounded-lg hover:bg-opacity-80 w-full"
+      (click)="openConfirmModal(PromoteType.STANDARD)"
+    >
+      Publish Now
+    </button>
+  </div>
+
+  <!-- Información sobre promoción (no activa desde aquí) -->
+
+  <div class="grid gap-6 md:grid-cols-2 max-w-4xl mx-auto">
+    <!-- Category Slider Info -->
+
+    <div class="p-6 border-2 border-purple-600 rounded-xl shadow">
+      <h4 class="text-xl font-bold text-purple-800 mb-4">Category Slider</h4>
+
+      <p class="text-secondary mb-4">
+        ✔ Promote your article in a specific category. <br />
+
+        ✔ Video rotates every 15–30s. <br />
+
+        ✔ Monthly subscription.
       </p>
 
       <!-- Selector de categoría -->
@@ -103,92 +73,30 @@
             : "Select a category"
         }}
       </span>
-
-      <!-- Precio y botón -->
-      <div class="mt-4 flex items-center justify-center w-full">
-        <p class="text-primary font-bold text-xl">15€ / Month</p>
-      </div>
-      <button
-        [disabled]="!selectedCategory || !categorySliderAvailable"
-        class="mt-6 bg-accent text-background py-2 px-6 rounded-lg hover:bg-opacity-80 w-full disabled:opacity-50"
-        (click)="openConfirmModal(PromoteType.CATEGORY_SLIDER)"
-      >
-        {{ categorySliderAvailable ? "Get Featured" : "No Slots Available" }}
-      </button>
     </div>
 
-    <!-- Main Slider Plan -->
-    <div
-      class="p-6 border-2 border-primary rounded-lg shadow-lg shadow-gradientEnd flex flex-col items-start text-left max-w-md"
-    >
-      <h3 class="text-2xl font-bold text-accent text-center w-full">
-        Main Slider
-      </h3>
-      <p class="text-secondary mt-4">
-        <span class="block"
-          >✔ Publish <strong>1 article</strong> featuring your app.</span
-        >
-        <span class="block"
-          >✔ The article will appear in
-          <strong>featured apps</strong> section</span
-        >
-        <span class="block"
-          >✔ Video <strong>featured on the homepage slider</strong>.</span
-        >
+    <!-- Main Slider Info -->
 
-        <span class="block text-sm text-secondary">
-          ✔ Rotates every <strong>15–30 seconds</strong> for maximum visibility.
-        </span>
+    <div class="p-6 border-2 border-pink-600 rounded-xl shadow">
+      <h4 class="text-xl font-bold text-pink-800 mb-2">Main Slider</h4>
 
-        <span class="block text-sm text-secondary">
-          ✔ If canceled, the video will be removed from the slider but the
-          article remains online.
-        </span>
+      <p class="text-secondary">
+        ✔ Maximum visibility on homepage. <br />
+
+        ✔ Includes your video and title. <br />
+
+        ✔ Monthly subscription.
       </p>
-      <span class="block">✔ You can delete your article at any time.</span>
-      <span class="block mt-2">
-        <p class="text-sm text-red-500 font-bold">
-          ✔ {{ availableSlots["MAIN_SLIDER"] || 0 }} global spots available
-        </p>
-      </span>
-      <div class="mt-4 flex items-center justify-center w-full">
-        <p class="text-primary font-bold text-xl">25€ / Month</p>
-      </div>
-      <button
-        [disabled]="!mainSliderAvailable"
-        class="mt-6 bg-primary text-background py-2 px-6 rounded-lg hover:bg-opacity-80 w-full disabled:opacity-50"
-        (click)="openConfirmModal(PromoteType.MAIN_SLIDER)"
-      >
-        {{
-          mainSliderAvailable ? "Get Maximum Visibility" : "No Slots Available"
-        }}
-      </button>
+
+      <p class="mt-2 text-sm text-gray-500">Limited to 5 global slots.</p>
+
+      <p class="mt-4 text-pink-600 font-semibold">
+        {{ availableSlots["MAIN_SLIDER"] || 0 }} slots available
+      </p>
     </div>
   </div>
+
+  <p class="mt-12 text-gray-500 text-sm">
+    You can promote your article after it's approved and published.
+  </p>
 </section>
-<div
-  *ngIf="showConfirmModal"
-  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
->
-  <div class="bg-white p-6 rounded-lg shadow-lg text-center max-w-md">
-    <h3 class="text-xl font-bold text-primary mb-4">Confirm Your Purchase</h3>
-    <p class="text-secondary mb-6">
-      Are you sure you want to purchase the
-      <strong>{{ selectedPlan }}</strong> plan?
-    </p>
-    <div class="flex justify-center gap-4">
-      <button
-        class="bg-primary text-white px-4 py-2 rounded hover:bg-opacity-80"
-        (click)="confirmPayment()"
-      >
-        Yes, Confirm
-      </button>
-      <button
-        class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400"
-        (click)="cancelPayment()"
-      >
-        Cancel
-      </button>
-    </div>
-  </div>
-</div>

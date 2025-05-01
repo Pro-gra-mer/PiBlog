@@ -1,5 +1,6 @@
 package com.piblogchain.backend.services;
 
+import com.piblogchain.backend.dto.ActivePlanDTO;
 import com.piblogchain.backend.dto.ArticleDTO;
 import com.piblogchain.backend.dto.CategoryDTO;
 import com.piblogchain.backend.enums.ArticleStatus;
@@ -119,7 +120,6 @@ public class ArticleService {
 
     article.setContent(articleDTO.getContent());
     article.setPublishDate(articleDTO.getPublishDate());
-    article.setPromoteType(articleDTO.getPromoteType());
     article.setPromoVideo(articleDTO.getPromoVideo());
     article.setPromoVideoPublicId(articleDTO.getPromoVideoPublicId());
     article.setPromoVideoUploadDate(articleDTO.getPromoVideoUploadDate());
@@ -127,6 +127,7 @@ public class ArticleService {
 
     return article;
   }
+
 
   public List<Article> getAllArticles() {
     return articleRepository.findAll();
@@ -219,7 +220,6 @@ public class ArticleService {
 
       article.setContent(articleDTO.getContent());
       article.setPublishDate(articleDTO.getPublishDate());
-      article.setPromoteType(articleDTO.getPromoteType());
       article.setPromoVideo(articleDTO.getPromoVideo());
       article.setPromoVideoPublicId(articleDTO.getPromoVideoPublicId());
       article.setPromoVideoUploadDate(articleDTO.getPromoVideoUploadDate());
@@ -303,54 +303,51 @@ public class ArticleService {
   }
 
   public List<Article> getPromotedVideosByType(PromoteType type) {
-    return articleRepository.findByPromoteTypeAndStatus(type, ArticleStatus.PUBLISHED).stream()
-      .filter(article -> {
-        return paymentRepository.findByArticle(article).stream()
-          .anyMatch(payment ->
-            "COMPLETED".equals(payment.getStatus()) &&
-              (payment.getExpirationAt() == null || payment.getExpirationAt().isAfter(LocalDateTime.now()))
-          );
-      })
+    return articleRepository.findByStatus(ArticleStatus.PUBLISHED).stream()
+      .filter(article -> article.getPromotions().stream()
+        .anyMatch(promotion ->
+          promotion.getPromoteType() == type &&
+            (promotion.getExpirationAt() == null || promotion.getExpirationAt().isAfter(LocalDateTime.now()))
+        )
+      )
       .toList();
   }
 
 
   public List<Article> getPromotedVideosByCategorySlug(String slug) {
-    List<Article> articles = articleRepository.findByPromoteTypeAndCategory_SlugIgnoreCaseAndStatus(
-      PromoteType.CATEGORY_SLIDER,
+    List<Article> articles = articleRepository.findByCategorySlugIgnoreCaseAndStatus(
       slug,
       ArticleStatus.PUBLISHED
     );
 
     return articles.stream()
-      .filter(article -> paymentRepository.findByArticle(article).stream()
-        .anyMatch(payment ->
-          "COMPLETED".equals(payment.getStatus()) &&
-            (payment.getExpirationAt() == null || payment.getExpirationAt().isAfter(LocalDateTime.now()))
+      .filter(article -> article.getPromotions().stream()
+        .anyMatch(promotion ->
+          promotion.getPromoteType() == PromoteType.CATEGORY_SLIDER &&
+            (promotion.getExpirationAt() == null || promotion.getExpirationAt().isAfter(LocalDateTime.now()))
         )
       )
       .toList();
   }
 
+
   public List<Article> getPromotedVideosForMainSlider() {
-    return articleRepository.findByPromoteTypeAndStatus(
-        PromoteType.MAIN_SLIDER,
-        ArticleStatus.PUBLISHED
-      ).stream()
-      .filter(article -> paymentRepository.findByArticle(article).stream()
-        .anyMatch(payment ->
-          "COMPLETED".equals(payment.getStatus()) &&
-            (payment.getExpirationAt() == null || payment.getExpirationAt().isAfter(LocalDateTime.now()))
+    return articleRepository.findByStatus(ArticleStatus.PUBLISHED).stream()
+      .filter(article -> article.getPromotions().stream()
+        .anyMatch(promotion ->
+          promotion.getPromoteType() == PromoteType.MAIN_SLIDER &&
+            (promotion.getExpirationAt() == null || promotion.getExpirationAt().isAfter(LocalDateTime.now()))
         )
       )
       .toList();
   }
+
 
 
   private ArticleDTO mapToDTO(Article article) {
     ArticleDTO dto = new ArticleDTO();
 
-    dto.setId(article.getId()); // Agregar esta línea
+    dto.setId(article.getId());
     dto.setApp(article.getApp());
     dto.setCompany(article.getCompany());
     dto.setTitle(article.getTitle());
@@ -362,7 +359,6 @@ public class ArticleService {
     dto.setCategory(new CategoryDTO(article.getCategoryName(), article.getCategorySlug()));
     dto.setContent(article.getContent());
     dto.setPublishDate(article.getPublishDate());
-    dto.setPromoteType(article.getPromoteType());
     dto.setPromoVideo(article.getPromoVideo());
     dto.setPromoVideoPublicId(article.getPromoVideoPublicId());
     dto.setPromoVideoUploadDate(article.getPromoVideoUploadDate());
@@ -370,14 +366,17 @@ public class ArticleService {
     dto.setCreatedBy(article.getCreatedBy());
     dto.setRejectionReason(article.getRejectionReason());
 
-    paymentRepository.findByArticle(article).stream()
-      .filter(p -> "COMPLETED".equals(p.getStatus()))
-      .max((p1, p2) -> p1.getCompletedAt().compareTo(p2.getCompletedAt()))
-      .ifPresent(payment -> {
-        dto.setPlanType(payment.getPlanType());
-        dto.setExpirationAt(payment.getExpirationAt());
-        dto.setPaymentId(payment.getId().toString());
-      });
+    List<ActivePlanDTO> activePlans = article.getPromotions().stream()
+      .filter(promotion -> promotion.getExpirationAt() == null || promotion.getExpirationAt().isAfter(LocalDateTime.now()))
+      .map(promotion -> new ActivePlanDTO(
+        promotion.getPromoteType().name(),
+        promotion.getExpirationAt(),
+        promotion.isCancelled() // ✅ añadir estado cancelado
+      ))
+      .toList();
+
+
+    dto.setActivePlans(activePlans);
 
     return dto;
   }
