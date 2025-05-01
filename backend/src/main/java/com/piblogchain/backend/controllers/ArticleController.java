@@ -17,6 +17,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -270,6 +271,14 @@ public class ArticleController {
 
     return ResponseEntity.ok(videoUrls);
   }
+
+  @GetMapping("/articles/featured")
+  public ResponseEntity<List<ArticleDTO>> getFeaturedArticles() {
+    List<ArticleDTO> featured = articleService.getFeaturedArticlesRotated();
+    return ResponseEntity.ok(featured);
+  }
+
+
 
 
 }

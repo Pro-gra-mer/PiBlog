@@ -24,6 +24,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -316,11 +317,8 @@ public class ArticleService {
 
   public List<Article> getPromotedVideosByCategorySlug(String slug) {
     List<Article> articles = articleRepository.findByCategorySlugIgnoreCaseAndStatus(
-      slug,
-      ArticleStatus.PUBLISHED
-    );
-
-    return articles.stream()
+        slug, ArticleStatus.PUBLISHED
+      ).stream()
       .filter(article -> article.getPromotions().stream()
         .anyMatch(promotion ->
           promotion.getPromoteType() == PromoteType.CATEGORY_SLIDER &&
@@ -328,11 +326,23 @@ public class ArticleService {
         )
       )
       .toList();
+
+    if (articles.isEmpty()) return articles;
+
+    int dayOfYear = LocalDate.now().getDayOfYear();
+    int rotationIndex = dayOfYear % articles.size();
+
+    List<Article> rotated = new ArrayList<>();
+    rotated.addAll(articles.subList(rotationIndex, articles.size()));
+    rotated.addAll(articles.subList(0, rotationIndex));
+
+    return rotated;
   }
 
 
+
   public List<Article> getPromotedVideosForMainSlider() {
-    return articleRepository.findByStatus(ArticleStatus.PUBLISHED).stream()
+    List<Article> articles = articleRepository.findByStatus(ArticleStatus.PUBLISHED).stream()
       .filter(article -> article.getPromotions().stream()
         .anyMatch(promotion ->
           promotion.getPromoteType() == PromoteType.MAIN_SLIDER &&
@@ -340,11 +350,23 @@ public class ArticleService {
         )
       )
       .toList();
+
+    if (articles.isEmpty()) return articles;
+
+    int dayOfYear = LocalDate.now().getDayOfYear();
+    int rotationIndex = dayOfYear % articles.size();
+
+    List<Article> rotated = new ArrayList<>();
+    rotated.addAll(articles.subList(rotationIndex, articles.size()));
+    rotated.addAll(articles.subList(0, rotationIndex));
+
+    return rotated;
   }
 
 
 
-  private ArticleDTO mapToDTO(Article article) {
+
+  public ArticleDTO mapToDTO(Article article) {
     ArticleDTO dto = new ArticleDTO();
 
     dto.setId(article.getId());
@@ -379,6 +401,30 @@ public class ArticleService {
     dto.setActivePlans(activePlans);
 
     return dto;
+  }
+
+  public List<ArticleDTO> getFeaturedArticlesRotated() {
+    List<Article> articles = articleRepository.findByStatus(ArticleStatus.PUBLISHED);
+
+    List<ArticleDTO> featured = articles.stream()
+      .map(this::mapToDTO)
+      .filter(dto -> dto.getActivePlans() != null && dto.getActivePlans().stream()
+        .anyMatch(plan -> !plan.isCancelled() &&
+          (plan.getPlanType().equals("MAIN_SLIDER") || plan.getPlanType().equals("CATEGORY_SLIDER")) &&
+          (plan.getExpirationAt() == null || plan.getExpirationAt().isAfter(LocalDateTime.now()))
+        )
+      ).toList();
+
+    // Rotar según el día del año (1–365)
+    int dayOfYear = LocalDate.now().getDayOfYear();
+    int rotationIndex = dayOfYear % featured.size();
+
+    // Rotar la lista
+    List<ArticleDTO> rotated = new ArrayList<>();
+    rotated.addAll(featured.subList(rotationIndex, featured.size()));
+    rotated.addAll(featured.subList(0, rotationIndex));
+
+    return rotated;
   }
 
 

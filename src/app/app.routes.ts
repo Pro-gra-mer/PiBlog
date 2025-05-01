@@ -12,10 +12,12 @@ import { PendingComponent } from './dashboards/user/pending/pending.component';
 import { AdminCategoryFormComponent } from './dashboards/admin/admin-category-form/admin-category-form.component';
 import { CategoryComponent } from './components/category/category.component';
 import { RejectedComponent } from './dashboards/user/rejected/rejected.component';
+import { FeaturedArticlesComponent } from './components/featured-articles/featured-articles.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
   { path: 'advertise', component: AdvertiseWithUsComponent },
+  { path: 'featured-articles', component: FeaturedArticlesComponent },
   { path: 'contact', component: ContactComponent },
   { path: 'articles/:id', component: ArticleDetailComponent },
   {

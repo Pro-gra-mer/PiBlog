@@ -154,4 +154,8 @@ export class ArticleService {
       }
     );
   }
+
+  getFeaturedArticles(): Observable<Article[]> {
+    return this.http.get<Article[]>(`${this.apiUrl}/featured`);
+  }
 }

@@ -1,0 +1,33 @@
+<section class="container mt-16 mx-auto max-w-screen-2xl py-10 px-4 flex-grow">
+  <h2 class="text-2xl font-bold mb-6 text-[#bd52a5]">Featured Articles</h2>
+
+  <div
+    class="grid gap-6"
+    style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr))"
+  >
+    <article
+      *ngFor="let article of featuredArticles"
+      class="bg-white shadow-md shadow-secondary rounded-lg border-l-4 border-[#e3b23c] overflow-hidden"
+    >
+      <img
+        *ngIf="article.headerImage"
+        [src]="article.headerImage"
+        alt="{{ article.title }}"
+        class="w-full h-40 object-cover"
+      />
+
+      <div class="p-4">
+        <h3 class="text-xl font-bold text-indigo-900">{{ article.title }}</h3>
+        <p class="mt-2 text-gray-700">
+          {{ article.description | slice : 0 : 150 }}...
+        </p>
+        <a
+          [routerLink]="'/articles/' + article.id"
+          class="text-[#bd52a5] mt-4 inline-block hover:text-yellow-400 cursor-pointer"
+        >
+          Read more
+        </a>
+      </div>
+    </article>
+  </div>
+</section>
