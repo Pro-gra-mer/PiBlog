@@ -43,6 +43,7 @@ public class SecurityConfig {
         .requestMatchers(HttpMethod.GET, "/api/articles/promoted-videos").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/articles/promoted-videos/category/**").permitAll()
         .requestMatchers(HttpMethod.GET,"/api/payments/slots").permitAll()
+        .requestMatchers(HttpMethod.POST, "/api/contact").permitAll()
 
 
         // Pagos

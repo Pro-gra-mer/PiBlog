@@ -5,49 +5,103 @@
     class="p-8 bg-white rounded-lg shadow-lg shadow-gradientEnd max-w-lg w-full relative"
   >
     <h3 class="text-3xl font-bold text-accent text-center">Contact Us</h3>
-    <p class="text-secondary mt-2 text-sm text-gray-500 text-center">
+    <p class="text-secondary mt-2 text-sm text-center">
       We’d love to hear from you! Fill out the form below and let’s connect.
     </p>
 
-    <form class="mt-6 space-y-4">
+    <!-- Mensaje de éxito -->
+    <div
+      *ngIf="showSuccessMessage"
+      class="mt-4 p-3 rounded bg-green-100 text-green-800 text-sm font-medium"
+    >
+      ✅ Your message has been sent successfully!
+    </div>
+
+    <!-- Mensaje de error -->
+    <div
+      *ngIf="errorMessage"
+      class="mt-4 p-3 rounded bg-red-100 text-red-800 text-sm font-medium"
+    >
+      ❌ {{ errorMessage }}
+    </div>
+
+    <form
+      [formGroup]="contactForm"
+      (ngSubmit)="onSubmit()"
+      class="mt-6 space-y-4"
+    >
+      <!-- Nombre -->
       <div>
-        <label class="text-secondary font-medium block" for="name"
-          >Full Name</label
-        >
+        <label class="text-secondary font-medium block" for="name">
+          Full Name
+        </label>
         <input
           id="name"
           type="text"
+          formControlName="name"
           placeholder="Your Name"
           class="w-full mt-1 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary bg-background"
         />
+        <div
+          *ngIf="
+            contactForm.get('name')?.touched && contactForm.get('name')?.invalid
+          "
+          class="text-red-500 text-sm mt-1"
+        >
+          Name is required (min. 3 characters).
+        </div>
       </div>
 
+      <!-- Email -->
       <div>
-        <label class="text-secondary font-medium block" for="email"
-          >Email</label
-        >
+        <label class="text-secondary font-medium block" for="email">
+          Email
+        </label>
         <input
           id="email"
           type="email"
+          formControlName="email"
           placeholder="Your Email"
           class="w-full mt-1 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary bg-background"
         />
+        <div
+          *ngIf="
+            contactForm.get('email')?.touched &&
+            contactForm.get('email')?.invalid
+          "
+          class="text-red-500 text-sm mt-1"
+        >
+          A valid email is required.
+        </div>
       </div>
 
+      <!-- Mensaje -->
       <div>
-        <label class="text-secondary font-medium block" for="message"
-          >Message</label
-        >
+        <label class="text-secondary font-medium block" for="message">
+          Message
+        </label>
         <textarea
           id="message"
           rows="4"
+          formControlName="message"
           placeholder="Type your message..."
           class="w-full mt-1 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary bg-background"
         ></textarea>
+        <div
+          *ngIf="
+            contactForm.get('message')?.touched &&
+            contactForm.get('message')?.invalid
+          "
+          class="text-red-500 text-sm mt-1"
+        >
+          Message is required (min. 10 characters).
+        </div>
       </div>
 
+      <!-- Botón -->
       <button
         type="submit"
+        [disabled]="contactForm.invalid"
         class="w-full py-3 bg-primary text-background font-bold rounded-xl hover:bg-opacity-90 transition-all duration-300"
       >
         Send Message
