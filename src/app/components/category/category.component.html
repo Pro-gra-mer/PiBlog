@@ -1,55 +1,112 @@
-<div
-  class="text-accent mt-16 mb-2 md:mt-20 py-40 md:py-72 text-left px-6 md:px-12 relative bg-no-repeat bg-cover bg-center rounded shadow-md shadow-secondary"
-  style="
-    background-image: url('assets/images/pi-cabecera.jpg');
-    background-size: cover;
-    background-position: center;
-  "
-></div>
+<div *ngIf="category" class="w-full mt-10 mb-2 md:mt-18">
+  <div
+    class="grid grid-cols-1 md:grid-cols-3 items-center min-h-[600px] w-full relative"
+  >
+    <!-- Columna izquierda -->
+    <div
+      class="relative col-span-1 w-full h-full flex items-center justify-center bg-gradient-to-br from-[#f4f5fb] to-[#e7e9f3] overflow-hidden"
+    >
+      <div
+        *ngIf="category.emoji"
+        class="absolute text-[220px] text-[#bd52a5]/10 top-6 left-6 select-none pointer-events-none"
+      >
+        {{ category.emoji }}
+      </div>
 
-<!-- Ajusta la altura según Home -->
+      <div class="text-center px-6 md:px-8 z-10">
+        <span
+          class="uppercase text-sm tracking-widest text-[#bd52a5] block mb-2"
+        >
+          {{ category.name }}
+        </span>
+        <h1 class="text-4xl font-bold text-primary">
+          {{ category.name }}
+        </h1>
+        <p class="mt-4 text-lg text-gray-700 max-w-md mx-auto">
+          {{
+            category.description ||
+              "Discover insightful articles in this category."
+          }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Columna derecha con imagen de fondo dinámica -->
+    <div class="col-span-2 w-full h-[600px] md:h-full overflow-hidden">
+      <div
+        class="w-full h-full bg-cover bg-center transform transition-transform duration-700 ease-out-in hover:scale-90"
+        [ngStyle]="{
+          'background-image':
+            'url(' +
+            (category.headerImage || 'assets/images/default-bg.webp') +
+            ')'
+        }"
+      ></div>
+    </div>
+  </div>
+</div>
+
 <app-slider
   *ngIf="showSlider"
   [customVideos]="videos"
   appStickyHeader
 ></app-slider>
 
-<section
-  class="container mx-auto max-w-screen-2xl md:mt-28 py-10 px-4 flex-grow"
+<div
+  class="container mx-auto px-4 lg:px-12 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8"
 >
-  <h2 class="text-2xl font-bold mt-20 mb-6 text-[#bd52a5]">
-    Articles in "{{ getCategoryTitleFromSlug(categorySlug) }}"
-  </h2>
+  <!-- Contenido principal: Artículos en 2 columnas -->
+  <div class="lg:col-span-2">
+    <section class="container mx-auto max-w-screen-2xl py-10 px-4 flex-grow">
+      <h2 class="text-2xl font-bold mb-6 text-[#bd52a5]">
+        Articles in "{{ getCategoryTitleFromSlug(categorySlug) }}"
+      </h2>
 
-  <div *ngIf="error" class="mb-4 text-red-500">{{ error }}</div>
+      <div *ngIf="error" class="mb-4 text-red-500">{{ error }}</div>
 
-  <div
-    *ngIf="!error"
-    class="grid gap-6"
-    style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr))"
-  >
-    <article
-      *ngFor="let article of articles"
-      class="bg-white shadow-md shadow-secondary rounded-lg border-l-4 border-[#e3b23c] overflow-hidden"
-    >
-      <img
-        *ngIf="article.headerImage"
-        [src]="article.headerImage"
-        alt="{{ article.title }}"
-        class="w-full h-40 object-cover"
-      />
-      <div class="p-4">
-        <h3 class="text-xl font-bold text-indigo-900">{{ article.title }}</h3>
-        <p class="mt-2 text-gray-700">
-          {{ article.description | slice : 0 : 150 }}...
-        </p>
-        <a
-          [routerLink]="['/articles', article.id]"
-          class="text-[#bd52a5] mt-4 inline-block hover:text-yellow-400 cursor-pointer"
+      <div
+        *ngIf="!error"
+        class="grid gap-6"
+        style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr))"
+      >
+        <article
+          *ngFor="let article of articles"
+          class="bg-white shadow-md shadow-gray-400 rounded-lg overflow-hidden"
         >
-          Read more
-        </a>
+          <!-- Imagen de cabecera -->
+          <img
+            *ngIf="article.headerImage"
+            [src]="article.headerImage"
+            alt="{{ article.title }}"
+            class="w-full h-40 object-cover"
+          />
+
+          <!-- Contenido -->
+          <div class="p-4">
+            <h3 class="text-xl font-bold text-indigo-900">
+              {{ article.title }}
+            </h3>
+            <p class="mt-2 text-gray-700">
+              {{ article.description | slice : 0 : 150 }}...
+            </p>
+
+            <div class="flex justify-between items-center mt-2 text-secondary">
+              <p>{{ article.company }}</p>
+              <a
+                [routerLink]="['/articles', article.id]"
+                class="text-[#bd52a5] hover:text-yellow-400 cursor-pointer text-sm"
+              >
+                Read more
+              </a>
+            </div>
+          </div>
+        </article>
       </div>
-    </article>
+    </section>
   </div>
-</section>
+
+  <!-- Sidebar fijo debajo de la navbar -->
+  <div class="hidden lg:block sticky top-[104px] self-start">
+    <app-sidebar></app-sidebar>
+  </div>
+</div>

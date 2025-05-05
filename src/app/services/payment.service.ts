@@ -9,7 +9,7 @@ import { Observable, of, Subject } from 'rxjs';
   providedIn: 'root',
 })
 export class PaymentService {
-  // Observable para notificar cuando se activa un plan
+  // Observable to notify when a plan is activated
   planActivated$ = new Subject<{
     articleId: number;
     expirationAt: string;
@@ -18,7 +18,7 @@ export class PaymentService {
 
   constructor(private http: HttpClient, private piAuthService: PiAuthService) {}
 
-  // Activar un plan (MAIN_SLIDER o CATEGORY_SLIDER)
+  // Activate a plan (MAIN_SLIDER or CATEGORY_SLIDER)
   activatePlan(
     articleId: number,
     planType: string,
@@ -27,20 +27,19 @@ export class PaymentService {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
 
     if (!user.accessToken || !user.username) {
-      console.error('No se encontró un token o usuario válido');
+      console.error('No valid token or user found');
       alert('You must be logged in with Pi to make payments.');
       this.piAuthService.forceReauthentication();
 
-      // Retornar un observable vacío o de error
-      return of(null); // Esto previene el error y termina el flujo sin hacer nada
+      return of(null); // Prevents the error and ends the flow without doing anything
     }
 
-    // Continuar con el código normal si el token es válido
+    // Continue with normal flow if token is valid
     const payload = {
       articleId,
       planType,
       username: user.username,
-      categorySlug: categorySlug, // Solo si el plan es CATEGORY_SLIDER
+      categorySlug: categorySlug,
     };
 
     return this.http.post(
@@ -55,7 +54,7 @@ export class PaymentService {
     );
   }
 
-  // Obtener los slots disponibles para los planes (MAIN_SLIDER o CATEGORY_SLIDER)
+  // Get available slots for plans (MAIN_SLIDER or CATEGORY_SLIDER)
   getSlotInfo(
     promoteType: string,
     categorySlug: string | null
@@ -65,6 +64,7 @@ export class PaymentService {
     });
   }
 
+  // Activate a plan as an admin (MAIN_SLIDER or CATEGORY_SLIDER)
   activatePlanAsAdmin(
     articleId: number,
     planType: string,

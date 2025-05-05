@@ -10,7 +10,7 @@
   >
     <article
       *ngFor="let article of articles"
-      class="bg-white shadow-md shadow-secondary rounded-lg border-l-4 border-[#e3b23c] overflow-hidden"
+      class="bg-white shadow-md shadow-gray-400 rounded-lg overflow-hidden"
     >
       <!-- Imagen de cabecera -->
       <img
@@ -25,12 +25,15 @@
         <p class="mt-2 text-gray-700">
           {{ article.description | slice : 0 : 150 }}...
         </p>
-        <a
-          (click)="onReadMore(article.id)"
-          class="text-[#bd52a5] mt-4 inline-block hover:text-yellow-400 cursor-pointer"
-        >
-          Read more
-        </a>
+        <div class="flex justify-between items-center mt-2 text-secondary">
+          <p>{{ article.company }}</p>
+          <a
+            (click)="onReadMore(article.id)"
+            class="text-[#bd52a5] hover:text-yellow-400 cursor-pointer text-sm"
+          >
+            Read more
+          </a>
+        </div>
       </div>
     </article>
   </div>

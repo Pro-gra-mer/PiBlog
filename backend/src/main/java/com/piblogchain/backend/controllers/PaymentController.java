@@ -9,6 +9,7 @@ import com.piblogchain.backend.models.Payment;
 import com.piblogchain.backend.repositories.ArticleRepository;
 import com.piblogchain.backend.repositories.PaymentRepository;
 import com.piblogchain.backend.services.PaymentService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,6 +28,7 @@ public class PaymentController {
   private final PaymentService paymentService;
   private final PaymentRepository paymentRepository;
   private final ArticleRepository articleRepository;
+
 
   public PaymentController(PaymentService paymentService, PaymentRepository paymentRepository, ArticleRepository articleRepository) {
     this.paymentService = paymentService;
@@ -165,6 +167,19 @@ public class PaymentController {
     } catch (Exception e) {
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
         .body("Error activating plan as admin");
+    }
+  }
+
+  @RestController
+  @RequestMapping("/api/price")
+  public class PiPriceController {
+
+    @Autowired
+    private PaymentService paymentService;
+
+    @GetMapping
+    public Map<String, Object> getPlanPricesInUsd() {
+      return paymentService.getPlanPricesInUsd();
     }
   }
 

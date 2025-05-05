@@ -7,6 +7,7 @@ import {
 } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ContactService } from '../../services/contact.service';
+import { environment } from '../../environments/environment.dev';
 
 @Component({
   selector: 'app-contact',
@@ -27,39 +28,46 @@ export class ContactComponent {
       email: ['', [Validators.required, Validators.email]],
       message: ['', [Validators.required, Validators.minLength(10)]],
     });
-    console.log('ContactComponent inicializado');
+    if (!environment.production) {
+      console.log('ContactComponent initialized');
+    }
   }
 
   onSubmit(): void {
-    console.log(
-      'Formulario enviado',
-      this.contactForm.value,
-      this.contactForm.valid
-    );
+    if (!environment.production) {
+      console.log('Form submitted', {
+        valid: this.contactForm.valid,
+      });
+    }
     this.submitted = true;
     this.showSuccessMessage = false;
     this.errorMessage = null;
 
     if (this.contactForm.invalid) {
-      console.log('Formulario inválido', this.contactForm.errors);
+      if (!environment.production) {
+        console.log('Form invalid', this.contactForm.errors);
+      }
       return;
     }
 
     this.contactService.sendMessage(this.contactForm.value).subscribe({
       next: (response) => {
-        console.log('Respuesta del servidor:', response);
+        if (!environment.production) {
+          console.log('Server response:', response);
+        }
         this.showSuccessMessage = true;
         this.contactForm.reset();
         this.submitted = false;
-        // Ocultar el mensaje de éxito después de 5 segundos
+
         setTimeout(() => {
           this.showSuccessMessage = false;
-        }, 5000);
+        }, 3000);
       },
-      error: (err) => {
-        console.error('Error al enviar el mensaje:', err);
-        this.errorMessage =
-          'Error: ' + err.status + ' - ' + (err.error?.error || err.message);
+      error: () => {
+        if (!environment.production) {
+          console.error('Failed to send message');
+        }
+        this.errorMessage = 'Failed to send message. Please try again.';
       },
     });
   }

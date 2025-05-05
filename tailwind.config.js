@@ -11,7 +11,7 @@ export default {
       colors: {
         primary: "#3d2466",
         secondary: "#010400",
-        background: "#E9EBF8",
+        background: "#f4f5fb",
         accent: "#fcb44b",
         gradientEnd: "#4e598c",
       },

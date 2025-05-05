@@ -6,11 +6,15 @@ import { CommonModule } from '@angular/common';
 import { PromotedVideoService } from '../../services/promoted-video.service';
 import { SliderComponent } from '../slider/slider.component';
 import { Subscription } from 'rxjs';
+import { environment } from '../../environments/environment.dev';
+import { SidebarComponent } from '../sidebar/sidebar.component';
+import { Category } from '../../models/Category.model';
+import { CategoryService } from '../../services/category.service';
 
 @Component({
   selector: 'app-category',
   standalone: true,
-  imports: [CommonModule, RouterLink, SliderComponent],
+  imports: [CommonModule, RouterLink, SliderComponent, SidebarComponent],
   templateUrl: './category.component.html',
   styleUrls: ['./category.component.css'],
 })
@@ -22,11 +26,13 @@ export class CategoryComponent implements OnInit, OnDestroy {
   videos: string[] = [];
   showSlider = false;
   private routeSub: Subscription;
+  category: Category | null = null;
 
   constructor(
     private route: ActivatedRoute,
     private articleService: ArticleService,
-    private promotedVideoService: PromotedVideoService
+    private promotedVideoService: PromotedVideoService,
+    private categoryService: CategoryService
   ) {
     this.routeSub = new Subscription();
   }
@@ -38,6 +44,7 @@ export class CategoryComponent implements OnInit, OnDestroy {
         this.categorySlug = slug;
         this.loadArticlesByCategory(slug);
         this.loadCategoryVideos(slug);
+        this.loadCategoryInfo(slug);
       }
     });
   }
@@ -49,9 +56,12 @@ export class CategoryComponent implements OnInit, OnDestroy {
         this.articles = data;
         this.loading = false;
       },
-      error: (err) => {
+      error: () => {
         this.error = 'Could not load articles.';
         this.loading = false;
+        if (!environment.production) {
+          console.error('Failed to load articles for category');
+        }
       },
     });
   }
@@ -59,12 +69,16 @@ export class CategoryComponent implements OnInit, OnDestroy {
   loadCategoryVideos(slug: string): void {
     this.promotedVideoService.getPromotedVideosByCategory(slug).subscribe({
       next: (data) => {
-        console.log(`Videos para ${slug}:`, data);
+        if (!environment.production) {
+          console.log(`Videos for ${slug}:`, data);
+        }
         this.videos = data;
         this.showSlider = data.length > 0;
       },
-      error: (err) => {
-        console.error('Error loading category videos', err);
+      error: () => {
+        if (!environment.production) {
+          console.error('Failed to load category videos');
+        }
         this.showSlider = false;
       },
     });
@@ -81,5 +95,18 @@ export class CategoryComponent implements OnInit, OnDestroy {
     if (this.routeSub) {
       this.routeSub.unsubscribe();
     }
+  }
+
+  loadCategoryInfo(slug: string): void {
+    this.categoryService.getCategoryBySlug(slug).subscribe({
+      next: (data) => {
+        this.category = data;
+      },
+      error: () => {
+        if (!environment.production) {
+          console.error('Failed to load category info');
+        }
+      },
+    });
   }
 }

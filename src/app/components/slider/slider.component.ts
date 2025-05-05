@@ -15,6 +15,7 @@ import Swiper from 'swiper';
 import { Autoplay, Navigation } from 'swiper/modules';
 import { StickyHeaderDirective } from '../../directives/sticky-header.directive';
 import { PromotedVideoService } from '../../services/promoted-video.service';
+import { environment } from '../../environments/environment.dev';
 
 @Component({
   selector: 'app-slider',
@@ -38,10 +39,10 @@ export class SliderComponent implements AfterViewInit, OnChanges {
     this.isBrowser = isPlatformBrowser(this.platformId);
   }
 
+  // Initializes component after view is ready
   ngAfterViewInit(): void {
     if (!this.isBrowser) return;
 
-    // Si no hay customVideos, cargamos los videos MAIN como fallback
     if (!this.customVideos.length) {
       this.loadMainVideos();
     } else if (this.videos.length) {
@@ -49,6 +50,7 @@ export class SliderComponent implements AfterViewInit, OnChanges {
     }
   }
 
+  // Handles changes to customVideos input
   ngOnChanges(changes: SimpleChanges): void {
     if (!this.isBrowser) return;
 
@@ -64,7 +66,7 @@ export class SliderComponent implements AfterViewInit, OnChanges {
     }
   }
 
-  // Método para cargar videos MAIN como fallback
+  // Loads main promoted videos from service
   loadMainVideos(): void {
     this.promotedVideoService.getPromotedVideos().subscribe({
       next: (urls) => {
@@ -76,12 +78,15 @@ export class SliderComponent implements AfterViewInit, OnChanges {
           this.ensureVideosPlay();
         }, 100);
       },
-      error: (err) => {
-        console.error('Error loading MAIN videos:', err);
+      error: () => {
+        if (!environment.production) {
+          console.error('Failed to load main videos');
+        }
       },
     });
   }
 
+  // Initializes Swiper carousel
   initSwiper(): void {
     if (!this.swiperContainer?.nativeElement) return;
 
@@ -105,16 +110,20 @@ export class SliderComponent implements AfterViewInit, OnChanges {
     });
   }
 
+  // Ensures videos play in active slide
   ensureVideosPlay(): void {
     const videos = this.swiperContainer.nativeElement.querySelectorAll('video');
     videos.forEach((video: HTMLVideoElement) => {
       video.muted = true;
-      video.play().catch((error) => {
-        console.log('Error al intentar reproducir video:', error);
+      video.play().catch(() => {
+        if (!environment.production) {
+          console.error('Failed to play video');
+        }
       });
     });
   }
 
+  // Destroys Swiper instance
   destroySwiper(): void {
     if (this.swiperInstance) {
       this.swiperInstance.destroy(true, true);
@@ -122,6 +131,7 @@ export class SliderComponent implements AfterViewInit, OnChanges {
     }
   }
 
+  // Cleans up on component destruction
   ngOnDestroy(): void {
     this.destroySwiper();
   }

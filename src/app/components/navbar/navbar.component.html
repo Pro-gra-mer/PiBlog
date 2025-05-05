@@ -1,9 +1,7 @@
-<nav
-  class="bg-primary text-[#ada1ae] rounded-b-md text-lg py-4 shadow-md shadow-secondary fixed top-0 w-full z-[1100]"
->
+<nav class="bg-primary text-[#ada1ae] text-lg py-4 fixed top-0 w-full z-[1100]">
   <div class="container mx-auto flex justify-between items-center px-4">
-    <a routerLink="/" class="text-4xl font-title text-accent">
-      <span class="text-background font-title">Rolling </span>Pi
+    <a routerLink="/" class="text-4xl text-accent">
+      <span class="text-background">Rolling </span>Pi
     </a>
 
     <!-- Botón de menú hamburguesa -->
@@ -40,11 +38,7 @@
           >Sign in</a
         >
       </li>
-      <li *ngIf="isAuthenticated">
-        <a href="#" class="text-background hover:text-accent"
-          >Hello, {{ username }}</a
-        >
-      </li>
+
       <li *ngIf="isAuthenticated && hasActivePlan">
         <a
           [routerLink]="dashboardRoute"
@@ -52,14 +46,32 @@
           >Dashboard</a
         >
       </li>
+      <li *ngIf="isAuthenticated">
+        <a href="#" class="text-background hover:text-accent"
+          >Hello, {{ username }}</a
+        >
+      </li>
 
       <li *ngIf="isAuthenticated">
         <a
           href="#"
           (click)="logout()"
-          class="text-background hover:text-red-500"
-          >Logout</a
+          class="flex items-center gap-2 text-background hover:text-red-500"
         >
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+            <polyline points="10 17 15 12 10 7" />
+            <line x1="15" y1="12" x2="3" y2="12" />
+          </svg>
+        </a>
       </li>
     </ul>
   </div>
@@ -73,6 +85,56 @@
       <a routerLink="/" class="text-background hover:text-accent block">Home</a>
     </li>
 
+    <li>
+      <a
+        routerLink="/featured-articles"
+        (click)="closeMenu()"
+        class="text-background hover:text-accent block"
+        >Featured</a
+      >
+    </li>
+    <li>
+      <a
+        routerLink="/advertise"
+        (click)="closeMenu()"
+        class="text-background hover:text-accent block"
+        >Advertise with Us</a
+      >
+    </li>
+    <li>
+      <a
+        routerLink="/contact"
+        (click)="closeMenu()"
+        class="text-background hover:text-accent block"
+        >Contact</a
+      >
+    </li>
+    <li *ngIf="!isAuthenticated">
+      <a
+        (click)="loginWithPi(); closeMenu()"
+        class="text-background hover:text-accent block"
+        >Sign in with Pi</a
+      >
+    </li>
+    <li *ngIf="isAuthenticated">
+      <a class="text-background hover:text-accent block"
+        >Hello, {{ username }}</a
+      >
+    </li>
+    <li *ngIf="isAuthenticated && hasActivePlan">
+      <a [routerLink]="dashboardRoute" class="text-background hover:text-accent"
+        >Dashboard</a
+      >
+    </li>
+
+    <li *ngIf="isAuthenticated">
+      <a
+        href="#"
+        (click)="logout(); closeMenu()"
+        class="text-background hover:text-red-500 block"
+        >Logout</a
+      >
+    </li>
     <!-- Artículos con submenú de categorías -->
     <li>
       <div class="relative">
@@ -98,67 +160,6 @@
           </li>
         </ul>
       </div>
-    </li>
-    <li>
-      <a
-        routerLink="/articles"
-        (click)="closeMenu()"
-        class="text-background hover:text-accent block"
-        >Articles</a
-      >
-    </li>
-    <li>
-      <a
-        routerLink="/featured"
-        (click)="closeMenu()"
-        class="text-background hover:text-accent block"
-        >Featured Apps</a
-      >
-    </li>
-    <li>
-      <a
-        routerLink="/advertise"
-        (click)="closeMenu()"
-        class="text-background hover:text-accent block"
-        >Advertise with Us</a
-      >
-    </li>
-    <li>
-      <a
-        routerLink="/contact"
-        (click)="closeMenu()"
-        class="text-background hover:text-accent block"
-        >Contact</a
-      >
-    </li>
-    <li *ngIf="!isAuthenticated">
-      <a
-        href="#"
-        (click)="loginWithPi()"
-        (click)="closeMenu()"
-        class="text-background hover:text-accent block"
-        >Sign in with Pi</a
-      >
-    </li>
-    <li *ngIf="isAuthenticated">
-      <a href="#" class="text-background hover:text-accent block"
-        >Hello, {{ username }}</a
-      >
-    </li>
-    <li *ngIf="isAuthenticated && hasActivePlan">
-      <a [routerLink]="dashboardRoute" class="text-background hover:text-accent"
-        >Dashboard</a
-      >
-    </li>
-
-    <li *ngIf="isAuthenticated">
-      <a
-        href="#"
-        (click)="logout()"
-        (click)="closeMenu()"
-        class="text-background hover:text-red-500 block"
-        >Logout</a
-      >
     </li>
   </ul>
 </nav>

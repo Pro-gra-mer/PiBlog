@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ArticleService } from '../../../services/article.service';
 import { Article } from '../../../models/Article.model';
 import { Router } from '@angular/router';
+import { environment } from '../../../environments/environment.dev';
 
 @Component({
   selector: 'app-rejected',
@@ -15,12 +16,12 @@ export class RejectedComponent implements OnInit {
   rejected: Article[] = [];
   loading = true;
   error = '';
-
   showDeleteModal = false;
   articleIdToDelete: number | null = null;
 
   constructor(private articleService: ArticleService, private router: Router) {}
 
+  // Initializes component and loads rejected articles
   ngOnInit(): void {
     this.articleService.getUserRejectedArticles().subscribe({
       next: (articles) => {
@@ -28,55 +29,60 @@ export class RejectedComponent implements OnInit {
         this.loading = false;
       },
       error: () => {
-        this.error = 'Error loading rejected articles';
+        if (!environment.production) {
+          console.error('Failed to load rejected articles');
+        }
+        this.error = 'Failed to load rejected articles.';
         this.loading = false;
       },
     });
   }
 
+  // Navigates to edit article page
   editArticle(id: number): void {
     this.router.navigate(['/user-dashboard/edit-article', id]);
   }
 
+  // Opens delete confirmation modal
   openDeleteModal(id: number): void {
     this.articleIdToDelete = id;
     this.showDeleteModal = true;
   }
 
+  // Confirms and deletes an article
   confirmDelete(): void {
     if (this.articleIdToDelete !== null) {
       this.articleService
         .deleteArticleWithCleanup(this.articleIdToDelete)
         .subscribe({
           next: () => {
-            // Remove the article from the list immediately
             this.rejected = this.rejected.filter(
               (a) => a.id !== this.articleIdToDelete
             );
-
-            // Update the 'hasRejected' status in the parent component
             this.updateHasRejected();
-
             this.showDeleteModal = false;
             this.articleIdToDelete = null;
+            this.error = 'Article deleted successfully.';
           },
-          error: (err) => {
-            console.error('Error deleting article:', err);
-            this.error = 'No se pudo eliminar el artículo.';
+          error: () => {
+            if (!environment.production) {
+              console.error('Failed to delete article');
+            }
+            this.error = 'Failed to delete article.';
             this.showDeleteModal = false;
           },
         });
     }
   }
 
+  // Cancels delete action
   cancelDelete(): void {
     this.showDeleteModal = false;
     this.articleIdToDelete = null;
   }
 
-  // Method to notify the parent component to update the 'hasRejected' status
+  // Notifies parent component to update rejected articles status
   private updateHasRejected(): void {
-    // Notify the parent (UserDashboardComponent) to update hasRejected
     const userDashboard =
       this.router.routerState.snapshot.root.children[0].component;
     if (userDashboard && (userDashboard as any).checkRejectedArticles) {

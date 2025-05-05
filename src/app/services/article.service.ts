@@ -13,7 +13,7 @@ export class ArticleService {
 
   constructor(private http: HttpClient) {}
 
-  // Obtener todos los artículos ordenados por fecha
+  // Get all public articles ordered by date
   getPublicArticles(order: 'desc' | 'asc' = 'desc'): Observable<Article[]> {
     return this.http.get<Article[]>(this.apiUrl).pipe(
       map((articles) =>
@@ -21,7 +21,7 @@ export class ArticleService {
           const dateA = new Date(a.publishDate).getTime();
           const dateB = new Date(b.publishDate).getTime();
           if (dateA === dateB) {
-            // Si las fechas son iguales, se ordena por id como criterio de desempate
+            // If dates are equal, use id as a tie-breaker
             return order === 'desc' ? b.id - a.id : a.id - b.id;
           }
           return order === 'desc' ? dateB - dateA : dateA - dateB;
@@ -30,54 +30,59 @@ export class ArticleService {
     );
   }
 
-  // Obtener un artículo por su id
+  // Get an article by its ID
   getArticleById(id: number): Observable<Article> {
     return this.http.get<Article>(`${this.apiUrl}/${id}`);
   }
 
-  // Crear un nuevo artículo, incluyendo los metadatos de la imagen
+  // Create a new article, including image metadata
   createArticle(article: Article): Observable<Article> {
     return this.http.post<Article>(this.apiUrl, article);
   }
 
-  // Actualizar un artículo (por ejemplo, para aprobarlo) incluyendo los nuevos campos de imagen
+  // Update an article (e.g., to approve it) including image fields
   updateArticle(id: number, article: Article): Observable<Article> {
     return this.http.put<Article>(`${this.apiUrl}/${id}`, article);
   }
 
-  // Eliminar un artículo
+  // Delete an article
   deleteArticle(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
-  // Este endpoint se implementaría en el backend para que, dado un publicId, elimine el archivo.
+  // Delete orphan image by publicId
   deleteOrphanImage(publicId: string): Observable<any> {
     return this.http.delete(`${environment.apiUrl}/api/cleanup/${publicId}`, {
       responseType: 'text',
     });
   }
 
+  // Get user's draft articles
   getDrafts(): Observable<Article[]> {
     return this.http.get<Article[]>(`${this.apiUrl}/drafts`);
   }
 
+  // Submit article for review
   submitArticleForReview(articleId: number): Observable<Article> {
     return this.http.put<Article>(`${this.apiUrl}/${articleId}/submit`, {});
   }
 
+  // Get pending articles for review
   getPendingArticles(): Observable<Article[]> {
     return this.http.get<Article[]>(`${this.apiUrl}/pending`);
   }
 
+  // Approve an article
   approveArticle(id: number): Observable<Article> {
     return this.http.put<Article>(`${this.apiUrl}/${id}/approve`, {});
   }
 
-  // Devuelve los artículos publicados del usuario actual
+  // Get the currently published articles of the user
   getUserPublishedArticles(): Observable<Article[]> {
     return this.http.get<Article[]>(`${this.apiUrl}/published`);
   }
 
+  // Delete orphan video by publicId
   deleteOrphanVideo(publicId: string): Observable<any> {
     return this.http.delete(
       `${environment.apiUrl}/api/cleanup/video/${publicId}`,
@@ -87,17 +92,20 @@ export class ArticleService {
     );
   }
 
+  // Get articles by category slug
   getArticlesByCategorySlug(slug: string): Observable<Article[]> {
     return this.http.get<Article[]>(
       `${environment.apiUrl}/api/articles/category/${slug}`
     );
   }
 
+  // Delete article and clean up orphan images/videos
   deleteArticleWithCleanup(id: number): Observable<void> {
     return this.getArticleById(id).pipe(
       switchMap((article: Article) => {
         const deleteRequests: Observable<any>[] = [];
 
+        // Add image and video deletion requests
         if (article.headerImagePublicId) {
           deleteRequests.push(
             this.deleteOrphanImage(article.headerImagePublicId)
@@ -110,6 +118,7 @@ export class ArticleService {
           );
         }
 
+        // Extract images in content and queue their deletion
         const parser = new DOMParser();
         const doc = parser.parseFromString(article.content || '', 'text/html');
         const imgElements = Array.from(doc.getElementsByTagName('img'));
@@ -122,6 +131,7 @@ export class ArticleService {
           }
         });
 
+        // Execute deletion requests and then delete the article
         return forkJoin(
           deleteRequests.length ? deleteRequests : [of(null)]
         ).pipe(switchMap(() => this.deleteArticle(id)));
@@ -129,19 +139,23 @@ export class ArticleService {
     );
   }
 
+  // Extract publicId from image/video URL
   private extractPublicIdFromUrl(url: string): string | null {
     const match = url.match(/\/upload\/(?:v\d+\/)?([^\.]+)/);
     return match ? match[1] : null;
   }
 
+  // Get rejected articles by the user
   getUserRejectedArticles(): Observable<Article[]> {
     return this.http.get<Article[]>(`${this.apiUrl}/rejected`);
   }
 
+  // Reject an article with a reason
   rejectArticle(id: number, reason: string): Observable<any> {
     return this.http.put(`${this.apiUrl}/${id}/reject`, { reason });
   }
 
+  // Cancel a subscription for an article's plan
   cancelSubscription(articleId: number, planType: string): Observable<any> {
     return this.http.delete(
       `${environment.apiUrl}/api/payments/cancel-subscription`,
@@ -155,6 +169,7 @@ export class ArticleService {
     );
   }
 
+  // Get featured articles
   getFeaturedArticles(): Observable<Article[]> {
     return this.http.get<Article[]>(`${this.apiUrl}/featured`);
   }

@@ -10,13 +10,13 @@
       <!-- Company Name -->
       <div>
         <label class="text-secondary font-medium block" for="company"
-          >Company Name</label
+          >Company/Author Name</label
         >
         <input
           id="company"
           type="text"
           formControlName="company"
-          placeholder="Enter company name"
+          placeholder="Enter company or author name"
           class="w-full max-w-md mt-1 p-3 border border-gradientEnd rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
         />
       </div>
@@ -45,7 +45,7 @@
           formControlName="category"
           class="w-full max-w-md mt-1 p-3 border border-gradientEnd rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
         >
-          <option [ngValue]="null" disabled>Selecciona una categoría</option>
+          <option [ngValue]="null" disabled>Select a gategory</option>
           <option
             *ngFor="let category of categories"
             [ngValue]="category"
@@ -159,17 +159,9 @@
             Upload Video
           </button>
           <p class="text-secondary text-sm mt-1">
-            The video must be 30 seconds or less.
+            The video must be 20 seconds or less.
           </p>
         </div>
-      </div>
-
-      <!-- Promote Type ARREGLAR -->
-      <div class="mt-4 text-sm text-secondary italic">
-        Your article will be promoted in:
-        <span class="font-semibold text-primary">
-          {{ promoteTypeLabel }}
-        </span>
       </div>
 
       <!-- Embedded Video (Preview) con botón para eliminar -->

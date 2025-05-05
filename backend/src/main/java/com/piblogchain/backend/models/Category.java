@@ -20,6 +20,15 @@ public class Category {
   @Column(name = "created_at")
   private LocalDateTime createdAt = LocalDateTime.now();
 
+  @Column(length = 300)
+  private String description;
+
+  private String emoji;
+
+  @Column(name = "header_image")
+  private String headerImage;
+
+
   public Category() {
     // necesario para JPA
   }
@@ -71,5 +80,29 @@ public class Category {
 
   public void setCreatedAt(LocalDateTime createdAt) {
     this.createdAt = createdAt;
+  }
+
+  public String getDescription() {
+    return description;
+  }
+
+  public void setDescription(String description) {
+    this.description = description;
+  }
+
+  public String getEmoji() {
+    return emoji;
+  }
+
+  public void setEmoji(String emoji) {
+    this.emoji = emoji;
+  }
+
+  public String getHeaderImage() {
+    return headerImage;
+  }
+
+  public void setHeaderImage(String headerImage) {
+    this.headerImage = headerImage;
   }
 }

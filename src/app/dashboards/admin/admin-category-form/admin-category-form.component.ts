@@ -8,6 +8,7 @@ import {
 import { CategoryService } from '../../../services/category.service';
 import { CommonModule } from '@angular/common';
 import { Category } from '../../../models/Category.model';
+import { environment } from '../../../environments/environment.dev';
 
 @Component({
   selector: 'app-admin-category-form',
@@ -30,62 +31,96 @@ export class AdminCategoryFormComponent implements OnInit {
   ) {
     this.categoryForm = this.fb.group({
       name: ['', Validators.required],
+      slug: [''],
+      description: [''],
+      emoji: [''],
+      headerImage: [''],
     });
   }
 
+  // Initializes component and loads categories
   ngOnInit(): void {
     this.loadCategories();
   }
 
+  // Loads all categories from service
   loadCategories(): void {
     this.categoryService.getAllCategories().subscribe({
       next: (data) => {
         this.categories = data;
       },
-      error: (err) => {
-        console.error('Error loading categories', err);
+      error: () => {
+        if (!environment.production) {
+          console.error('Failed to load categories');
+        }
       },
     });
   }
 
+  // Submits form to create or update category
   onSubmit(): void {
     if (this.categoryForm.invalid) return;
 
-    if (this.selectedCategory && this.selectedCategory.id !== undefined) {
+    const { name, description, emoji, headerImage } = this.categoryForm.value;
+    let slug = this.categoryForm.value.slug;
+
+    // Generar slug automáticamente si está vacío o si se cambia el nombre
+    if (
+      !slug ||
+      !this.selectedCategory ||
+      this.selectedCategory.name !== name
+    ) {
+      slug = this.generateSlug(name);
+    }
+
+    const payload = { name, slug, description, emoji, headerImage };
+
+    if (this.selectedCategory?.id !== undefined) {
       this.categoryService
-        .updateCategory(this.selectedCategory.id, this.categoryForm.value)
+        .updateCategory(this.selectedCategory.id, payload)
         .subscribe({
           next: () => {
             this.message = 'Category updated successfully!';
             this.cancelEdit();
             this.loadCategories();
           },
-          error: (err) => {
-            console.error(err);
-            this.message = err.error?.error || 'Error updating category.';
+          error: () => {
+            if (!environment.production) {
+              console.error('Failed to update category');
+            }
+            this.message = 'Failed to update category. Please try again.';
           },
         });
     } else {
-      // Modo creación
-      this.categoryService.createCategory(this.categoryForm.value).subscribe({
+      this.categoryService.createCategory(payload).subscribe({
         next: () => {
           this.message = 'Category created successfully!';
           this.categoryForm.reset();
           this.loadCategories();
         },
-        error: (err) => {
-          console.error(err);
-          this.message = err.error?.error || 'Error creating category.';
+        error: () => {
+          if (!environment.production) {
+            console.error('Failed to create category');
+          }
+          this.message = 'Failed to create category. Please try again.';
         },
       });
     }
   }
 
+  // Sets category for editing
   editCategory(category: Category): void {
     this.selectedCategory = category;
-    this.categoryForm.patchValue({ name: category.name });
+    this.categoryForm.patchValue({
+      name: category.name,
+      slug: category.slug,
+      description: category.description || '',
+      emoji: category.emoji || '',
+      headerImage: category.headerImage || '',
+    });
   }
 
+  // Deletes category after confirmation
   deleteCategory(id: number): void {
     if (!confirm('Are you sure you want to delete this category?')) return;
 
@@ -94,18 +129,22 @@ export class AdminCategoryFormComponent implements OnInit {
         this.message = 'Category deleted.';
         this.loadCategories();
       },
-      error: (err) => {
-        console.error(err);
-        this.message = err.error?.error || 'Error deleting category.';
+      error: () => {
+        if (!environment.production) {
+          console.error('Failed to delete category');
+        }
+        this.message = 'Failed to delete category. Please try again.';
       },
     });
   }
 
+  // Opens delete confirmation dialog
   confirmDelete(category: Category): void {
     this.categoryToDelete = category;
     this.showConfirmDelete = true;
   }
 
+  // Proceeds with category deletion
   proceedDelete(): void {
     if (!this.categoryToDelete?.id) return;
 
@@ -115,21 +154,34 @@ export class AdminCategoryFormComponent implements OnInit {
         this.loadCategories();
         this.closeConfirmDelete();
       },
-      error: (err) => {
-        console.error(err);
-        this.message = err.error?.error || 'Error deleting category.';
-        this.closeConfirmDelete();
+      error: () => {
+        if (!environment.production) {
+          console.error('Failed to delete category');
+        }
+        this.message = 'Failed to delete category. Please try again.';
       },
     });
   }
 
+  // Cancels category editing
   cancelEdit(): void {
     this.selectedCategory = null;
     this.categoryForm.reset();
   }
 
+  // Closes delete confirmation dialog
   closeConfirmDelete(): void {
     this.showConfirmDelete = false;
     this.categoryToDelete = null;
+  }
+
+  generateSlug(name: string): string {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/&/g, 'and')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .replace(/-{2,}/g, '-');
   }
 }

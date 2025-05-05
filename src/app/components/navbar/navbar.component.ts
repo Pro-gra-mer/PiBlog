@@ -10,6 +10,7 @@ import { Router, RouterLink, NavigationEnd } from '@angular/router';
 import { PiAuthService } from '../../services/pi-auth.service';
 import { CategoryService, Category } from '../../services/category.service';
 import { PromoteType } from '../../models/PromoteType';
+import { environment } from '../../environments/environment.dev';
 
 @Component({
   selector: 'app-navbar',
@@ -23,7 +24,7 @@ export class NavbarComponent implements OnInit {
   isAuthenticated = false;
   role: string | null = null;
   username: string | null = null;
-  dashboardRoute: string = '/user-dashboard'; // Propiedad para la ruta
+  dashboardRoute: string = '/user-dashboard';
   categories: Category[] = [];
   showCategories = false;
   hasActivePlan: boolean = false;
@@ -41,26 +42,26 @@ export class NavbarComponent implements OnInit {
       this.isAuthenticated = authStatus;
       this.updateUserInfo();
       this.loadCategories();
-      this.checkPlan(); // 👈 Añadir aquí
+      this.checkPlan();
       this.cdr.detectChanges();
     });
 
     this.piAuthService.username$.subscribe((username) => {
       this.username = username;
       this.updateUserInfo();
-      this.checkPlan(); // 👈 Y aquí también
+      this.checkPlan();
       this.cdr.detectChanges();
     });
 
     if (isPlatformBrowser(this.platformId) && localStorage.getItem('user')) {
       this.updateUserInfo();
-      this.checkPlan(); // 👈 Esto asegura que esté presente tras recargar
+      this.checkPlan();
     }
 
     this.router.events.subscribe((event) => {
       if (event instanceof NavigationEnd) {
         this.isMenuOpen = false;
-        this.checkPlan(); // 👈 Al cambiar de ruta, especialmente tras completar pago
+        this.checkPlan();
         this.cdr.detectChanges();
       }
     });
@@ -69,21 +70,24 @@ export class NavbarComponent implements OnInit {
   private updateUserInfo(): void {
     if (isPlatformBrowser(this.platformId)) {
       const userJson = localStorage.getItem('user');
-      console.log('Raw localStorage user:', userJson);
+      if (!environment.production) {
+        console.log('Retrieved user from localStorage');
+      }
       const user = JSON.parse(userJson || '{}');
       this.username = user.username || null;
       this.role = user.role || null;
       this.dashboardRoute =
-        this.role === 'ADMIN' ? '/admin-dashboard' : '/user-dashboard'; // Actualizar ruta
-      console.log('User info actualizada:', {
-        username: this.username,
-        role: this.role,
-        dashboardRoute: this.dashboardRoute,
-      });
+        this.role === 'ADMIN' ? '/admin-dashboard' : '/user-dashboard';
+      if (!environment.production) {
+        console.log('User info updated', {
+          username: this.username,
+          role: this.role,
+        });
+      }
     } else {
       this.username = null;
       this.role = null;
-      this.dashboardRoute = '/user-dashboard'; // Valor por defecto
+      this.dashboardRoute = '/user-dashboard';
     }
   }
 
@@ -92,13 +96,16 @@ export class NavbarComponent implements OnInit {
   }
 
   loginWithPi(): void {
-    console.log('Se hizo click en Sign in');
+    if (!environment.production) {
+      console.log('Sign in clicked');
+    }
     this.piAuthService.loginWithPi();
   }
 
-  // Mantener por si necesitas usarlo en otro contexto
   getDashboardRoute(): string {
-    console.log('getDashboardRoute llamado, role actual:', this.role);
+    if (!environment.production) {
+      console.log('Getting dashboard route', { role: this.role });
+    }
     return this.role === 'ADMIN' ? '/admin-dashboard' : '/user-dashboard';
   }
 
@@ -115,15 +122,17 @@ export class NavbarComponent implements OnInit {
       next: (data) => {
         this.categories = data;
       },
-      error: (err) => {
-        console.error('Error loading categories:', err);
+      error: () => {
+        if (!environment.production) {
+          console.error('Failed to load categories');
+        }
       },
     });
   }
 
   closeMenu() {
     this.isMenuOpen = false;
-    this.showCategories = false; // opcional si también quieres cerrar subcategorías
+    this.showCategories = false;
   }
 
   checkPlan(): void {

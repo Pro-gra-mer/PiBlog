@@ -1,63 +1,179 @@
 <section class="container mx-auto py-20 mt-6 text-center">
   <h2 class="text-4xl font-bold text-primary mb-6">Advertise with Us</h2>
 
-  <p class="text-secondary max-w-2xl mx-auto mb-12">
-    Pay once to publish an article about your Pi Network app. After publication,
-    you can choose to promote it further in our sliders.
+  <p class="text-secondary max-w-2xl mx-auto mb-12 text-lg">
+    Pay once to publish an article about your Pi Network app, web or channel.
+    After publication, you can choose to promote it further in our sliders and
+    featured section.
   </p>
 
-  <!-- Publicar artículo -->
+  <!-- Pricing Cards -->
+  <div class="grid gap-6 md:grid-cols-3 max-w-9xl mx-auto">
+    <!-- Publish an Article -->
+    <div class="p-6 border border-accent rounded-xl shadow-lg shadow-gray-400">
+      <h3 class="text-2xl font-bold text-accent">Publish an Article</h3>
 
-  <div
-    class="max-w-md mx-auto p-6 border border-accent rounded-xl shadow-lg shadow-gradientEnd mb-12"
-  >
-    <h3 class="text-2xl font-bold text-accent">Publish an Article</h3>
+      <ul class="mt-4 text-secondary space-y-2 text-left">
+        <li class="flex items-start gap-2">
+          <svg
+            class="w-5 h-5 text-green-600 mt-1"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            viewBox="0 0 24 24"
+          >
+            <path d="M5 13l4 4L19 7" />
+          </svg>
+          Write an article about your app, web or channel.
+        </li>
+        <li class="flex items-start gap-2">
+          <svg
+            class="w-5 h-5 text-green-600 mt-1"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            viewBox="0 0 24 24"
+          >
+            <path d="M5 13l4 4L19 7" />
+          </svg>
+          Add a video, images, and choose a category.
+        </li>
+        <li class="flex items-start gap-2">
+          <svg
+            class="w-5 h-5 text-green-600 mt-1"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            viewBox="0 0 24 24"
+          >
+            <path d="M5 13l4 4L19 7" />
+          </svg>
+          One-time payment, no subscription.
+        </li>
+      </ul>
 
-    <p class="mt-4 text-secondary">
-      ✔ Write and submit an article about your app. <br />
+      <p class="mt-4 text-primary font-bold text-xl">{{ standardPricePi }} π</p>
 
-      ✔ Add a video, images, and choose a category. <br />
+      <button
+        class="mt-6 bg-accent text-secondary py-2 px-6 rounded-lg hover:bg-opacity-80 w-full"
+        (click)="openConfirmModal(PromoteType.STANDARD)"
+      >
+        Publish Now
+      </button>
+    </div>
 
-      ✔ One-time payment, no subscription.
-    </p>
-
-    <p class="mt-4 text-primary font-bold text-xl">3€ (One-time)</p>
-
-    <button
-      class="mt-6 bg-accent text-background py-2 px-6 rounded-lg hover:bg-opacity-80 w-full"
-      (click)="openConfirmModal(PromoteType.STANDARD)"
-    >
-      Publish Now
-    </button>
-  </div>
-
-  <!-- Información sobre promoción (no activa desde aquí) -->
-
-  <div class="grid gap-6 md:grid-cols-2 max-w-4xl mx-auto">
     <!-- Category Slider Info -->
+    <div class="p-6 border border-purple-600 rounded-xl shadow">
+      <h4 class="text-xl font-bold text-purple-800 mb-4">
+        Category Slider | {{ categoryPricePi }} π/mo
+      </h4>
 
-    <div class="p-6 border-2 border-purple-600 rounded-xl shadow">
-      <h4 class="text-xl font-bold text-purple-800 mb-4">Category Slider</h4>
+      <ul class="text-secondary mb-4 text-left space-y-2">
+        <li class="flex items-start gap-2">
+          <svg
+            class="w-5 h-5 text-green-600 mt-1"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M5 13l4 4L19 7" />
+          </svg>
+          Feature your video in a specific category's slider.
+        </li>
 
-      <p class="text-secondary mb-4">
-        ✔ Promote your article in a specific category. <br />
-
-        ✔ Video rotates every 15–30s. <br />
-
-        ✔ Monthly subscription.
-      </p>
+        <li class="flex items-start gap-2">
+          <svg
+            class="w-5 h-5 text-green-600 mt-1"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M5 13l4 4L19 7" />
+          </svg>
+          Video rotates every 20s.
+        </li>
+        <li class="flex items-start gap-2">
+          <svg
+            class="w-5 h-5 text-green-600 mt-1"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M5 13l4 4L19 7" />
+          </svg>
+          Order ratation changes everyday.
+        </li>
+        <li class="flex items-start gap-2">
+          <svg
+            class="w-5 h-5 text-green-600 mt-1"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M5 13l4 4L19 7" />
+          </svg>
+          The article will be displayed in the Featured section.
+        </li>
+        <li class="flex items-start gap-2">
+          <svg
+            class="w-5 h-5 text-green-600 mt-1"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M5 13l4 4L19 7" />
+          </svg>
+          Monthly subscription.
+        </li>
+        <li class="flex items-start gap-2">
+          <svg
+            class="w-5 h-5 text-yellow-500 mt-1"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            viewBox="0 0 24 24"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          Limited to 7 slots per category.
+        </li>
+      </ul>
 
       <!-- Selector de categoría -->
       <div class="mt-4 w-full">
         <label class="block mb-1 font-semibold text-secondary"
-          >Choose category:</label
+          >Check category slots:</label
         >
         <select
-          class="w-full px-4 py-2 rounded border border-accent focus:outline-none"
+          class="w-full px-4 py-2 rounded border border-purple-600 focus:outline-none"
           [(ngModel)]="selectedCategory"
           (change)="checkCategorySliderSlot()"
         >
-          <option value="" disabled selected>Select a category</option>
           <option *ngFor="let category of categories" [value]="category.slug">
             {{ category.name }}
           </option>
@@ -65,33 +181,113 @@
       </div>
 
       <!-- Info de slots -->
-      <span class="block mt-2 text-sm text-red-500 font-bold">
-        ✔
+      <span class="block mt-2 text-sm text-purple-600 font-bold">
         {{
           availableSlots["CATEGORY_SLIDER"] !== undefined
-            ? availableSlots["CATEGORY_SLIDER"] + " spots available"
+            ? availableSlots["CATEGORY_SLIDER"] + " slots available!"
             : "Select a category"
         }}
       </span>
     </div>
 
     <!-- Main Slider Info -->
+    <div class="p-6 border border-pink-800 rounded-xl shadow">
+      <h4 class="text-xl font-bold text-pink-800 mb-2">
+        Main Slider | {{ mainPricePi }} π/mo
+      </h4>
 
-    <div class="p-6 border-2 border-pink-600 rounded-xl shadow">
-      <h4 class="text-xl font-bold text-pink-800 mb-2">Main Slider</h4>
+      <ul class="mt-4 text-secondary space-y-2 text-left">
+        <li class="flex items-start gap-2">
+          <svg
+            class="w-5 h-5 text-green-600 mt-1"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            viewBox="0 0 24 24"
+          >
+            <path d="M5 13l4 4L19 7" />
+          </svg>
+          Maximum visibility for your video on the homepage.
+        </li>
 
-      <p class="text-secondary">
-        ✔ Maximum visibility on homepage. <br />
+        <li class="flex items-start gap-2">
+          <svg
+            class="w-5 h-5 text-green-600 mt-1"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            viewBox="0 0 24 24"
+          >
+            <path d="M5 13l4 4L19 7" />
+          </svg>
+          Video rotates every 20s.
+        </li>
+        <li class="flex items-start gap-2">
+          <svg
+            class="w-5 h-5 text-green-600 mt-1"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M5 13l4 4L19 7" />
+          </svg>
+          Order ratation changes everyday.
+        </li>
+        <li class="flex items-start gap-2">
+          <svg
+            class="w-5 h-5 text-green-600 mt-1"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            viewBox="0 0 24 24"
+          >
+            <path d="M5 13l4 4L19 7" />
+          </svg>
+          The article will be displayed in the Featured section
+        </li>
+        <li class="flex items-start gap-2">
+          <svg
+            class="w-5 h-5 text-green-600 mt-1"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            viewBox="0 0 24 24"
+          >
+            <path d="M5 13l4 4L19 7" />
+          </svg>
+          Monthly subscription.
+        </li>
+        <li class="flex items-start gap-2">
+          <svg
+            class="w-5 h-5 text-yellow-500 mt-1"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            viewBox="0 0 24 24"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          Limited to 7 global slots.
+        </li>
+      </ul>
 
-        ✔ Includes your video and title. <br />
-
-        ✔ Monthly subscription.
-      </p>
-
-      <p class="mt-2 text-sm text-gray-500">Limited to 5 global slots.</p>
-
-      <p class="mt-4 text-pink-600 font-semibold">
-        {{ availableSlots["MAIN_SLIDER"] || 0 }} slots available
+      <p class="mt-4 text-pink-800 font-bold">
+        {{ availableSlots["MAIN_SLIDER"] || 0 }} slots available!
       </p>
     </div>
   </div>
@@ -100,6 +296,7 @@
     You can promote your article after it's approved and published.
   </p>
 </section>
+
 <!-- Modal de confirmación -->
 <div
   *ngIf="showConfirmModal"

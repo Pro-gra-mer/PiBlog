@@ -28,18 +28,166 @@
 </div>
 
 <!-- Desktop: Sidebar normal -->
-<aside
-  class="hidden lg:block bg-gray-100 p-4 shadow-md shadow-secondary rounded-lg sticky top-[120px]"
->
-  <h3 class="text-lg font-bold mb-4 text-[#bd52a5]">Categories</h3>
-  <ul class="space-y-2">
-    <li *ngFor="let category of categories">
-      <a
-        [routerLink]="['/category', category.slug]"
-        class="accent-secondary hover:text-yellow-400"
-      >
+<section class="px-4 py-10 bg-background rounded-lg shadow-sm">
+  <h2 class="text-2xl font-bold text-center text-secondary mb-6">
+    Explore by Category
+  </h2>
+
+  <div
+    class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 max-w-3xl mx-auto"
+  >
+    <a
+      *ngFor="let category of categories; let i = index"
+      [routerLink]="['/category', category.slug]"
+      class="flex flex-col items-center justify-center bg-white p-4 rounded-xl shadow hover:shadow-md hover:bg-accent/10 transition-all text-center"
+      [ngClass]="{ 'md:col-start-2': categories.length === 7 && i === 6 }"
+    >
+      <ng-container [ngSwitch]="category.slug">
+        <!-- Productivity Tools -->
+        <svg
+          *ngSwitchCase="'productivity-tools'"
+          class="w-8 h-8 text-accent mb-2"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          viewBox="0 0 24 24"
+        >
+          <path d="M9 2L9 6L15 6L15 2M4 6H20V20H4V6Z" />
+        </svg>
+
+        <!-- Marketplaces (carrito de compras) -->
+        <svg
+          *ngSwitchCase="'marketplaces'"
+          class="w-8 h-8 text-accent mb-2"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          viewBox="0 0 24 24"
+        >
+          <circle cx="9" cy="21" r="1" />
+          <circle cx="20" cy="21" r="1" />
+          <path
+            d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"
+          />
+        </svg>
+
+        <!-- Social & Community -->
+        <svg
+          *ngSwitchCase="'social-community'"
+          class="w-8 h-8 text-accent mb-2"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          viewBox="0 0 24 24"
+        >
+          <circle cx="12" cy="7" r="4" />
+          <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
+        </svg>
+
+        <!-- Digital Services -->
+        <svg
+          *ngSwitchCase="'digital-services'"
+          class="w-8 h-8 text-accent mb-2"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          viewBox="0 0 24 24"
+        >
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+          <path d="M8 21h8" />
+        </svg>
+
+        <!-- Education -->
+        <svg
+          *ngSwitchCase="'education'"
+          class="w-8 h-8 text-accent mb-2"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          viewBox="0 0 24 24"
+        >
+          <path d="M22 10L12 4L2 10L12 16L22 10Z" />
+          <path d="M6 12V17C6 17.6 6.4 18 7 18H17C17.6 18 18 17.6 18 17V12" />
+        </svg>
+
+        <!-- Travel & Experiences -->
+        <svg
+          *ngSwitchCase="'travel-experiences'"
+          class="w-8 h-8 text-accent mb-2"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          viewBox="0 0 24 24"
+        >
+          <path d="M2.5 19.5L21 12 2.5 4.5V10L17 12 2.5 14Z" />
+        </svg>
+
+        <!-- Finance (gráfica de barras) -->
+        <svg
+          *ngSwitchCase="'finances'"
+          class="w-8 h-8 text-accent mb-2"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          viewBox="0 0 24 24"
+        >
+          <path d="M3 12v7h18v-2" />
+          <path d="M7 12v4" />
+          <path d="M11 8v8" />
+          <path d="M15 4v12" />
+        </svg>
+
+        <!-- Health & Wellness (corazón) -->
+        <svg
+          *ngSwitchCase="'health-wellness'"
+          class="w-8 h-8 text-accent mb-2"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          viewBox="0 0 24 24"
+        >
+          <path
+            d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.8z"
+          />
+        </svg>
+
+        <!-- Games -->
+        <svg
+          *ngSwitchCase="'games'"
+          class="w-8 h-8 text-accent mb-2"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          viewBox="0 0 24 24"
+        >
+          <rect x="2" y="6" width="20" height="12" rx="2" ry="2" />
+          <path d="M6 12H10M8 10V14" />
+          <circle cx="16" cy="12" r="1" />
+          <circle cx="18" cy="14" r="1" />
+        </svg>
+      </ng-container>
+
+      <span class="text-sm font-medium text-secondary">
         {{ category.name }}
-      </a>
-    </li>
-  </ul>
-</aside>
+      </span>
+    </a>
+  </div>
+</section>

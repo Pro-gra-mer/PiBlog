@@ -5,6 +5,7 @@ import { PaymentService } from '../../../services/payment.service';
 import { Article } from '../../../models/Article.model';
 import { Router } from '@angular/router';
 import { PiAuthService } from '../../../services/pi-auth.service';
+import { environment } from '../../../environments/environment.dev';
 
 @Component({
   selector: 'app-my-articles',
@@ -27,7 +28,6 @@ export class MyArticlesComponent implements OnInit {
   isAdmin = false;
   successMessage: string | null = null;
 
-  // Modal genérico de confirmación
   confirmationModal = {
     visible: false,
     title: '',
@@ -45,6 +45,7 @@ export class MyArticlesComponent implements OnInit {
     private piAuthService: PiAuthService
   ) {}
 
+  // Initializes component and loads published articles
   ngOnInit(): void {
     this.isAdmin = this.piAuthService.isAdmin();
     this.articleService.getUserPublishedArticles().subscribe({
@@ -54,38 +55,56 @@ export class MyArticlesComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: () => {
-        this.error = 'Error loading your published articles.';
+        if (!environment.production) {
+          console.error('Failed to load published articles');
+        }
+        this.error = 'Failed to load published articles.';
         this.loading = false;
         this.cdr.detectChanges();
       },
     });
   }
 
+  // Opens modal for promoting or activating plan
   openModal(article: Article, action: string): void {
     this.selectedArticleId = article.id!;
     this.isPromoteMode = action === 'promote';
-
     const categorySlug = article.category.slug || null;
 
-    this.paymentService
-      .getSlotInfo('MAIN_SLIDER', null)
-      .subscribe((mainSliderData) => {
+    this.paymentService.getSlotInfo('MAIN_SLIDER', null).subscribe({
+      next: (mainSliderData) => {
         this.mainSliderInfo = mainSliderData;
         this.paymentService
           .getSlotInfo('CATEGORY_SLIDER', categorySlug)
-          .subscribe((categorySliderData) => {
-            this.categorySliderInfo = categorySliderData;
-            this.showPlanModal = true;
+          .subscribe({
+            next: (categorySliderData) => {
+              this.categorySliderInfo = categorySliderData;
+              this.showPlanModal = true;
+            },
+            error: () => {
+              if (!environment.production) {
+                console.error('Failed to load category slider info');
+              }
+              this.error = 'Failed to load plan information.';
+            },
           });
-      });
+      },
+      error: () => {
+        if (!environment.production) {
+          console.error('Failed to load main slider info');
+        }
+        this.error = 'Failed to load plan information.';
+      },
+    });
   }
 
+  // Opens modal for activating a specific plan
   openActivateModal(article: Article, planType: string): void {
     this.selectedArticleId = article.id!;
     this.selectedPlanType = planType;
 
     if (planType === 'CATEGORY_SLIDER' && !article.category?.slug) {
-      alert('Error: Este artículo no tiene una categoría asignada.');
+      this.error = 'This article does not have a category assigned.';
       return;
     }
 
@@ -94,12 +113,13 @@ export class MyArticlesComponent implements OnInit {
     this.loadPlanInfo(planType);
   }
 
+  // Loads plan information for a specific plan type
   loadPlanInfo(planType: string): void {
     const article = this.articles.find((a) => a.id === this.selectedArticleId);
     const categorySlug = article?.category?.slug || null;
 
     if (!categorySlug && planType === 'CATEGORY_SLIDER') {
-      alert('Error: No se encontró la categoría para este artículo.');
+      this.error = 'No valid category found for this article.';
       return;
     }
 
@@ -113,11 +133,15 @@ export class MyArticlesComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: () => {
-        alert('Error loading plan information. Please try again.');
+        if (!environment.production) {
+          console.error('Failed to load plan information');
+        }
+        this.error = 'Failed to load plan information.';
       },
     });
   }
 
+  // Handles plan selection and activation
   handlePlanSelection(planType: string): void {
     if (!this.selectedArticleId) return;
 
@@ -129,10 +153,11 @@ export class MyArticlesComponent implements OnInit {
     const categorySlug = selectedArticle.category?.slug?.trim() || null;
 
     if (!categorySlug && planType === 'CATEGORY_SLIDER') {
-      alert("Error: This article doesn't have a valid category.");
+      this.error = 'This article does not have a valid category.';
       return;
     }
-    this.successMessage = `✅ ${planType.replace(
+
+    this.successMessage = `${planType.replace(
       '_',
       ' '
     )} activated successfully!`;
@@ -174,7 +199,10 @@ export class MyArticlesComponent implements OnInit {
         .subscribe({
           next: applyPlanToArticle,
           error: () => {
-            alert('Error activating plan as admin');
+            if (!environment.production) {
+              console.error('Failed to activate plan as admin');
+            }
+            this.error = 'Failed to activate plan as admin.';
             this.closePlanModal();
           },
         });
@@ -186,19 +214,23 @@ export class MyArticlesComponent implements OnInit {
       .subscribe({
         next: applyPlanToArticle,
         error: () => {
-          alert(`Error activating the plan ${planType}.`);
+          if (!environment.production) {
+            console.error('Failed to activate plan');
+          }
+          this.error = `Failed to activate ${planType.replace('_', ' ')}.`;
           this.closePlanModal();
         },
       });
   }
 
+  // Closes plan selection modal
   closePlanModal(): void {
     this.showPlanModal = false;
     this.selectedArticleId = null;
     this.selectedPlanType = null;
   }
 
-  // ✅ Modal de confirmación genérico
+  // Opens generic confirmation modal
   openConfirmationModal(
     title: string,
     message: string,
@@ -215,7 +247,7 @@ export class MyArticlesComponent implements OnInit {
     };
   }
 
-  // ✅ Abrir modal para eliminar
+  // Opens modal for deleting an article
   openDeleteModal(id: number): void {
     this.openConfirmationModal(
       'Delete Article',
@@ -225,23 +257,40 @@ export class MyArticlesComponent implements OnInit {
     );
   }
 
-  // ✅ Confirmar eliminar
+  // Confirms and deletes an article
   confirmDelete(id: number): void {
     this.articleService.deleteArticleWithCleanup(id).subscribe({
       next: () => {
+        // Update the article list after deletion
         this.articles = this.articles.filter((a) => a.id !== id);
+
+        // Hide the confirmation modal
         this.confirmationModal.visible = false;
+
+        // Set success message
+
+        this.successMessage = 'Article deleted successfully.';
+        setTimeout(() => {
+          this.successMessage = null;
+        }, 3000);
         this.cdr.detectChanges();
+
+        // Ensure view updates
+        this.cdr.detectChanges(); // Manually trigger change detection after the update
+        this.cdr.markForCheck(); // Ensure Angular checks for changes on the next cycle
       },
       error: () => {
-        this.error = 'Could not delete the article.';
+        if (!environment.production) {
+          console.error('Failed to delete article');
+        }
+        this.error = 'Failed to delete article.';
         this.confirmationModal.visible = false;
         this.cdr.detectChanges();
       },
     });
   }
 
-  // ✅ Abrir modal para cancelar suscripción
+  // Opens modal for canceling a subscription
   openCancelModal(article: Article, planType: string): void {
     const plan = article.activePlans?.find((p) => p.planType === planType);
     if (!plan) return;
@@ -254,28 +303,40 @@ export class MyArticlesComponent implements OnInit {
     );
   }
 
-  // ✅ Confirmar cancelación de suscripción
+  // Confirms cancellation of a subscription
   confirmCancel(article: Article, planType: string): void {
     this.articleService.cancelSubscription(article.id, planType).subscribe({
       next: () => {
         const plan = article.activePlans?.find((p) => p.planType === planType);
-        if (plan) plan.cancelled = true;
+        if (plan) {
+          plan.cancelled = true;
+        }
         this.confirmationModal.visible = false;
+        this.successMessage = 'Subscription cancelled successfully.';
+        setTimeout(() => {
+          this.successMessage = null;
+        }, 3000);
+        this.cdr.detectChanges();
       },
       error: () => {
-        alert('Failed to cancel the subscription.');
+        if (!environment.production) {
+          console.error('Failed to cancel subscription');
+        }
+        this.error = 'Failed to cancel subscription.';
         this.confirmationModal.visible = false;
+        this.cdr.detectChanges();
       },
     });
   }
 
-  // Utilidades
+  // Checks if a plan has expired
   isExpired(expirationAt: string | null | undefined): boolean {
     if (!expirationAt) return false;
     const expirationDate = new Date(expirationAt);
     return expirationDate < new Date();
   }
 
+  // Checks if an article has an active plan
   hasActivePlanType(article: Article, planType: string): boolean {
     return (
       article.activePlans?.some(

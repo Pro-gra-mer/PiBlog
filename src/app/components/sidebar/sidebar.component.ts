@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { CategoryService, Category } from '../../services/category.service';
 import { RouterLink } from '@angular/router';
+import { environment } from '../../environments/environment.dev';
 
 @Component({
   selector: 'app-sidebar',
@@ -19,11 +20,12 @@ export class SidebarComponent implements OnInit {
   ngOnInit(): void {
     this.categoryService.getAllCategories().subscribe({
       next: (data) => {
-        // Oculta la categoría 'sin-categoria'
         this.categories = data.filter((c) => c.slug !== 'sin-categoria');
       },
-      error: (err) => {
-        console.error('Error loading categories', err);
+      error: () => {
+        if (!environment.production) {
+          console.error('Failed to load categories');
+        }
       },
     });
   }

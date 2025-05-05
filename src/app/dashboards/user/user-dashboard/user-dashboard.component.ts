@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { ArticleService } from '../../../services/article.service'; // Ajusta si cambia el path
+import { ArticleService } from '../../../services/article.service';
 import {
   NavigationEnd,
   Router,
@@ -9,6 +9,8 @@ import {
 import { CommonModule } from '@angular/common';
 import { filter } from 'rxjs';
 import { PiAuthService } from '../../../services/pi-auth.service';
+import { environment } from '../../../environments/environment.dev';
+
 @Component({
   selector: 'app-user-dashboard',
   standalone: true,
@@ -34,36 +36,50 @@ export class UserDashboardComponent implements OnInit {
       });
   }
 
+  // Initializes component and checks for rejected articles
   ngOnInit(): void {
     this.checkRejectedArticles();
   }
 
-  toggleSidebar() {
+  // Toggles sidebar visibility
+  toggleSidebar(): void {
     this.sidebarOpen = !this.sidebarOpen;
   }
 
+  // Checks if user has rejected articles
   checkRejectedArticles(): void {
     this.articleService.getUserRejectedArticles().subscribe({
       next: (articles) => {
         this.hasRejected = articles.length > 0;
       },
       error: () => {
+        if (!environment.production) {
+          console.error('Failed to check rejected articles');
+        }
         this.hasRejected = false;
       },
     });
   }
 
+  // Handles navigation to create article or advertise page
   handleCreateArticleClick(): void {
     if (this.piAuthService.isAdmin()) {
-      // 🔓 Si es admin, puede ir directamente a redactar
       this.router.navigate(['/user-dashboard/create-article']);
     } else {
-      // 🔐 Si no es admin, debe ir a pagar primero
+      this.infoMessage =
+        'You need to subscribe to create an article. Redirecting to subscription page...';
       this.showInfoMessage = true;
-
       setTimeout(() => {
+        this.showInfoMessage = false;
+        this.infoMessage = null;
         this.router.navigate(['/advertise']);
       }, 3000);
+    }
+  }
+
+  closeSidebar(): void {
+    if (window.innerWidth < 1024) {
+      this.sidebarOpen = false;
     }
   }
 }

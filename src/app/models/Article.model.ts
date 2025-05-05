@@ -31,9 +31,9 @@ export interface Article {
   promoVideoUploadDate?: string;
 
   planType?: string;
-  expirationAt?: string; // o Date si prefieres formatearlo mejor
+  expirationAt?: string;
 
-  // Nuevas propiedades para manejar múltiples planes
+  // Plans
   activePlans?: Array<{
     planType: string;
     expirationAt: string;

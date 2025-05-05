@@ -1,8 +1,8 @@
-<section class="mt-6 bg-white p-6 rounded-lg shadow-lg shadow-gradientEnd">
-  <h2 class="text-2xl font-bold text-primary mb-4">Your Published Articles</h2>
+<section class="mt-6 bg-white p-6 rounded-lg shadow-lg shadow-gray-400">
+  <h2 class="text-3xl font-bold text-primary mb-4">Your Published Articles</h2>
   <div
     *ngIf="successMessage"
-    class="mb-4 p-3 mt-10 rounded bg-green-100 text-green-800 text-sm font-medium"
+    class="mb-4 p-3 mt-10 rounded bg-green-100 text-green-800 text-md font-medium"
   >
     {{ successMessage }}
   </div>
@@ -13,18 +13,18 @@
   <ul *ngIf="!loading && !error && articles.length > 0" class="space-y-4">
     <li
       *ngFor="let article of articles"
-      class="p-4 bg-white border border-gray-200 rounded-xl shadow hover:shadow-md transition"
+      class="p-4 bg-white border border-gray-300 rounded-xl shadow hover:shadow-md transition"
     >
       <div class="flex justify-between items-start">
         <div>
-          <h3 class="text-lg font-bold text-primary">{{ article.title }}</h3>
-          <p class="text-sm text-gray-500">
+          <h3 class="text-xl font-bold text-primary">{{ article.title }}</h3>
+          <p class="text-lg text-gray-700">
             {{ article.company }} - {{ article.app }} -
             {{ article.category.name }}
           </p>
 
           <span
-            class="inline-block mt-1 text-xs font-semibold px-2 py-1 rounded bg-green-100 text-green-800 uppercase tracking-wide"
+            class="inline-block mt-1 text-md font-semibold px-2 py-1 rounded bg-green-100 text-green-800 uppercase tracking-wide"
           >
             {{ article.status }}
           </span>
@@ -36,7 +36,7 @@
             >
               <ng-container *ngIf="plan.planType !== 'STANDARD'">
                 <span
-                  class="inline-block px-2 py-1 text-xs font-medium rounded-full"
+                  class="inline-block px-2 py-1 text-md font-medium rounded-full"
                   [ngClass]="{
                     'bg-pink-100 text-pink-800':
                       plan.planType === 'MAIN_SLIDER',
@@ -51,13 +51,13 @@
                   <a
                     href="javascript:void(0)"
                     (click)="openCancelModal(article, plan.planType)"
-                    class="text-black hover:underline text-xs"
+                    class="text-black hover:underline text-md"
                   >
                     Cancel Subscription
                   </a>
                 </ng-container>
                 <ng-template #cancelledInfo>
-                  <span class="text-xs text-gray-500">
+                  <span class="text-ms text-gray-700">
                     Expires on {{ plan.expirationAt | date : "mediumDate" }}
                   </span>
                 </ng-template>
@@ -66,7 +66,7 @@
           </div>
 
           <!-- Enlaces para activar planes -->
-          <div class="mt-4 text-sm text-gray-600 flex flex-wrap gap-4">
+          <div class="mt-4 text-md text-gray-600 flex flex-wrap gap-4">
             <a
               *ngIf="!hasActivePlanType(article, 'CATEGORY_SLIDER')"
               href="javascript:void(0)"

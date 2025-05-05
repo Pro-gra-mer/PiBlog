@@ -16,6 +16,8 @@ import jakarta.transaction.Transactional;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -32,12 +34,15 @@ import java.util.Optional;
 @Service
 public class ArticleService {
 
+  private static final Logger log = LoggerFactory.getLogger(ArticleService.class);
+
   private final ArticleRepository articleRepository;
   private final CategoryRepository categoryRepository;
   private final UserRepository userRepository;
   private final Cloudinary cloudinary;
   private final PaymentRepository paymentRepository;
   private final PaymentService paymentService;
+  private final boolean isProduction;
 
   @Autowired
   public ArticleService(
@@ -46,7 +51,8 @@ public class ArticleService {
     UserRepository userRepository,
     PaymentRepository paymentRepository,
     PaymentService paymentService,
-    @Value("${cloudinary.url}") String cloudinaryUrl
+    @Value("${cloudinary.url}") String cloudinaryUrl,
+    @Value("${app.production:false}") boolean isProduction
   ) {
     this.articleRepository = articleRepository;
     this.categoryRepository = categoryRepository;
@@ -54,21 +60,23 @@ public class ArticleService {
     this.paymentRepository = paymentRepository;
     this.paymentService = paymentService;
     this.cloudinary = new Cloudinary(cloudinaryUrl);
+    this.isProduction = isProduction;
   }
 
+  // Creates a new article
   public Article createArticle(ArticleDTO articleDTO, String username) {
     try {
       validateImageCount(articleDTO);
       if (articleDTO.getCategory() == null || articleDTO.getCategory().getName() == null) {
-        throw new IllegalArgumentException("El nombre de la categoría es obligatorio");
+        throw new IllegalArgumentException("Category name is required");
       }
       User user = userRepository.findByUsername(username)
-        .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + username));
+        .orElseThrow(() -> new RuntimeException("User not found"));
       Article article = buildArticleFromDto(articleDTO);
 
       if (user.getRole() == UserRole.USER) {
         if (articleDTO.getStatus() == ArticleStatus.PUBLISHED) {
-          throw new IllegalArgumentException("Los usuarios no pueden publicar artículos directamente.");
+          throw new IllegalArgumentException("Users cannot publish articles directly");
         }
         article.setStatus(articleDTO.getStatus() != null ? articleDTO.getStatus() : ArticleStatus.DRAFT);
       } else {
@@ -84,10 +92,14 @@ public class ArticleService {
 
       return savedArticle;
     } catch (RuntimeException e) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
+      if (!isProduction) {
+        log.error("Failed to create article: {}", e.getMessage());
+      }
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to create article", e);
     }
   }
 
+  // Validates image count in article content
   private void validateImageCount(ArticleDTO articleDTO) {
     int imageCount = 0;
     if (articleDTO.getHeaderImage() != null && !articleDTO.getHeaderImage().isEmpty()) {
@@ -98,10 +110,11 @@ public class ArticleService {
     imageCount += imgElements.size();
 
     if (imageCount > 5) {
-      throw new IllegalArgumentException("El artículo no puede contener más de 5 imágenes en total.");
+      throw new IllegalArgumentException("Article cannot contain more than 5 images");
     }
   }
 
+  // Builds article from DTO
   private Article buildArticleFromDto(ArticleDTO articleDTO) {
     Article article = new Article();
     article.setApp(articleDTO.getApp());
@@ -114,7 +127,7 @@ public class ArticleService {
 
     String categoryName = articleDTO.getCategory().getName();
     Category category = categoryRepository.findByName(categoryName)
-      .orElseThrow(() -> new RuntimeException("Category not found: " + categoryName));
+      .orElseThrow(() -> new RuntimeException("Category not found"));
     article.setCategory(category);
     article.setCategoryName(categoryName);
     article.setCategorySlug(category.getSlug());
@@ -129,22 +142,24 @@ public class ArticleService {
     return article;
   }
 
-
+  // Retrieves all articles
   public List<Article> getAllArticles() {
     return articleRepository.findAll();
   }
 
+  // Retrieves article by ID
   public Optional<Article> getArticleById(Long id) {
     return articleRepository.findById(id);
   }
 
+  // Approves an article
   public Optional<Article> approveArticle(Long id) {
     Optional<Article> articleOpt = articleRepository.findById(id);
     if (articleOpt.isPresent()) {
       Article article = articleOpt.get();
 
       if (article.getStatus() != ArticleStatus.PENDING_APPROVAL) {
-        throw new IllegalStateException("Only pending articles can be approved.");
+        throw new IllegalStateException("Only pending articles can be approved");
       }
 
       article.setStatus(ArticleStatus.PUBLISHED);
@@ -156,35 +171,45 @@ public class ArticleService {
     return Optional.empty();
   }
 
+  // Deletes an article and associated payments
   @Transactional
   public boolean deleteArticle(Long id) {
-    Optional<Article> optionalArticle = articleRepository.findById(id);
-    if (optionalArticle.isEmpty()) {
-      return false;
+    try {
+      Optional<Article> optionalArticle = articleRepository.findById(id);
+      if (optionalArticle.isEmpty()) {
+        return false;
+      }
+
+      Article article = optionalArticle.get();
+
+      List<Payment> payments = paymentRepository.findByArticle(article);
+      payments.forEach(paymentRepository::delete);
+
+      articleRepository.delete(article);
+      return true;
+    } catch (Exception e) {
+      if (!isProduction) {
+        log.error("Failed to delete article with ID: {}", id);
+      }
+      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete article");
     }
-
-    Article article = optionalArticle.get();
-
-    List<Payment> payments = paymentRepository.findByArticle(article);
-    payments.forEach(paymentRepository::delete);
-
-
-    articleRepository.delete(article);
-
-    return true;
   }
 
+  // Deletes an orphan image from Cloudinary
   public boolean deleteOrphanImage(String publicId) {
     try {
       @SuppressWarnings("unchecked")
       Map<String, Object> result = cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
       return "ok".equals(result.get("result"));
     } catch (Exception e) {
-      e.printStackTrace();
+      if (!isProduction) {
+        log.error("Failed to delete orphan image: {}", publicId);
+      }
       return false;
     }
   }
 
+  // Submits an article for review
   public Optional<Article> submitArticleForReview(Long id) {
     Optional<Article> articleOpt = articleRepository.findById(id);
     if (articleOpt.isPresent()) {
@@ -198,71 +223,93 @@ public class ArticleService {
     return Optional.empty();
   }
 
+  // Retrieves articles by status
   public List<Article> getArticlesByStatus(ArticleStatus status) {
     return articleRepository.findByStatus(status);
   }
 
+  // Updates an existing article
   public Optional<Article> updateArticle(Long id, ArticleDTO articleDTO) {
-    return articleRepository.findById(id).map(article -> {
-      article.setCompany(articleDTO.getCompany());
-      article.setApp(articleDTO.getApp());
-      article.setTitle(articleDTO.getTitle());
-      article.setDescription(articleDTO.getDescription());
-      article.setHeaderImage(articleDTO.getHeaderImage());
-      article.setHeaderImagePublicId(articleDTO.getHeaderImagePublicId());
-      article.setHeaderImageUploadDate(articleDTO.getHeaderImageUploadDate());
+    try {
+      return articleRepository.findById(id).map(article -> {
+        article.setCompany(articleDTO.getCompany());
+        article.setApp(articleDTO.getApp());
+        article.setTitle(articleDTO.getTitle());
+        article.setDescription(articleDTO.getDescription());
+        article.setHeaderImage(articleDTO.getHeaderImage());
+        article.setHeaderImagePublicId(articleDTO.getHeaderImagePublicId());
+        article.setHeaderImageUploadDate(articleDTO.getHeaderImageUploadDate());
 
-      String categoryName = articleDTO.getCategory().getName();
-      Category category = categoryRepository.findByName(categoryName)
-        .orElseThrow(() -> new RuntimeException("Category not found: " + categoryName));
-      article.setCategory(category);
-      article.setCategoryName(categoryName);
-      article.setCategorySlug(category.getSlug());
+        String categoryName = articleDTO.getCategory().getName();
+        Category category = categoryRepository.findByName(categoryName)
+          .orElseThrow(() -> new RuntimeException("Category not found"));
+        article.setCategory(category);
+        article.setCategoryName(categoryName);
+        article.setCategorySlug(category.getSlug());
 
-      article.setContent(articleDTO.getContent());
-      article.setPublishDate(articleDTO.getPublishDate());
-      article.setPromoVideo(articleDTO.getPromoVideo());
-      article.setPromoVideoPublicId(articleDTO.getPromoVideoPublicId());
-      article.setPromoVideoUploadDate(articleDTO.getPromoVideoUploadDate());
-      article.setStatus(articleDTO.getStatus());
+        article.setContent(articleDTO.getContent());
+        article.setPublishDate(articleDTO.getPublishDate());
+        article.setPromoVideo(articleDTO.getPromoVideo());
+        article.setPromoVideoPublicId(articleDTO.getPromoVideoPublicId());
+        article.setPromoVideoUploadDate(articleDTO.getPromoVideoUploadDate());
+        article.setStatus(articleDTO.getStatus());
 
-      System.out.println("Actualizando artículo ID " + id + " con estado: " + articleDTO.getStatus());
+        if (!isProduction) {
+          log.info("Updating article ID: {} with status: {}", id, articleDTO.getStatus());
+        }
 
-      return articleRepository.save(article);
-    });
+        return articleRepository.save(article);
+      });
+    } catch (RuntimeException e) {
+      if (!isProduction) {
+        log.error("Failed to update article with ID: {}", id);
+      }
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to update article");
+    }
   }
 
+  // Retrieves draft articles by user
   public List<Article> getDraftsByUser(String username) {
     return articleRepository.findByStatusAndCreatedBy(ArticleStatus.DRAFT, username);
   }
 
+  // Retrieves published articles by user
   public List<ArticleDTO> getPublishedArticlesByUser(String username) {
-    List<Article> articles = articleRepository.findByStatusAndCreatedBy(ArticleStatus.PUBLISHED, username);
+    try {
+      List<Article> articles = articleRepository.findByStatusAndCreatedBy(ArticleStatus.PUBLISHED, username);
 
-    return articles.stream().map(article -> {
-      ArticleDTO dto = mapToDTO(article); // Tu método personalizado para convertir Article a ArticleDTO
+      return articles.stream().map(article -> {
+        ArticleDTO dto = mapToDTO(article);
 
-      // 🔗 Vincula la información del pago si existe
-      paymentRepository.findByArticle(article).stream()
-        .filter(p -> "COMPLETED".equals(p.getStatus()))
-        .max((p1, p2) -> p1.getCompletedAt().compareTo(p2.getCompletedAt()))
-        .ifPresent(payment -> {
-          dto.setPlanType(payment.getPlanType());
-          dto.setExpirationAt(payment.getExpirationAt());
+        paymentRepository.findByArticle(article).stream()
+          .filter(p -> "COMPLETED".equals(p.getStatus()))
+          .max((p1, p2) -> p1.getCompletedAt().compareTo(p2.getCompletedAt()))
+          .ifPresent(payment -> {
+            dto.setPlanType(payment.getPlanType());
+            dto.setExpirationAt(payment.getExpirationAt());
 
-          System.out.println("🔁 Article " + article.getId() +
-            " => planType: " + payment.getPlanType() +
-            ", expires: " + payment.getExpirationAt());
-        });
+            if (!isProduction) {
+              log.info("Article ID: {} linked to planType: {}, expires: {}",
+                article.getId(), payment.getPlanType(), payment.getExpirationAt());
+            }
+          });
 
-      return dto;
-    }).toList();
+        return dto;
+      }).toList();
+    } catch (Exception e) {
+      if (!isProduction) {
+        log.error("Failed to retrieve published articles for user: {}", username);
+      }
+      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to retrieve published articles");
+    }
   }
 
+  // Retrieves pending articles by user
   public List<Article> getPendingArticlesByUser(String username) {
     return articleRepository.findByStatusAndCreatedBy(ArticleStatus.PENDING_APPROVAL, username);
   }
 
+  // Deletes an orphan video from Cloudinary
   public boolean deleteOrphanVideo(String publicId) {
     try {
       @SuppressWarnings("unchecked")
@@ -272,22 +319,26 @@ public class ArticleService {
       );
       return "ok".equals(result.get("result"));
     } catch (Exception e) {
-      e.printStackTrace();
+      if (!isProduction) {
+        log.error("Failed to delete orphan video: {}", publicId);
+      }
       return false;
     }
   }
 
+  // Retrieves articles by category slug
   public List<Article> getArticlesByCategorySlug(String slug) {
     return articleRepository.findByCategorySlugIgnoreCaseAndStatus(slug, ArticleStatus.PUBLISHED);
   }
 
+  // Rejects an article with a reason
   public Optional<Article> rejectArticle(Long id, String reason) {
     Optional<Article> articleOpt = articleRepository.findById(id);
     if (articleOpt.isPresent()) {
       Article article = articleOpt.get();
 
       if (article.getStatus() != ArticleStatus.PENDING_APPROVAL) {
-        throw new IllegalStateException("Only pending articles can be rejected.");
+        throw new IllegalStateException("Only pending articles can be rejected");
       }
 
       article.setStatus(ArticleStatus.REJECTED);
@@ -299,10 +350,12 @@ public class ArticleService {
     return Optional.empty();
   }
 
+  // Retrieves rejected articles by user
   public List<Article> getRejectedArticlesByUser(String username) {
     return articleRepository.findByStatusAndCreatedBy(ArticleStatus.REJECTED, username);
   }
 
+  // Retrieves promoted videos by type
   public List<Article> getPromotedVideosByType(PromoteType type) {
     return articleRepository.findByStatus(ArticleStatus.PUBLISHED).stream()
       .filter(article -> article.getPromotions().stream()
@@ -314,11 +367,10 @@ public class ArticleService {
       .toList();
   }
 
-
+  // Retrieves promoted videos by category slug with rotation
   public List<Article> getPromotedVideosByCategorySlug(String slug) {
-    List<Article> articles = articleRepository.findByCategorySlugIgnoreCaseAndStatus(
-        slug, ArticleStatus.PUBLISHED
-      ).stream()
+    List<Article> articles = articleRepository.findByCategorySlugIgnoreCaseAndStatus(slug, ArticleStatus.PUBLISHED)
+      .stream()
       .filter(article -> article.getPromotions().stream()
         .anyMatch(promotion ->
           promotion.getPromoteType() == PromoteType.CATEGORY_SLIDER &&
@@ -339,8 +391,7 @@ public class ArticleService {
     return rotated;
   }
 
-
-
+  // Retrieves promoted videos for main slider with rotation
   public List<Article> getPromotedVideosForMainSlider() {
     List<Article> articles = articleRepository.findByStatus(ArticleStatus.PUBLISHED).stream()
       .filter(article -> article.getPromotions().stream()
@@ -363,9 +414,7 @@ public class ArticleService {
     return rotated;
   }
 
-
-
-
+  // Maps article to DTO
   public ArticleDTO mapToDTO(Article article) {
     ArticleDTO dto = new ArticleDTO();
 
@@ -393,16 +442,16 @@ public class ArticleService {
       .map(promotion -> new ActivePlanDTO(
         promotion.getPromoteType().name(),
         promotion.getExpirationAt(),
-        promotion.isCancelled() // ✅ añadir estado cancelado
+        promotion.isCancelled()
       ))
       .toList();
-
 
     dto.setActivePlans(activePlans);
 
     return dto;
   }
 
+  // Retrieves featured articles with rotation
   public List<ArticleDTO> getFeaturedArticlesRotated() {
     List<Article> articles = articleRepository.findByStatus(ArticleStatus.PUBLISHED);
 
@@ -415,17 +464,15 @@ public class ArticleService {
         )
       ).toList();
 
-    // Rotar según el día del año (1–365)
+    if (featured.isEmpty()) return featured;
+
     int dayOfYear = LocalDate.now().getDayOfYear();
     int rotationIndex = dayOfYear % featured.size();
 
-    // Rotar la lista
     List<ArticleDTO> rotated = new ArrayList<>();
     rotated.addAll(featured.subList(rotationIndex, featured.size()));
     rotated.addAll(featured.subList(0, rotationIndex));
 
     return rotated;
   }
-
-
 }

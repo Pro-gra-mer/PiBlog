@@ -1,0 +1,12 @@
+@keyframes zoomInSlow {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.05);
+  }
+}
+
+.zoom-in-bg {
+  animation: zoomInSlow 10s ease-in-out forwards;
+}

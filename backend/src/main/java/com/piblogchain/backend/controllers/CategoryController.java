@@ -50,4 +50,12 @@ public class CategoryController {
   public ResponseEntity<List<Category>> getAllCategories() {
     return ResponseEntity.ok(categoryService.getAllCategories());
   }
+
+  @GetMapping("/slug/{slug}")
+  public ResponseEntity<Category> getCategoryBySlug(@PathVariable String slug) {
+    return categoryService.getCategoryBySlug(slug)
+      .map(ResponseEntity::ok)
+      .orElse(ResponseEntity.notFound().build());
+  }
+
 }

@@ -35,7 +35,6 @@ export class ArticleListComponent implements OnInit {
   }
 
   onReadMore(articleId: number): void {
-    // Navega a la página de detalle del artículo, por ejemplo: /articles/:id
     this.router.navigate(['/articles', articleId]);
   }
 }

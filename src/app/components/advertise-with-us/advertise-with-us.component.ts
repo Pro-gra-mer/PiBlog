@@ -2,7 +2,6 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { environment } from '../../environments/environment.dev';
-
 import { Router } from '@angular/router';
 import { PromoteType } from '../../models/PromoteType';
 import { Category, CategoryService } from '../../services/category.service';
@@ -31,22 +30,29 @@ export class AdvertiseWithUsComponent {
   categories: Category[] = [];
   selectedCategory: string = '';
   private categoryService = inject(CategoryService);
+  piPriceUsd: number = 1;
+  standardPricePi!: number;
+  categoryPricePi!: number;
+  mainPricePi!: number;
 
   ngOnInit(): void {
-    this.checkSlots();
+    this.fetchPlanPricesInPi();
     this.categoryService.getAllCategories().subscribe({
       next: (data) => {
         this.categories = data;
-        // Establece la primera como predeterminada si quieres
         if (data.length > 0) {
           this.selectedCategory = data[0].slug || '';
           this.checkCategorySliderSlot();
         }
       },
-      error: (err) => console.error('Error fetching categories', err),
+      error: () => {
+        if (!environment.production) {
+          console.error('Failed to fetch categories');
+        }
+      },
     });
 
-    this.checkMainSliderSlot(); // también puedes mover esto a parte
+    this.checkMainSliderSlot();
   }
 
   checkMainSliderSlot(): void {
@@ -56,7 +62,6 @@ export class AdvertiseWithUsComponent {
 
     const user = JSON.parse(storedUser);
     const headers = { Authorization: `Bearer ${user.accessToken}` };
-
     const url = `${environment.apiUrl}/api/payments/slots?promoteType=${PromoteType.MAIN_SLIDER}`;
 
     this.http
@@ -70,23 +75,25 @@ export class AdvertiseWithUsComponent {
         next: (res) => {
           this.mainSliderAvailable = res.remainingSlots > 0;
           this.availableSlots['MAIN_SLIDER'] = res.remainingSlots;
-          console.log(`✅ MAIN_SLIDER remaining:`, res.remainingSlots);
+          if (!environment.production) {
+            console.log(`MAIN_SLIDER remaining: ${res.remainingSlots}`);
+          }
         },
-        error: (err) => {
-          console.error(`❌ Error checking MAIN_SLIDER slots:`, err);
+        error: () => {
+          if (!environment.production) {
+            console.error('Failed to check MAIN_SLIDER slots');
+          }
         },
       });
   }
 
   checkCategorySliderSlot(): void {
     if (typeof window === 'undefined' || !window.localStorage) return;
-
     const storedUser = localStorage.getItem('user');
     if (!storedUser || !this.selectedCategory) return;
 
     const user = JSON.parse(storedUser);
     const headers = { Authorization: `Bearer ${user.accessToken}` };
-
     const url = `${environment.apiUrl}/api/payments/slots?promoteType=${PromoteType.CATEGORY_SLIDER}&categorySlug=${this.selectedCategory}`;
 
     this.http
@@ -100,71 +107,26 @@ export class AdvertiseWithUsComponent {
         next: (res) => {
           this.categorySliderAvailable = res.remainingSlots > 0;
           this.availableSlots['CATEGORY_SLIDER'] = res.remainingSlots;
-          console.log(
-            `✅ CATEGORY_SLIDER remaining in ${this.selectedCategory}:`,
-            res.remainingSlots
-          );
+          if (!environment.production) {
+            console.log(
+              `CATEGORY_SLIDER remaining in ${this.selectedCategory}: ${res.remainingSlots}`
+            );
+          }
         },
-        error: (err) => {
-          console.error(`❌ Error checking CATEGORY_SLIDER slots:`, err);
+        error: () => {
+          if (!environment.production) {
+            console.error('Failed to check CATEGORY_SLIDER slots');
+          }
         },
       });
-  }
-
-  checkSlots(): void {
-    if (typeof window === 'undefined') return;
-
-    const storedUser = localStorage.getItem('user');
-    if (!storedUser) return;
-
-    const user = JSON.parse(storedUser);
-    const headers = {
-      Authorization: `Bearer ${user.accessToken}`,
-    };
-
-    const types: PromoteType[] = [
-      PromoteType.MAIN_SLIDER,
-      PromoteType.CATEGORY_SLIDER,
-    ];
-
-    const categorySlug = 'sin-categoria'; // o el que uses por defecto
-
-    types.forEach((type) => {
-      let url = `${environment.apiUrl}/api/payments/slots?promoteType=${type}`;
-
-      if (type === PromoteType.CATEGORY_SLIDER) {
-        url += `&categorySlug=${categorySlug}`;
-      }
-
-      this.http
-        .get<{
-          available: boolean;
-          usedSlots: number;
-          remainingSlots: number;
-          totalSlots: number;
-        }>(url, { headers })
-        .subscribe({
-          next: (res) => {
-            console.log(`✅ ${type} remaining:`, res.remainingSlots);
-            this.availableSlots[type] = res.remainingSlots;
-            if (type === PromoteType.MAIN_SLIDER) {
-              this.mainSliderAvailable = res.remainingSlots > 0;
-            }
-            if (type === PromoteType.CATEGORY_SLIDER) {
-              this.categorySliderAvailable = res.remainingSlots > 0;
-            }
-          },
-          error: (err) => {
-            console.error(`❌ Error checking slots for ${type}:`, err);
-          },
-        });
-    });
   }
 
   pay(plan: PromoteType): void {
     const storedUser = localStorage.getItem('user');
     if (!storedUser) {
-      console.warn('User not authenticated');
+      if (!environment.production) {
+        console.warn('User not authenticated');
+      }
       this.showLoginMessage = true;
       setTimeout(() => {
         this.showLoginMessage = false;
@@ -188,7 +150,7 @@ export class AdvertiseWithUsComponent {
       .subscribe({
         next: (payment: any) => {
           if (environment.sandbox || user.username === 'sandbox-user') {
-            alert('🧪 Modo sandbox activo. Simulando pago completo sin SDK.');
+            alert('Sandbox mode active. Simulating payment without SDK.');
             localStorage.setItem('pendingPaymentId', fakePaymentId);
 
             const accessToken = user.accessToken;
@@ -230,9 +192,12 @@ export class AdvertiseWithUsComponent {
             return;
           }
 
-          // 🟢 PRODUCCIÓN
+          // Production
           if (typeof Pi === 'undefined') {
-            console.error('Pi SDK no disponible');
+            if (!environment.production) {
+              console.error('Pi SDK not available');
+            }
+            alert('Payment SDK unavailable. Please try again later.');
             return;
           }
 
@@ -260,9 +225,17 @@ export class AdvertiseWithUsComponent {
                   { headers }
                 )
                 .subscribe({
-                  next: () => console.log('✔ Pago aprobado.'),
-                  error: (err) =>
-                    console.error('❌ Error al aprobar el pago:', err),
+                  next: () => {
+                    if (!environment.production) {
+                      console.log('Payment approved');
+                    }
+                  },
+                  error: () => {
+                    if (!environment.production) {
+                      console.error('Failed to approve payment');
+                    }
+                    alert('Failed to process payment. Please try again.');
+                  },
                 });
             },
 
@@ -289,32 +262,40 @@ export class AdvertiseWithUsComponent {
                 )
                 .subscribe({
                   next: () => {
-                    alert(
-                      `✅ ¡Pago completado con éxito para el plan ${plan}!`
-                    );
+                    alert(`Payment completed successfully for plan ${plan}!`);
                     this.router.navigate(['/user-dashboard/create-article']);
                   },
-                  error: (err) => {
-                    console.error('❌ Error al completar el pago:', err);
+                  error: () => {
+                    if (!environment.production) {
+                      console.error('Failed to complete payment');
+                    }
+                    alert('Failed to complete payment. Please try again.');
                   },
                 });
             },
 
             onCancel: (paymentId: string) => {
-              console.warn('❌ Pago cancelado', paymentId);
-              alert('⚠️ El pago fue cancelado o no se confirmó a tiempo.');
+              if (!environment.production) {
+                console.warn('Payment cancelled');
+              }
+              alert('Payment was cancelled or timed out.');
               localStorage.removeItem('pendingPaymentId');
             },
 
             onError: (error: any, paymentId: string) => {
-              console.error('⚠️ Error en el pago', error, paymentId);
-              alert('❌ Ha ocurrido un error al procesar el pago.');
+              if (!environment.production) {
+                console.error('Payment error', error);
+              }
+              alert('An error occurred while processing the payment.');
               localStorage.removeItem('pendingPaymentId');
             },
           });
         },
-        error: (err) => {
-          console.error('Error al crear el pago:', err);
+        error: () => {
+          if (!environment.production) {
+            console.error('Failed to create payment');
+          }
+          alert('Failed to initiate payment. Please try again.');
         },
       });
   }
@@ -334,5 +315,22 @@ export class AdvertiseWithUsComponent {
   cancelPayment(): void {
     this.showConfirmModal = false;
     this.selectedPlan = null;
+  }
+
+  fetchPlanPricesInPi(): void {
+    this.http
+      .get<{ [key: string]: number }>(`${environment.apiUrl}/api/price`)
+      .subscribe({
+        next: (prices) => {
+          this.standardPricePi = prices['STANDARD'];
+          this.categoryPricePi = prices['CATEGORY_SLIDER'];
+          this.mainPricePi = prices['MAIN_SLIDER'];
+        },
+        error: () => {
+          if (!environment.production) {
+            console.error('Failed to fetch PI prices');
+          }
+        },
+      });
   }
 }

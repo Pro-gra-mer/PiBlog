@@ -6,6 +6,7 @@ import {
   HttpRequest,
 } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../environments/environment.dev';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
@@ -16,21 +17,18 @@ export class AuthInterceptor implements HttpInterceptor {
     const storedUser = localStorage.getItem('user');
     let accessToken: string | null = null;
 
-    // Verificar si hay un usuario almacenado
     if (storedUser) {
       try {
         const user = JSON.parse(storedUser);
         accessToken = user.accessToken;
-        console.log('Token encontrado en localStorage:', accessToken); // Depuración
       } catch (error) {
-        console.error('Error al parsear user desde localStorage:', error);
+        if (!environment.production) {
+          console.error('Error parsing user from localStorage:', error);
+        }
       }
-    } else {
-      console.log('No se encontró usuario en localStorage');
     }
 
     if (accessToken) {
-      // Clonar la solicitud y añadir solo el encabezado Authorization si no hay Content-Type definido
       const headers = req.headers
         .set('Authorization', `Bearer ${accessToken}`)
         .set(
@@ -39,10 +37,16 @@ export class AuthInterceptor implements HttpInterceptor {
         );
 
       const authReq = req.clone({ headers });
-      console.log('Solicitud con Authorization:', authReq); // Depuración
+
+      if (!environment.production) {
+        console.log('Request with Authorization header:', authReq);
+      }
+
       return next.handle(authReq);
     } else {
-      console.log('Solicitud sin Authorization:', req); // Depuración
+      if (!environment.production) {
+        console.log('Request without Authorization header:', req);
+      }
     }
 
     return next.handle(req);

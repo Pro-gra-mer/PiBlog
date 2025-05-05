@@ -1,9 +1,35 @@
-<main class="container mx-auto px-4 lg:px-12 py-10 mt-5">
+<main class="container max-w-6xl mx-auto px-4 lg:px-12 py-10 mt-6">
   <div *ngIf="message" class="mb-4 text-red-500">{{ message }}</div>
 
-  <article *ngIf="article" class="bg-white p-8 shadow-lg rounded-lg">
+  <article
+    *ngIf="article"
+    class="bg-white p-8 shadow-lg rounded-lg shadow-gray-400"
+  >
     <header class="mb-6 border-b pb-4">
-      <h1 class="text-4xl font-bold text-indigo-900">{{ article.title }}</h1>
+      <h1 class="text-6xl font-bold text-secondary">{{ article.title }}</h1>
+      <!-- ✅ Nueva línea: Descripción -->
+
+      <div class="mt-4 flex flex-wrap gap-3">
+        <div
+          class="bg-gray-100 text-gray-700 px-4 py-1 rounded-full text-sm shadow-sm"
+        >
+          {{ article.company }}
+        </div>
+        <div
+          class="bg-gray-100 text-gray-700 px-4 py-1 rounded-full text-sm shadow-sm"
+        >
+          {{ article.app }}
+        </div>
+        <div
+          class="bg-gray-100 text-gray-700 px-4 py-1 rounded-full text-sm shadow-sm"
+        >
+          {{ article.category.name }}
+        </div>
+      </div>
+
+      <div class="mt-2 ml-2 text-gray-700">
+        {{ article.publishDate | date : "longDate" }}
+      </div>
       <div *ngIf="article.headerImage" class="mt-4">
         <img
           [src]="article.headerImage"
@@ -11,26 +37,14 @@
           class="w-full max-w-2xl h-auto rounded-lg shadow-md mx-auto"
         />
       </div>
-
-      <!-- ✅ Nueva línea: Descripción -->
-      <p class="mt-4 text-lg text-gray-700">
-        {{ article.description }}
-      </p>
-
-      <div class="mt-2 text-gray-600 flex flex-wrap gap-4">
-        <span><strong>Company:</strong> {{ article.company }}</span>
-        <span><strong>App:</strong> {{ article.app }}</span>
-        <span><strong>Category:</strong> {{ article.category.name }}</span>
-      </div>
-      <div class="mt-2 text-gray-500">
-        <strong>Publication Date:</strong>
-        {{ article.publishDate | date : "longDate" }}
-      </div>
     </header>
 
-    <section class="prose max-w-none" [innerHTML]="safeContent"></section>
+    <section
+      class="prose text-lg max-w-none"
+      [innerHTML]="safeContent"
+    ></section>
 
-    <!-- ✅ Nueva sección: Video promocional -->
+    <!-- Promo vídeo -->
     <div *ngIf="article.promoVideo" class="mt-6">
       <h2 class="text-xl font-semibold text-primary mb-2">Promotional Video</h2>
       <video
@@ -39,26 +53,5 @@
         class="w-full max-w-2xl rounded-md shadow-md"
       ></video>
     </div>
-    <footer class="mt-8">
-      <div
-        *ngIf="article.promoteType !== 'STANDARD'"
-        class="text-sm text-gray-700"
-      >
-        This article includes a promoted video in
-        <strong>
-          {{
-            article.promoteType === "MAIN_SLIDER"
-              ? "the main slider"
-              : "the category slider"
-          }}.
-        </strong>
-      </div>
-      <div
-        *ngIf="article.promoteType === 'STANDARD'"
-        class="text-sm text-gray-700"
-      >
-        No video promotion.
-      </div>
-    </footer>
   </article>
 </main>

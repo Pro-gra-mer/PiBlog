@@ -44,21 +44,25 @@ export class PiAuthService {
         window.addEventListener('load', () => {
           if (typeof Pi !== 'undefined') {
             this.initializePiSDK();
-          } else {
-            console.error('Pi SDK no está disponible');
+          } else if (!environment.production) {
+            console.error('Failed to initialize Pi SDK');
           }
         });
       }
     }
   }
 
+  // Initializes Pi SDK
   private initializePiSDK(): void {
     Pi.init({ version: '2.0', sandbox: true });
   }
 
+  // Authenticates user with Pi SDK
   loginWithPi(): void {
     if (typeof Pi === 'undefined') {
-      console.error('Pi SDK no está disponible.');
+      if (!environment.production) {
+        console.error('Failed to initialize Pi SDK');
+      }
       return;
     }
 
@@ -70,10 +74,11 @@ export class PiAuthService {
         }) => {
           this.ngZone.run(() => {
             if (!auth || !auth.accessToken) {
-              console.error(
-                'Autenticación fallida: no se recibió accessToken',
-                auth
-              );
+              if (!environment.production) {
+                console.error(
+                  'Authentication failed: No access token received'
+                );
+              }
               return;
             }
 
@@ -81,7 +86,7 @@ export class PiAuthService {
             const piId = auth.user?.uid || 'sandbox-user';
 
             this.http
-              .post('http://localhost:8080/auth/pi-login', {
+              .post(`${environment.apiUrl}/auth/pi-login`, {
                 accessToken: auth.accessToken,
                 piId,
                 username,
@@ -101,7 +106,6 @@ export class PiAuthService {
 
                     this.appRef.tick();
 
-                    // 👇 Consultar si tiene plan activo antes de redirigir
                     this.getActivePlan().subscribe((planType) => {
                       const hasPlan = planType !== PromoteType.STANDARD;
 
@@ -110,25 +114,29 @@ export class PiAuthService {
                       } else if (hasPlan) {
                         this.router.navigate(['/user-dashboard']);
                       } else {
-                        this.router.navigate(['/']); // 👈 sin plan, redirige al home
+                        this.router.navigate(['/']);
                       }
                     });
                   }
                 },
-
-                error: (err) => {
-                  console.error('Error en el backend:', err);
+                error: () => {
+                  if (!environment.production) {
+                    console.error('Failed to authenticate with backend');
+                  }
                   this.router.navigate(['/user-dashboard']);
                 },
               });
           });
         }
       )
-      .catch((error: any) => {
-        console.error('Error en Pi.authenticate:', error);
+      .catch(() => {
+        if (!environment.production) {
+          console.error('Failed to authenticate with Pi SDK');
+        }
       });
   }
 
+  // Logs out the user
   logout(): void {
     if (isPlatformBrowser(this.platformId)) {
       localStorage.removeItem('user');
@@ -142,47 +150,77 @@ export class PiAuthService {
     });
   }
 
+  // Checks authentication status
   private checkAuthStatus(): boolean {
     return isPlatformBrowser(this.platformId)
       ? localStorage.getItem('user') !== null
       : false;
   }
 
+  // Retrieves username from local storage
   getUsername(): string | null {
     if (isPlatformBrowser(this.platformId)) {
       const storedUser = localStorage.getItem('user');
-      return storedUser ? JSON.parse(storedUser).username : null;
+      if (storedUser) {
+        try {
+          return JSON.parse(storedUser).username || null;
+        } catch {
+          if (!environment.production) {
+            console.error('Failed to parse user data');
+          }
+          return null;
+        }
+      }
     }
     return null;
   }
 
+  // Checks if user is admin
   isAdmin(): boolean {
     if (isPlatformBrowser(this.platformId)) {
       const storedUser = localStorage.getItem('user');
-      return storedUser ? JSON.parse(storedUser).role === 'ADMIN' : false;
+      if (storedUser) {
+        try {
+          return JSON.parse(storedUser).role === 'ADMIN';
+        } catch {
+          if (!environment.production) {
+            console.error('Failed to parse user data');
+          }
+          return false;
+        }
+      }
     }
     return false;
   }
 
+  // Retrieves user's active plan
   getActivePlan(): Observable<PromoteType> {
     const storedUser = localStorage.getItem('user');
-    if (!storedUser) return of(PromoteType.STANDARD); // o null si prefieres
+    if (!storedUser) return of(PromoteType.STANDARD);
 
-    const { username } = JSON.parse(storedUser);
-    return this.http
-      .get<any>(
-        `${environment.apiUrl}/api/payments/active-plan?username=${username}`
-      )
-      .pipe(
-        map((response) => {
-          const plan = response.planType;
-          return Object.values(PromoteType).includes(plan)
-            ? (plan as PromoteType)
-            : PromoteType.STANDARD;
-        })
-      );
+    try {
+      const { username } = JSON.parse(storedUser);
+      return this.http
+        .get<any>(
+          `${environment.apiUrl}/api/payments/active-plan?username=${username}`
+        )
+        .pipe(
+          map((response) => {
+            const plan = response.planType;
+            return Object.values(PromoteType).includes(plan)
+              ? (plan as PromoteType)
+              : PromoteType.STANDARD;
+          })
+        );
+    } catch {
+      if (!environment.production) {
+        console.error('Failed to parse user data');
+      }
+      return of(PromoteType.STANDARD);
+    }
   }
 
+  // Forces reauthentication with Pi SDK
   forceReauthentication(): void {
     if (isPlatformBrowser(this.platformId)) {
       localStorage.removeItem('user');

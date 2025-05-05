@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ArticleService } from '../../../services/article.service';
 import { Article } from '../../../models/Article.model';
 import { Router } from '@angular/router';
+import { environment } from '../../../environments/environment.dev';
 
 @Component({
   selector: 'app-drafts',
@@ -15,12 +16,12 @@ export class DraftsComponent implements OnInit {
   drafts: Article[] = [];
   loading = true;
   error = '';
-
   showDeleteModal = false;
   articleIdToDelete: number | null = null;
 
   constructor(private articleService: ArticleService, private router: Router) {}
 
+  // Initializes component and loads drafts
   ngOnInit(): void {
     this.articleService.getDrafts().subscribe({
       next: (articles) => {
@@ -28,40 +29,48 @@ export class DraftsComponent implements OnInit {
         this.loading = false;
       },
       error: () => {
-        this.error = 'Error loading drafts';
+        if (!environment.production) {
+          console.error('Failed to load drafts');
+        }
+        this.error = 'Failed to load drafts.';
         this.loading = false;
       },
     });
   }
 
+  // Navigates to edit draft page
   editDraft(id: number): void {
     const userData = localStorage.getItem('user');
     const isAdmin = userData && JSON.parse(userData).role === 'ADMIN';
-
     const basePath = isAdmin
       ? '/admin-dashboard/edit-article'
       : '/user-dashboard/edit-article';
     this.router.navigate([basePath, id]);
   }
 
+  // Submits draft for review
   sendForReview(articleId: number): void {
     this.articleService.submitArticleForReview(articleId).subscribe({
       next: () => {
         this.drafts = this.drafts.filter((d) => d.id !== articleId);
-        alert('Artículo enviado para revisión.');
+        this.error = 'Article submitted for review successfully.';
       },
-      error: (err) => {
-        console.error('Error al enviar a revisión:', err);
-        alert('No se pudo enviar el artículo a revisión.');
+      error: () => {
+        if (!environment.production) {
+          console.error('Failed to submit for review');
+        }
+        this.error = 'Failed to submit article for review.';
       },
     });
   }
 
+  // Opens delete confirmation modal
   openDeleteModal(id: number): void {
     this.articleIdToDelete = id;
     this.showDeleteModal = true;
   }
 
+  // Confirms and deletes draft
   confirmDelete(): void {
     if (this.articleIdToDelete !== null) {
       this.articleService
@@ -73,16 +82,20 @@ export class DraftsComponent implements OnInit {
             );
             this.showDeleteModal = false;
             this.articleIdToDelete = null;
+            this.error = 'Draft deleted successfully.';
           },
-          error: (err) => {
-            console.error('Error al eliminar el artículo:', err);
-            this.error = 'No se pudo eliminar el borrador.';
+          error: () => {
+            if (!environment.production) {
+              console.error('Failed to delete draft');
+            }
+            this.error = 'Failed to delete draft.';
             this.showDeleteModal = false;
           },
         });
     }
   }
 
+  // Cancels delete action
   cancelDelete(): void {
     this.showDeleteModal = false;
     this.articleIdToDelete = null;

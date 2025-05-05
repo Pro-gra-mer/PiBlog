@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { environment } from '../environments/environment.dev';
 import { Article } from '../models/Article.model';
 
@@ -19,28 +19,39 @@ export class CategoryService {
 
   constructor(private http: HttpClient) {}
 
-  // Crear nueva categoría
+  // Create a new category
   createCategory(category: Category): Observable<Category> {
     return this.http.post<Category>(this.apiUrl, category);
   }
 
-  // Obtener todas las categorías
+  // Get all categories
   getAllCategories(): Observable<Category[]> {
-    return this.http.get<Category[]>(this.apiUrl);
+    return this.http
+      .get<Category[]>(this.apiUrl)
+      .pipe(
+        map((categories) =>
+          categories.filter((c) => c.slug !== 'sin-categoria')
+        )
+      );
   }
 
-  // Obtener una por ID
+  // Get a category by ID
   getCategoryById(id: number): Observable<Category> {
     return this.http.get<Category>(`${this.apiUrl}/${id}`);
   }
 
-  // Actualizar
+  // Update a category by ID
   updateCategory(id: number, category: Category): Observable<Category> {
     return this.http.put<Category>(`${this.apiUrl}/${id}`, category);
   }
 
-  // Eliminar
+  // Delete a category by ID
   deleteCategory(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  // Get category by slug
+  getCategoryBySlug(slug: string): Observable<Category> {
+    return this.http.get<Category>(`${this.apiUrl}/slug/${slug}`);
   }
 }
