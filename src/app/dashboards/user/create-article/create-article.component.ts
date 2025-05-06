@@ -186,11 +186,9 @@ export class CreateArticleComponent implements AfterViewInit {
     });
   }
 
-  // Previews article content
-  onPreview(): void {
-    const formValues = this.articleForm.value;
-    const rawContent = formValues.content;
-    const sanitizedContent = DOMPurify.sanitize(rawContent, {
+  // Sanitizes content and adds loading="lazy" to images
+  private sanitizeAndEnhanceContent(rawHtml: string): string {
+    const cleanHtml = DOMPurify.sanitize(rawHtml, {
       ALLOWED_TAGS: [
         'p',
         'br',
@@ -208,6 +206,23 @@ export class CreateArticleComponent implements AfterViewInit {
       ],
       ALLOWED_ATTR: ['href', 'target', 'src', 'style'],
     });
+
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = cleanHtml;
+
+    tempDiv.querySelectorAll('img').forEach((img) => {
+      img.setAttribute('loading', 'lazy');
+    });
+
+    return tempDiv.innerHTML;
+  }
+
+  // Previews article content
+  onPreview(): void {
+    const formValues = this.articleForm.value;
+    const rawContent = formValues.content;
+    // Usamos la nueva función para sanitizar y agregar loading="lazy"
+    const sanitizedContent = this.sanitizeAndEnhanceContent(rawContent);
     this.previewArticle = {
       ...formValues,
       content: sanitizedContent,
@@ -235,24 +250,8 @@ export class CreateArticleComponent implements AfterViewInit {
     }
 
     const rawContent = this.articleForm.get('content')?.value;
-    const sanitizedContent = DOMPurify.sanitize(rawContent, {
-      ALLOWED_TAGS: [
-        'p',
-        'br',
-        'strong',
-        'em',
-        'u',
-        'a',
-        'ul',
-        'ol',
-        'li',
-        'h1',
-        'h2',
-        'h3',
-        'img',
-      ],
-      ALLOWED_ATTR: ['href', 'target', 'src', 'style'],
-    });
+    // Usamos la nueva función para sanitizar y agregar loading="lazy"
+    const sanitizedContent = this.sanitizeAndEnhanceContent(rawContent);
 
     if (!sanitizedContent.trim()) {
       this.setErrorMessage('Content cannot be empty after sanitization.');
@@ -575,24 +574,8 @@ export class CreateArticleComponent implements AfterViewInit {
     }
 
     const rawContent = this.articleForm.get('content')?.value;
-    const sanitizedContent = DOMPurify.sanitize(rawContent, {
-      ALLOWED_TAGS: [
-        'p',
-        'br',
-        'strong',
-        'em',
-        'u',
-        'a',
-        'ul',
-        'ol',
-        'li',
-        'h1',
-        'h2',
-        'h3',
-        'img',
-      ],
-      ALLOWED_ATTR: ['href', 'target', 'src', 'style'],
-    });
+    // Usamos la nueva función para sanitizar y agregar loading="lazy"
+    const sanitizedContent = this.sanitizeAndEnhanceContent(rawContent);
 
     const formValues = this.articleForm.value;
 
