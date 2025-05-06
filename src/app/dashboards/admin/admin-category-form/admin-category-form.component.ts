@@ -62,15 +62,20 @@ export class AdminCategoryFormComponent implements OnInit {
     if (this.categoryForm.invalid) return;
 
     const { name, description, emoji, headerImage } = this.categoryForm.value;
-    let slug = this.categoryForm.value.slug;
+    let slug = this.categoryForm.value.slug?.trim() || '';
 
-    // Generar slug automáticamente si está vacío o si se cambia el nombre
-    if (
-      !slug ||
-      !this.selectedCategory ||
-      this.selectedCategory.name !== name
-    ) {
-      slug = this.generateSlug(name);
+    const generatedSlug = this.generateSlug(name);
+
+    const isEditing = !!this.selectedCategory;
+    const nameChanged = isEditing && this.selectedCategory?.name !== name;
+    const slugManuallyEdited =
+      isEditing && this.selectedCategory?.slug !== slug;
+
+    // Preservar el slug original si no se cambió el nombre ni se editó manualmente
+    if (isEditing && !nameChanged && slug && slugManuallyEdited) {
+      slug = this.selectedCategory?.slug || generatedSlug;
+    } else if (!slug || nameChanged) {
+      slug = generatedSlug;
     }
 
     const payload = { name, slug, description, emoji, headerImage };
@@ -113,7 +118,7 @@ export class AdminCategoryFormComponent implements OnInit {
     this.selectedCategory = category;
     this.categoryForm.patchValue({
       name: category.name,
-      slug: category.slug,
+      slug: category.slug || this.generateSlug(category.name),
       description: category.description || '',
       emoji: category.emoji || '',
       headerImage: category.headerImage || '',
@@ -176,12 +181,17 @@ export class AdminCategoryFormComponent implements OnInit {
   }
 
   generateSlug(name: string): string {
-    return name
-      .toLowerCase()
-      .trim()
-      .replace(/&/g, 'and')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .replace(/-{2,}/g, '-');
+    console.log('Input name:', name);
+    let result = name.toLowerCase().trim();
+    console.log('After toLowerCase and trim:', result);
+    result = result.replace(/&/g, 'and');
+    console.log('After replacing & with and:', result);
+    result = result.replace(/[^a-z0-9]+/g, '-');
+    console.log('After replacing non-alphanumeric with -:', result);
+    result = result.replace(/^-+|-+$/g, '');
+    console.log('After removing leading/trailing -:', result);
+    result = result.replace(/-{2,}/g, '-');
+    console.log('After removing multiple -:', result);
+    return result;
   }
 }

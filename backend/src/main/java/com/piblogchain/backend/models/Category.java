@@ -28,15 +28,14 @@ public class Category {
   @Column(name = "header_image")
   private String headerImage;
 
-
   public Category() {
-    // necesario para JPA
+    // Necesario para JPA
   }
 
   public Category(String name) {
     this.name = name;
-    this.slug = generateSlug(name);
     this.createdAt = LocalDateTime.now();
+    // No generar slug aquí; se establecerá explícitamente
   }
 
   public Category(String name, String slug) {
@@ -45,11 +44,7 @@ public class Category {
     this.createdAt = LocalDateTime.now();
   }
 
-  private String generateSlug(String name) {
-    return name.toLowerCase().replaceAll("[^a-z0-9]+", "-").replaceAll("-+$", "");
-  }
-
-
+  // Getters y setters
   public Long getId() {
     return id;
   }

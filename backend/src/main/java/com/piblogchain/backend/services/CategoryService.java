@@ -38,14 +38,18 @@ public class CategoryService {
       if (categoryRepository.existsByName(dto.getName())) {
         throw new IllegalArgumentException("Category with name already exists");
       }
-      Category category = new Category(dto.getName());
+      if (dto.getSlug() == null || dto.getSlug().trim().isEmpty()) {
+        throw new IllegalArgumentException("Slug is required");
+      }
+      // Usar constructor con name y slug
+      Category category = new Category(dto.getName(), dto.getSlug());
       category.setDescription(dto.getDescription());
       category.setEmoji(dto.getEmoji());
       category.setHeaderImage(dto.getHeaderImage());
 
       Category savedCategory = categoryRepository.save(category);
       if (!isProduction) {
-        log.info("Category created with name: {}", dto.getName());
+        log.info("Category created with name: {}, slug: {}", dto.getName(), dto.getSlug());
       }
       return savedCategory;
     } catch (Exception e) {
@@ -92,6 +96,9 @@ public class CategoryService {
       if (dto == null || dto.getName() == null || dto.getName().trim().isEmpty()) {
         throw new IllegalArgumentException("Category name is required");
       }
+      if (dto.getSlug() == null || dto.getSlug().trim().isEmpty()) {
+        throw new IllegalArgumentException("Slug is required");
+      }
 
       // Verifica duplicado por nombre (evitando conflicto con el mismo ID)
       boolean nameExists = categoryRepository.existsByName(dto.getName());
@@ -105,23 +112,15 @@ public class CategoryService {
 
       return categoryRepository.findById(id).map(category -> {
         category.setName(dto.getName());
+        category.setSlug(dto.getSlug()); // Usar el slug del DTO
         category.setDescription(dto.getDescription());
         category.setEmoji(dto.getEmoji());
         category.setHeaderImage(dto.getHeaderImage());
 
-
-        // 🆕 Slug generado automáticamente desde name
-        String newSlug = dto.getName()
-          .toLowerCase()
-          .trim()
-          .replaceAll("\\s+", "-")
-          .replaceAll("[^a-z0-9\\-]", "");
-        category.setSlug(newSlug);
-
         Category updatedCategory = categoryRepository.save(category);
 
         if (!isProduction) {
-          log.info("Category updated with ID: {}", id);
+          log.info("Category updated with ID: {}, slug: {}", id, dto.getSlug());
         }
         return updatedCategory;
       });
@@ -132,7 +131,6 @@ public class CategoryService {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to update category");
     }
   }
-
 
 
   // Deletes a category by ID
