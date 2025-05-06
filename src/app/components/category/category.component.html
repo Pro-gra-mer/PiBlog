@@ -28,13 +28,32 @@
               "Discover insightful articles in this category."
           }}
         </p>
+
+        <small
+          *ngIf="
+            category.name === 'Social & Community' ||
+            category.name === 'Marketplaces' ||
+            category.name === 'Productivity Tools' ||
+            category.name === 'Games'
+          "
+          class="block text-xs text-gray-500 mt-2"
+        >
+          Image:
+          <a
+            href="http://www.freepik.com"
+            class="underline text-[#bd52a5]"
+            target="_blank"
+            rel="noopener"
+            >Designed by Freepik</a
+          >
+        </small>
       </div>
     </div>
 
     <!-- Columna derecha con imagen de fondo dinámica -->
-    <div class="col-span-2 w-full h-[600px] md:h-full overflow-hidden">
+    <div class="col-span-2 w-full h-[600px] md:h-full overflow-hidden relative">
       <div
-        class="w-full h-full bg-cover bg-center transform transition-transform duration-700 ease-out-in hover:scale-90"
+        class="absolute inset-0 bg-cover bg-center transform transition-transform duration-700 ease-out-in hover:scale-110"
         [ngStyle]="{
           'background-image':
             'url(' +
