@@ -3,6 +3,7 @@ import { HeroComponent } from '../hero/hero.component';
 import { SliderComponent } from '../slider/slider.component';
 import { ArticleListComponent } from '../article-list/article-list.component';
 import { SidebarComponent } from '../sidebar/sidebar.component';
+import { CookieBannerComponent } from '../cookie-banner/cookie-banner.component';
 
 @Component({
   selector: 'app-home',
@@ -12,6 +13,7 @@ import { SidebarComponent } from '../sidebar/sidebar.component';
     SliderComponent,
     ArticleListComponent,
     SidebarComponent,
+    CookieBannerComponent,
   ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css',

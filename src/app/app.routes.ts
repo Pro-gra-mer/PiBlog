@@ -13,6 +13,9 @@ import { AdminCategoryFormComponent } from './dashboards/admin/admin-category-fo
 import { CategoryComponent } from './components/category/category.component';
 import { RejectedComponent } from './dashboards/user/rejected/rejected.component';
 import { FeaturedArticlesComponent } from './components/featured-articles/featured-articles.component';
+import { PrivacyPolicyComponent } from './components/privacy-policy/privacy-policy.component';
+import { CookiePolicyComponent } from './components/cookie-policy/cookie-policy.component';
+import { TermsOfServiceComponent } from './components/terms-of-service/terms-of-service.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -20,6 +23,10 @@ export const routes: Routes = [
   { path: 'featured-articles', component: FeaturedArticlesComponent },
   { path: 'contact', component: ContactComponent },
   { path: 'articles/:id', component: ArticleDetailComponent },
+  { path: 'privacy-policy', component: PrivacyPolicyComponent },
+  { path: 'cookie-policy', component: CookiePolicyComponent },
+  { path: 'terms-of-service', component: TermsOfServiceComponent },
+
   {
     path: 'category/:slug',
     component: CategoryComponent,

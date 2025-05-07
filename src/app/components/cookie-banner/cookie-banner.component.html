@@ -1,0 +1,27 @@
+<div
+  *ngIf="showBanner"
+  class="fixed bottom-14 left-0 w-full bg-gray-900 text-white text-sm px-6 py-4 flex flex-col lg:flex-row items-center justify-between gap-4 z-[1050] shadow-lg"
+>
+  <span>
+    We use cookies to improve your experience and analyze site traffic. See our
+    <a
+      routerLink="/cookie-policy"
+      class="underline text-blue-400 hover:text-blue-300"
+    >
+      Cookie Policy
+    </a>
+    and
+    <a
+      routerLink="/terms-of-service"
+      class="underline text-blue-400 hover:text-blue-300"
+    >
+      Terms of Service </a
+    >.
+  </span>
+  <button
+    (click)="acceptCookies()"
+    class="bg-primary hover:bg-opacity-90 text-white px-5 py-2 rounded-md font-medium transition"
+  >
+    Accept
+  </button>
+</div>

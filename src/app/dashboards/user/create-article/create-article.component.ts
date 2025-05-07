@@ -380,6 +380,7 @@ export class CreateArticleComponent implements AfterViewInit {
             sources: ['local', 'url', 'camera'],
             multiple: false,
             resourceType: 'image',
+            transformation: [{ quality: 'auto', fetch_format: 'auto' }],
           },
           (error: any, result: any) => {
             if (!error && result && result.event === 'success') {
@@ -430,6 +431,7 @@ export class CreateArticleComponent implements AfterViewInit {
             uploadSignatureTimestamp: config.timestamp,
             uploadPreset: config.uploadPreset,
             sources: ['local', 'url', 'camera'],
+            transformation: [{ quality: 'auto', fetch_format: 'auto' }],
           },
           (error: any, result: any) => {
             if (!error && result && result.event === 'success') {
@@ -659,6 +661,7 @@ export class CreateArticleComponent implements AfterViewInit {
             sources: ['local', 'url', 'camera'],
             multiple: false,
             resourceType: 'video',
+            transformation: [{ quality: 'auto', fetch_format: 'auto' }],
             maxFileSize: 30 * 1024 * 1024,
             maxVideoDuration: 20,
           },
