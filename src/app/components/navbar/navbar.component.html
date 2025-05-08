@@ -1,7 +1,15 @@
 <nav class="bg-primary text-[#ada1ae] text-lg py-4 fixed top-0 w-full z-[1100]">
   <div class="container mx-auto flex justify-between items-center px-4">
-    <a routerLink="/" class="text-4xl text-accent">
-      <span class="text-background">Rolling </span>Pi
+    <a
+      routerLink="/"
+      class="flex items-center gap-2 text-3xl font-bold text-accent"
+    >
+      <img
+        src="assets/images/logo.png"
+        alt="Rolling Pi logo"
+        class="w-12 h-12"
+      />
+      <span class="text-background font-normal">Rolling</span> Pi
     </a>
 
     <!-- Botón de menú hamburguesa -->
@@ -48,7 +56,7 @@
       <li *ngIf="isAuthenticated && hasActivePlan">
         <a
           [routerLink]="dashboardRoute"
-          class="flex items-center gap-2 text-background hover:text-accent"
+          class="flex items-center gap-1 text-background hover:text-accent"
         >
           <!-- SVG gráfico en pantalla -->
           <svg
@@ -69,6 +77,7 @@
             <line x1="8" y1="20" x2="16" y2="20" />
             <line x1="12" y1="18" x2="12" y2="20" />
           </svg>
+          Dashboard
         </a>
       </li>
 

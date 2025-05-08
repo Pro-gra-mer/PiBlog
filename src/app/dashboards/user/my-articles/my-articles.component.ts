@@ -290,45 +290,6 @@ export class MyArticlesComponent implements OnInit {
     });
   }
 
-  // Opens modal for canceling a subscription
-  openCancelModal(article: Article, planType: string): void {
-    const plan = article.activePlans?.find((p) => p.planType === planType);
-    if (!plan) return;
-
-    const date = new Date(plan.expirationAt).toLocaleDateString();
-    this.openConfirmationModal(
-      'Cancel Subscription',
-      `Your subscription will remain active until ${date}.`,
-      () => this.confirmCancel(article, planType)
-    );
-  }
-
-  // Confirms cancellation of a subscription
-  confirmCancel(article: Article, planType: string): void {
-    this.articleService.cancelSubscription(article.id, planType).subscribe({
-      next: () => {
-        const plan = article.activePlans?.find((p) => p.planType === planType);
-        if (plan) {
-          plan.cancelled = true;
-        }
-        this.confirmationModal.visible = false;
-        this.successMessage = 'Subscription cancelled successfully.';
-        setTimeout(() => {
-          this.successMessage = null;
-        }, 3000);
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        if (!environment.production) {
-          console.error('Failed to cancel subscription');
-        }
-        this.error = 'Failed to cancel subscription.';
-        this.confirmationModal.visible = false;
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
   // Checks if a plan has expired
   isExpired(expirationAt: string | null | undefined): boolean {
     if (!expirationAt) return false;

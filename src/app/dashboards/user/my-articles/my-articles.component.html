@@ -47,20 +47,9 @@
                   {{ plan.planType }}
                 </span>
 
-                <ng-container *ngIf="!plan.cancelled; else cancelledInfo">
-                  <a
-                    href="javascript:void(0)"
-                    (click)="openCancelModal(article, plan.planType)"
-                    class="text-black hover:underline text-md"
-                  >
-                    Cancel Subscription
-                  </a>
-                </ng-container>
-                <ng-template #cancelledInfo>
-                  <span class="text-ms text-gray-700">
-                    Expires on {{ plan.expirationAt | date : "mediumDate" }}
-                  </span>
-                </ng-template>
+                <span class="text-ms text-gray-700">
+                  Expires on {{ plan.expirationAt | date : "mediumDate" }}
+                </span>
               </ng-container>
             </div>
           </div>
@@ -71,7 +60,7 @@
               *ngIf="!hasActivePlanType(article, 'CATEGORY_SLIDER')"
               href="javascript:void(0)"
               (click)="openActivateModal(article, 'CATEGORY_SLIDER')"
-              class="text-purple-800 hover:underline"
+              class="text-purple-800 hover:underline font-semibold"
             >
               Activate Category Slider
             </a>
@@ -79,7 +68,7 @@
               *ngIf="!hasActivePlanType(article, 'MAIN_SLIDER')"
               href="javascript:void(0)"
               (click)="openActivateModal(article, 'MAIN_SLIDER')"
-              class="text-pink-800 hover:underline"
+              class="text-pink-800 hover:underline font-semibold"
             >
               Activate Main Slider
             </a>
@@ -120,8 +109,12 @@
       }}
     </h2>
 
+    <p class="text-sm text-gray-600 text-center mb-2">
+      Promote my artice in the featured section.
+    </p>
+
     <p class="text-sm text-gray-600 text-center mb-4">
-      Promote your article in the
+      Promote my video in the
       {{
         selectedPlanType === "MAIN_SLIDER" ? "Main Slider" : "Category Slider"
       }}.
@@ -183,7 +176,7 @@
   </div>
 </div>
 
-<!-- ✅ Modal Genérico de Confirmación -->
+<!-- ✅ Confirmation Modal -->
 <div
   *ngIf="confirmationModal.visible"
   class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"

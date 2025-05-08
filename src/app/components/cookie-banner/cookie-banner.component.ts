@@ -13,8 +13,10 @@ export class CookieBannerComponent {
   showBanner = false;
 
   ngOnInit(): void {
-    const consent = localStorage.getItem('cookie_consent');
-    this.showBanner = consent !== 'accepted';
+    if (typeof window !== 'undefined') {
+      const consent = localStorage.getItem('cookie_consent');
+      this.showBanner = consent !== 'accepted';
+    }
   }
 
   acceptCookies(): void {
