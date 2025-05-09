@@ -90,4 +90,10 @@ export class PaymentService {
       }
     );
   }
+
+  getPlanPricesInUsd() {
+    return this.http.get<{ [key: string]: number }>(
+      `${environment.apiUrl}/api/price`
+    );
+  }
 }

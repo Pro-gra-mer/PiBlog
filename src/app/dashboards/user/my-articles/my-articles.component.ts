@@ -3,9 +3,9 @@ import { CommonModule } from '@angular/common';
 import { ArticleService } from '../../../services/article.service';
 import { PaymentService } from '../../../services/payment.service';
 import { Article } from '../../../models/Article.model';
-import { Router } from '@angular/router';
 import { PiAuthService } from '../../../services/pi-auth.service';
 import { environment } from '../../../environments/environment.dev';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-my-articles',
@@ -27,6 +27,9 @@ export class MyArticlesComponent implements OnInit {
   categorySliderInfo: any = null;
   isAdmin = false;
   successMessage: string | null = null;
+  standardPricePi!: number;
+  categoryPricePi!: number;
+  mainPricePi!: number;
 
   confirmationModal = {
     visible: false,
@@ -40,13 +43,14 @@ export class MyArticlesComponent implements OnInit {
   constructor(
     private articleService: ArticleService,
     private paymentService: PaymentService,
-    private router: Router,
+    private http: HttpClient,
     private cdr: ChangeDetectorRef,
     private piAuthService: PiAuthService
   ) {}
 
   // Initializes component and loads published articles
   ngOnInit(): void {
+    this.fetchPlanPricesInPi();
     this.isAdmin = this.piAuthService.isAdmin();
     this.articleService.getUserPublishedArticles().subscribe({
       next: (articles) => {
@@ -157,15 +161,6 @@ export class MyArticlesComponent implements OnInit {
       return;
     }
 
-    this.successMessage = `${planType.replace(
-      '_',
-      ' '
-    )} activated successfully!`;
-
-    setTimeout(() => {
-      this.successMessage = null;
-    }, 4000);
-
     const applyPlanToArticle = (response: any) => {
       const expirationAt =
         response?.expirationAt ||
@@ -189,10 +184,20 @@ export class MyArticlesComponent implements OnInit {
         selectedArticle.activePlans = [newPlan];
       }
 
+      this.successMessage = `${planType.replace(
+        '_',
+        ' '
+      )} activated successfully!`;
+
+      setTimeout(() => {
+        this.successMessage = null;
+      }, 4000);
+
       this.cdr.detectChanges();
       this.closePlanModal();
     };
 
+    // 🔒 ADMIN NO PAGA
     if (this.isAdmin) {
       this.paymentService
         .activatePlanAsAdmin(this.selectedArticleId, planType, categorySlug)
@@ -209,15 +214,137 @@ export class MyArticlesComponent implements OnInit {
       return;
     }
 
-    this.paymentService
-      .activatePlan(this.selectedArticleId, planType, categorySlug)
+    // 🧪 SANDBOX O MODO DEV → simula el pago
+    if (environment.sandbox) {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const paymentId = 'sandbox-' + Date.now();
+      const txid = 'sandbox-tx-' + Date.now();
+      const headers = {
+        Authorization: `Bearer ${user.accessToken}`,
+        'Content-Type': 'application/json',
+      };
+
+      this.http
+        .post(
+          `${environment.apiUrl}/api/payments/create`,
+          {
+            paymentId,
+            planType,
+            username: user.username,
+          },
+          { headers }
+        )
+        .subscribe(() => {
+          this.http
+            .post(
+              `${environment.apiUrl}/api/payments/approve`,
+              {
+                paymentId,
+                planType,
+              },
+              { headers }
+            )
+            .subscribe(() => {
+              this.http
+                .post(
+                  `${environment.apiUrl}/api/payments/complete`,
+                  {
+                    paymentId,
+                    txid,
+                    articleId: this.selectedArticleId,
+                  },
+                  { headers }
+                )
+                .subscribe({
+                  next: (res: any) => {
+                    alert(
+                      `✅ Sandbox payment completed for ${planType.replace(
+                        '_',
+                        ' '
+                      )}!`
+                    );
+                    applyPlanToArticle(res);
+                  },
+                  error: () => {
+                    this.error = 'Failed to complete sandbox payment.';
+                    this.closePlanModal();
+                  },
+                });
+            });
+        });
+
+      return;
+    }
+
+    // ✅ PRODUCCIÓN: Pi SDK real
+    if (typeof Pi === 'undefined') {
+      alert('Pi SDK not available. Please try again later.');
+      return;
+    }
+
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const paymentPayload = {
+      planType,
+      username: user.username,
+      paymentId: 'pi-' + Date.now(),
+    };
+
+    this.http
+      .post(`${environment.apiUrl}/api/payments/create`, paymentPayload)
       .subscribe({
-        next: applyPlanToArticle,
+        next: (payment: any) => {
+          Pi.createPayment(payment, {
+            onReadyForServerApproval: (paymentId: string) => {
+              const headers = {
+                Authorization: `Bearer ${user.accessToken}`,
+                'Content-Type': 'application/json',
+              };
+              this.http
+                .post(
+                  `${environment.apiUrl}/api/payments/approve`,
+                  {
+                    paymentId,
+                    planType,
+                  },
+                  { headers }
+                )
+                .subscribe();
+            },
+            onReadyForServerCompletion: (paymentId: string, txid: string) => {
+              const headers = {
+                Authorization: `Bearer ${user.accessToken}`,
+                'Content-Type': 'application/json',
+              };
+              this.http
+                .post(
+                  `${environment.apiUrl}/api/payments/complete`,
+                  {
+                    paymentId,
+                    txid,
+                    articleId: this.selectedArticleId,
+                  },
+                  { headers }
+                )
+                .subscribe({
+                  next: applyPlanToArticle,
+                  error: () => {
+                    this.error = 'Failed to complete payment.';
+                    this.closePlanModal();
+                  },
+                });
+            },
+            onCancel: () => {
+              alert('Payment was cancelled.');
+              this.closePlanModal();
+            },
+            onError: () => {
+              alert('Error occurred during payment.');
+              this.closePlanModal();
+            },
+          });
+        },
         error: () => {
-          if (!environment.production) {
-            console.error('Failed to activate plan');
-          }
-          this.error = `Failed to activate ${planType.replace('_', ' ')}.`;
+          this.error = 'Failed to create payment.';
           this.closePlanModal();
         },
       });
@@ -305,5 +432,20 @@ export class MyArticlesComponent implements OnInit {
           plan.planType === planType && !this.isExpired(plan.expirationAt)
       ) || false
     );
+  }
+
+  fetchPlanPricesInPi(): void {
+    this.paymentService.getPlanPricesInUsd().subscribe({
+      next: (prices) => {
+        this.standardPricePi = prices['STANDARD'];
+        this.categoryPricePi = prices['CATEGORY_SLIDER'];
+        this.mainPricePi = prices['MAIN_SLIDER'];
+      },
+      error: () => {
+        if (!environment.production) {
+          console.error('Failed to fetch PI prices');
+        }
+      },
+    });
   }
 }

@@ -34,6 +34,8 @@ export class AdvertiseWithUsComponent {
   standardPricePi!: number;
   categoryPricePi!: number;
   mainPricePi!: number;
+  acceptedTerms: boolean = false;
+  showTermsError: boolean = false;
 
   ngOnInit(): void {
     this.fetchPlanPricesInPi();
@@ -123,18 +125,34 @@ export class AdvertiseWithUsComponent {
 
   pay(plan: PromoteType): void {
     const storedUser = localStorage.getItem('user');
-    if (!storedUser) {
-      if (!environment.production) {
-        console.warn('User not authenticated');
+    const user = storedUser ? JSON.parse(storedUser) : null;
+
+    if (!user?.username || !user?.accessToken) {
+      alert('🔐 You must log in with Pi Network to continue.');
+      if (typeof Pi !== 'undefined') {
+        Pi.authenticate(
+          (res: any) => {
+            localStorage.setItem(
+              'user',
+              JSON.stringify({
+                username: res.user.username,
+                accessToken: res.accessToken,
+              })
+            );
+            alert('✅ Login successful. Please retry your payment.');
+            location.reload(); // o simplemente llamar otra vez a this.pay(plan)
+          },
+          (error: any) => {
+            alert('❌ Login failed. Please try again inside the Pi Browser.');
+            console.error('Pi login error:', error);
+          }
+        );
+      } else {
+        alert('⚠️ Pi SDK not available. Please use the Pi Browser to log in.');
       }
-      this.showLoginMessage = true;
-      setTimeout(() => {
-        this.showLoginMessage = false;
-      }, 4000);
       return;
     }
 
-    const user = JSON.parse(storedUser);
     const timestamp = Date.now();
     const fakePaymentId = 'sandbox-' + timestamp;
     const fakeTxId = 'sandbox-tx-' + timestamp;
@@ -332,5 +350,15 @@ export class AdvertiseWithUsComponent {
           }
         },
       });
+  }
+
+  handleConfirm(): void {
+    if (!this.acceptedTerms) {
+      this.showTermsError = true;
+      return;
+    }
+
+    this.showTermsError = false;
+    this.confirmPayment();
   }
 }

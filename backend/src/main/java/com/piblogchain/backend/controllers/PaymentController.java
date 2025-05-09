@@ -112,41 +112,12 @@ public class PaymentController {
     return ResponseEntity.ok(availability);
   }
 
-  @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
   @PostMapping("/activate")
+  @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
   public ResponseEntity<?> activatePlan(@RequestBody ActivatePlanRequest request) {
-    Map<String, Object> response = new HashMap<>();
-
-    Article article = articleRepository.findById(request.getArticleId())
-      .orElseThrow(() -> new RuntimeException("Article not found"));
-
-    PromoteType promoteType = PromoteType.valueOf(request.getPlanType());
-
-    if (promoteType != PromoteType.STANDARD) {
-      if (!paymentService.isSlotAvailable(promoteType, request.getCategorySlug())) {
-        throw new RuntimeException("No slots available for this plan.");
-      }
-    }
-
-    // 🔥 Crear nueva promoción
-    ArticlePromotion promotion = new ArticlePromotion();
-    promotion.setArticle(article);
-    promotion.setPromoteType(promoteType);
-
-    // Crear fecha de expiración manualmente (30 días después de hoy)
-    LocalDateTime expirationAt = LocalDateTime.now().plusDays(30);
-    promotion.setExpirationAt(expirationAt);
-
-    // Añadir la promoción al artículo
-    article.getPromotions().add(promotion);
-
-    articleRepository.save(article);
-
-    response.put("message", "Plan activated successfully.");
-    response.put("expirationAt", expirationAt);
-
-    return ResponseEntity.ok(response);
+    return ResponseEntity.ok(paymentService.activatePlan(request));
   }
+
 
   @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
   @DeleteMapping("/cancel-subscription")

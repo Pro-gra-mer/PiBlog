@@ -449,7 +449,7 @@ public class PaymentService {
   }
 
   // Activates a plan for an article
-  public void activatePlan(ActivatePlanRequest request) {
+  public Map<String, Object> activatePlan(ActivatePlanRequest request) {
     try {
       if (request == null || request.getArticleId() == null) {
         throw new IllegalArgumentException("Article ID is required");
@@ -457,27 +457,45 @@ public class PaymentService {
       if (request.getPlanType() == null) {
         throw new IllegalArgumentException("Plan type is required");
       }
-      if (request.getCategorySlug() == null && PromoteType.valueOf(request.getPlanType()) == PromoteType.CATEGORY_SLIDER) {
+      PromoteType promoteType = PromoteType.valueOf(request.getPlanType());
+      if (promoteType == PromoteType.CATEGORY_SLIDER && (request.getCategorySlug() == null || request.getCategorySlug().isBlank())) {
         throw new IllegalArgumentException("Category slug is required for CATEGORY_SLIDER");
       }
 
       Article article = articleRepository.findById(request.getArticleId())
         .orElseThrow(() -> new IllegalArgumentException("Article not found"));
-      PromoteType promoteType = PromoteType.valueOf(request.getPlanType());
 
       if (promoteType != PromoteType.STANDARD && !isSlotAvailable(promoteType, request.getCategorySlug())) {
         throw new IllegalArgumentException("No slots available for plan: " + promoteType);
       }
 
+      LocalDateTime expirationAt = LocalDateTime.now().plusDays(30);
+
       ArticlePromotion promotion = new ArticlePromotion();
       promotion.setArticle(article);
       promotion.setPromoteType(promoteType);
-
+      promotion.setExpirationAt(expirationAt);
+      promotion.setCancelled(false);
       article.getPromotions().add(promotion);
+
+      Payment payment = new Payment();
+      payment.setPlanType(promoteType.name());
+      payment.setStatus("COMPLETED");
+      payment.setCreatedAt(LocalDateTime.now());
+      payment.setCompletedAt(LocalDateTime.now());
+      payment.setExpirationAt(expirationAt);
+      payment.setPaymentId("manual-" + System.currentTimeMillis());
+      payment.setUsername(article.getCreatedBy());
+      payment.setArticle(article);
+      payment.setSandbox(env.acceptsProfiles("sandbox")); // ✅ correcto para distinguir entorno
+
       articleRepository.save(article);
-      if (!isProduction) {
-        log.info("Plan activated for article ID: {}, plan: {}", request.getArticleId(), request.getPlanType());
-      }
+      paymentRepository.save(payment);
+
+      Map<String, Object> response = new HashMap<>();
+      response.put("message", "Plan activated successfully.");
+      response.put("expirationAt", expirationAt);
+      return response;
     } catch (Exception e) {
       if (!isProduction) {
         log.error("Failed to activate plan: {}", e.getMessage());
@@ -485,6 +503,8 @@ public class PaymentService {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to activate plan");
     }
   }
+
+
 
   // Cancels a subscription for an article
   @Transactional

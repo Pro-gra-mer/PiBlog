@@ -2,9 +2,9 @@
   <h2 class="text-4xl font-bold text-primary mb-6">Advertise with Us</h2>
 
   <p class="text-secondary max-w-2xl mx-auto mb-12 text-lg">
-    Pay once to publish an article about your Pi Network app, web or channel.
-    After publication, you can choose to promote it further in our sliders and
-    featured section.
+    Pay once to publish an article about your Pi Network app, web, store or
+    channel. After publication, you can choose to promote it further in our
+    sliders and featured section.
   </p>
 
   <!-- Pricing Cards -->
@@ -337,10 +337,37 @@
       You are about to pay to publish one article. Do you want to continue?
     </p>
 
-    <div class="flex justify-center gap-4 mt-4">
+    <!-- Checkbox de aceptación de términos -->
+    <div class="text-sm text-gray-500 mt-4 text-left">
+      <label class="flex items-center gap-2">
+        <input
+          type="checkbox"
+          [(ngModel)]="acceptedTerms"
+          class="accent-accent"
+        />
+        <span>
+          I agree to the
+          <a
+            href="/terms-of-service"
+            target="_blank"
+            class="underline text-primary hover:text-accent"
+          >
+            Terms of Service
+          </a>
+        </span>
+      </label>
+
+      <!-- Mensaje de error -->
+      <div *ngIf="showTermsError" class="text-red-600 text-xs mt-2 font-medium">
+        You must accept the Terms of Service before proceeding.
+      </div>
+    </div>
+
+    <!-- Botones -->
+    <div class="flex justify-center gap-4 mt-6">
       <button
         class="bg-accent text-white px-4 py-2 rounded hover:bg-opacity-90"
-        (click)="confirmPayment()"
+        (click)="handleConfirm()"
       >
         Confirm
       </button>
