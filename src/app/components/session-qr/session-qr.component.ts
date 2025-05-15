@@ -1,5 +1,5 @@
 import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common'; // ✅
+import { isPlatformBrowser } from '@angular/common';
 import { Client, IMessage } from '@stomp/stompjs';
 import { SessionLinkService } from '../../services/session-link.service';
 import { Router } from '@angular/router';
@@ -38,10 +38,11 @@ export class SessionQrComponent implements OnInit {
       this.sessionCode = code;
       const url = `https://pi.app/rollingpi?code=${code}`;
       this.qrDataUrl = await QRCode.toDataURL(url);
+      this.connectToWebSocket();
     });
   }
 
-  private connectToWebSocket(code: string): void {
+  private connectToWebSocket(): void {
     this.stompClient = new Client({
       brokerURL: environment.wsUrl,
       reconnectDelay: 5000,
@@ -53,17 +54,19 @@ export class SessionQrComponent implements OnInit {
         console.error('STOMP error:', frame);
       },
       onConnect: () => {
-        console.log('WebSocket connected successfully');
+        console.log('✅ WebSocket connected');
         this.stompClient?.subscribe(
           `/topic/session/${this.sessionCode}`,
           (message: IMessage) => {
-            const username = JSON.parse(message.body);
-            console.log('✅ Usuario sincronizado:', username);
+            const userData = JSON.parse(message.body);
+            console.log('✅ Session synced for user:', userData);
+            localStorage.setItem('user', JSON.stringify(userData));
             this.router.navigate(['/dashboard']);
           }
         );
       },
     });
+
     this.stompClient.activate();
   }
 }
