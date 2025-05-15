@@ -48,6 +48,9 @@ export class UserDashboardComponent implements OnInit {
 
   // Checks if user has rejected articles
   checkRejectedArticles(): void {
+    const user = localStorage.getItem('user');
+    if (!user) return; // 🔒 Evita llamada si no hay usuario logueado
+
     this.articleService.getUserRejectedArticles().subscribe({
       next: (articles) => {
         this.hasRejected = articles.length > 0;
