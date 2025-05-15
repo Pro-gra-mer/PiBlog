@@ -4,6 +4,7 @@ import com.piblogchain.backend.dto.ActivePlanDTO;
 import com.piblogchain.backend.dto.ArticleDTO;
 import com.piblogchain.backend.dto.CategoryDTO;
 import com.piblogchain.backend.enums.ArticleStatus;
+import com.piblogchain.backend.enums.PaymentStatus;
 import com.piblogchain.backend.enums.PromoteType;
 import com.piblogchain.backend.models.*;
 import com.piblogchain.backend.repositories.ArticleRepository;
@@ -30,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ArticleService {
@@ -182,18 +184,25 @@ public class ArticleService {
 
       Article article = optionalArticle.get();
 
-      List<Payment> payments = paymentRepository.findByArticle(article);
-      payments.forEach(paymentRepository::delete);
+      // ✅ Desvincular todos los pagos asociados
+      List<Payment> allPayments = paymentRepository.findByArticle(article);
+      allPayments.forEach(payment -> {
+        payment.setArticle(null);
+        paymentRepository.save(payment);
+      });
 
+      // 🗑️ Eliminar el artículo
       articleRepository.delete(article);
       return true;
+
     } catch (Exception e) {
       if (!isProduction) {
-        log.error("Failed to delete article with ID: {}", id);
+        log.error("Failed to delete article with ID: {}", id, e);
       }
       throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete article");
     }
   }
+
 
   // Deletes an orphan image from Cloudinary
   public boolean deleteOrphanImage(String publicId) {

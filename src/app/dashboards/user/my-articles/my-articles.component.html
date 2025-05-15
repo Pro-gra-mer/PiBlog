@@ -1,16 +1,11 @@
-<!-- ✅ Toast flotante centrado arriba -->
-<div
-  *ngIf="successMessage"
-  class="fixed top-100 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 text-center transition-opacity duration-500"
->
-  {{ successMessage }}
-</div>
-
 <section class="mt-6 bg-white p-6 rounded-lg shadow-lg shadow-gray-400">
   <h2 class="text-3xl font-bold text-primary mb-4">Your Published Articles</h2>
 
   <div *ngIf="loading" class="text-gray-500">Loading articles...</div>
   <div *ngIf="error" class="text-red-500">{{ error }}</div>
+  <div *ngIf="successMessage" class="text-green-600 font-medium mb-4">
+    {{ successMessage }}
+  </div>
 
   <ul *ngIf="!loading && !error && articles.length > 0" class="space-y-4">
     <li
@@ -197,5 +192,41 @@
         {{ confirmationModal.cancelLabel }}
       </button>
     </div>
+  </div>
+</div>
+<!-- Modal de QR para pagos desde escritorio -->
+<div
+  *ngIf="qrUrl && qrImageUrl"
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+>
+  <div class="bg-white p-6 rounded-lg shadow-xl w-[90%] max-w-md text-center">
+    <h2 class="text-xl font-bold mb-4 text-accent">
+      Scan to Pay with Pi Browser
+    </h2>
+
+    <p class="text-secondary mb-4">
+      Scan this QR with your phone to open the app in Pi Browser and finish your
+      payment.
+    </p>
+
+    <img
+      [src]="qrImageUrl"
+      width="256"
+      height="256"
+      alt="Payment QR"
+      class="mx-auto shadow-lg rounded-lg"
+    />
+
+    <p class="mt-4 text-sm text-gray-400 break-all">
+      Or open manually:<br />
+      <code>{{ qrUrl }}</code>
+    </p>
+
+    <button
+      class="mt-6 bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400"
+      (click)="closeQrModal()"
+    >
+      Cancel
+    </button>
   </div>
 </div>

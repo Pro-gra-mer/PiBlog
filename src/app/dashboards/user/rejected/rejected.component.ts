@@ -18,6 +18,7 @@ export class RejectedComponent implements OnInit {
   error = '';
   showDeleteModal = false;
   articleIdToDelete: number | null = null;
+  successMessage: string | null = null;
 
   constructor(private articleService: ArticleService, private router: Router) {}
 
@@ -62,7 +63,7 @@ export class RejectedComponent implements OnInit {
             this.updateHasRejected();
             this.showDeleteModal = false;
             this.articleIdToDelete = null;
-            this.error = 'Article deleted successfully.';
+            this.successMessage = 'Article deleted successfully.';
           },
           error: () => {
             if (!environment.production) {

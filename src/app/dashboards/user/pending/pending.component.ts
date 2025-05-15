@@ -24,6 +24,7 @@ export class PendingComponent implements OnInit {
   articleIdToDelete: number | null = null;
   articleIdToReject: number | null = null;
   rejectionReason: string = '';
+  successMessage: string | null = null;
 
   constructor(
     private articleService: ArticleService,
@@ -90,7 +91,7 @@ export class PendingComponent implements OnInit {
             );
             this.showDeleteModal = false;
             this.articleIdToDelete = null;
-            this.error = 'Article deleted successfully.';
+            this.successMessage = 'Article deleted successfully.';
           },
           error: () => {
             if (!environment.production) {

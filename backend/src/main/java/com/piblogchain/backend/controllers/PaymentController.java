@@ -154,6 +154,19 @@ public class PaymentController {
     }
   }
 
-
+  @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+  @GetMapping("/by-payment-id/{paymentId}")
+  public ResponseEntity<?> getPaymentByPaymentId(@PathVariable String paymentId) {
+    try {
+      Payment payment = paymentService.getByPaymentId(paymentId);
+      return ResponseEntity.ok(payment);
+    } catch (IllegalArgumentException e) {
+      return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        .body("Payment not found for paymentId: " + paymentId);
+    } catch (Exception e) {
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        .body("Error retrieving payment: " + e.getMessage());
+    }
+  }
 
 }

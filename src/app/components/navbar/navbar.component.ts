@@ -96,12 +96,13 @@ export class NavbarComponent implements OnInit {
   }
 
   loginWithPi(): void {
-    const isPiBrowser = navigator.userAgent.includes('PiBrowser');
-    if (isPiBrowser) {
-      this.piAuthService.loginWithPi();
-    } else {
-      this.router.navigate(['/session-qr']);
-    }
+    this.piAuthService.loginWithPi();
+    // const isPiBrowser = navigator.userAgent.includes('PiBrowser');
+    // if (isPiBrowser) {
+    //   this.piAuthService.loginWithPi();
+    // } else {
+    //   this.router.navigate(['/session-qr']);
+    // }
   }
 
   getDashboardRoute(): string {

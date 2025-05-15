@@ -2,6 +2,7 @@ package com.piblogchain.backend.services;
 
 import com.piblogchain.backend.dto.*;
 import com.piblogchain.backend.enums.ArticleStatus;
+import com.piblogchain.backend.enums.PaymentStatus;
 import com.piblogchain.backend.enums.PlanType;
 import com.piblogchain.backend.enums.PromoteType;
 import com.piblogchain.backend.models.Article;
@@ -83,7 +84,7 @@ public class PaymentService {
       payment.setPaymentId(request.getPaymentId());
       payment.setUsername(request.getUsername());
       payment.setPlanType(request.getPlanType().name());
-      payment.setStatus("CREATED");
+      payment.setStatus(PaymentStatus.CREATED);
       payment.setSandbox(env.acceptsProfiles("sandbox"));
       payment.setCreatedAt(LocalDateTime.now());
 
@@ -120,7 +121,7 @@ public class PaymentService {
       }
 
       Payment payment = findPaymentOrThrow(request.getPaymentId());
-      payment.setStatus("APPROVED");
+      payment.setStatus(PaymentStatus.APPROVED);
       paymentRepository.save(payment);
       if (!isProduction) {
         log.info("Payment approved with ID: {}", request.getPaymentId());
@@ -144,7 +145,7 @@ public class PaymentService {
       }
 
       Payment payment = findPaymentOrThrow(request.getPaymentId());
-      payment.setStatus("COMPLETED");
+      payment.setStatus(PaymentStatus.COMPLETED);
       payment.setTxid(request.getTxid());
       payment.setCompletedAt(LocalDateTime.now());
 
@@ -186,7 +187,7 @@ public class PaymentService {
       promotion.setPromoteType(promoteType);
 
       if (plan != PlanType.STANDARD) {
-        Payment previous = paymentRepository.findTopByArticleAndStatusOrderByExpirationAtDesc(article, "COMPLETED");
+        Payment previous = paymentRepository.findTopByArticleAndStatusOrderByExpirationAtDesc(article, PaymentStatus.COMPLETED);
         LocalDateTime baseDate = LocalDateTime.now();
         if (previous != null && previous.getExpirationAt() != null && previous.getExpirationAt().isAfter(LocalDateTime.now())) {
           baseDate = previous.getExpirationAt();
@@ -244,7 +245,7 @@ public class PaymentService {
         throw new IllegalArgumentException("Username is required");
       }
 
-      Payment active = paymentRepository.findTopByUsernameAndStatusOrderByCompletedAtDesc(username, "COMPLETED");
+      Payment active = paymentRepository.findTopByUsernameAndStatusOrderByCompletedAtDesc(username, PaymentStatus.COMPLETED);
       if (active != null && active.getExpirationAt() != null && active.getExpirationAt().isAfter(LocalDateTime.now())) {
         return active.getPlanType();
       }
@@ -264,7 +265,8 @@ public class PaymentService {
         throw new IllegalArgumentException("Username is required");
       }
 
-      Payment active = paymentRepository.findTopByUsernameAndStatusOrderByCompletedAtDesc(username, "COMPLETED");
+      Payment active = paymentRepository.findTopByUsernameAndStatusOrderByCompletedAtDesc(username, PaymentStatus.COMPLETED);
+
       Map<String, Object> response = new HashMap<>();
       if (active != null && (
         active.getPlanType().equals("STANDARD") ||
@@ -480,7 +482,7 @@ public class PaymentService {
 
       Payment payment = new Payment();
       payment.setPlanType(promoteType.name());
-      payment.setStatus("COMPLETED");
+      payment.setStatus(PaymentStatus.COMPLETED);
       payment.setCreatedAt(LocalDateTime.now());
       payment.setCompletedAt(LocalDateTime.now());
       payment.setExpirationAt(expirationAt);

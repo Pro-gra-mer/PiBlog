@@ -324,6 +324,44 @@
     You can promote your article after it's approved and published.
   </p>
 </section>
+<!-- Modal QR para pago desde escritorio -->
+<div
+  *ngIf="showQr"
+  class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50"
+>
+  <div class="bg-white p-6 rounded-lg shadow-xl w-[90%] max-w-md text-center">
+    <h2 class="text-xl font-bold mb-4 text-accent">
+      Scan to Pay with Pi Browser
+    </h2>
+
+    <p class="text-secondary mb-4">
+      Scan the QR with your phone to open the app in the Pi Browser and finish
+      your payment.
+    </p>
+
+    <img
+      [src]="qrDataUrl"
+      width="256"
+      height="256"
+      alt="Payment QR"
+      class="mx-auto shadow-lg rounded-lg"
+    />
+
+    <p class="mt-4 text-sm text-gray-400 break-all">
+      Or enter manually:<br />
+      <code>{{ qrUrl }}</code>
+    </p>
+
+    <div class="mt-6">
+      <button
+        class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400"
+        (click)="showQr = false"
+      >
+        Close
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- Modal de confirmación -->
 <div

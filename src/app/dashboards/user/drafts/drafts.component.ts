@@ -18,6 +18,7 @@ export class DraftsComponent implements OnInit {
   error = '';
   showDeleteModal = false;
   articleIdToDelete: number | null = null;
+  successMessage: string | null = null;
 
   constructor(private articleService: ArticleService, private router: Router) {}
 
@@ -82,7 +83,7 @@ export class DraftsComponent implements OnInit {
             );
             this.showDeleteModal = false;
             this.articleIdToDelete = null;
-            this.error = 'Draft deleted successfully.';
+            this.successMessage = 'Draft deleted successfully.';
           },
           error: () => {
             if (!environment.production) {

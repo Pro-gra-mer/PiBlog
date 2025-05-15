@@ -58,6 +58,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       piId = "Myblood";
       role = "USER"; // Asegura que coincide con lo esperado en SecurityConfig
       System.out.println("🟢 Modo sandbox/dev activo");
+      System.out.println("🌍 Perfil activo: " + piNetworkValidator.getActiveProfile());
+
     } else {
       // En modo producción, validar como JWT
       try {

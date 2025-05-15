@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ArticleService } from '../../../services/article.service';
 import { PaymentService } from '../../../services/payment.service';
@@ -6,6 +6,7 @@ import { Article } from '../../../models/Article.model';
 import { PiAuthService } from '../../../services/pi-auth.service';
 import { environment } from '../../../environments/environment.dev';
 import { HttpClient } from '@angular/common/http';
+import QRCode from 'qrcode';
 
 @Component({
   selector: 'app-my-articles',
@@ -14,10 +15,10 @@ import { HttpClient } from '@angular/common/http';
   templateUrl: './my-articles.component.html',
   styleUrls: ['./my-articles.component.css'],
 })
-export class MyArticlesComponent implements OnInit {
+export class MyArticlesComponent implements OnInit, OnDestroy {
   articles: Article[] = [];
   loading = true;
-  error = '';
+  error: string | null = null;
   today = new Date();
   showPlanModal = false;
   isPromoteMode = false;
@@ -30,6 +31,9 @@ export class MyArticlesComponent implements OnInit {
   standardPricePi!: number;
   categoryPricePi!: number;
   mainPricePi!: number;
+  qrImageUrl: string | null = null;
+  qrUrl: string | null = null;
+  private paymentCheckInterval: any = null;
 
   confirmationModal = {
     visible: false,
@@ -48,10 +52,10 @@ export class MyArticlesComponent implements OnInit {
     private piAuthService: PiAuthService
   ) {}
 
-  // Initializes component and loads published articles
   ngOnInit(): void {
     this.fetchPlanPricesInPi();
     this.isAdmin = this.piAuthService.isAdmin();
+    console.log('Initial isAdmin value:', this.isAdmin);
     this.articleService.getUserPublishedArticles().subscribe({
       next: (articles) => {
         this.articles = articles.filter((article) => article.id != null);
@@ -69,11 +73,18 @@ export class MyArticlesComponent implements OnInit {
     });
   }
 
-  // Opens modal for promoting or activating plan
+  ngOnDestroy(): void {
+    if (this.paymentCheckInterval) {
+      clearInterval(this.paymentCheckInterval);
+      this.paymentCheckInterval = null;
+      console.log('Payment check interval cleared on component destroy');
+    }
+  }
+
   openModal(article: Article, action: string): void {
     this.selectedArticleId = article.id!;
     this.isPromoteMode = action === 'promote';
-    const categorySlug = article.category.slug || null;
+    const categorySlug = article.category?.slug || null;
 
     this.paymentService.getSlotInfo('MAIN_SLIDER', null).subscribe({
       next: (mainSliderData) => {
@@ -84,12 +95,14 @@ export class MyArticlesComponent implements OnInit {
             next: (categorySliderData) => {
               this.categorySliderInfo = categorySliderData;
               this.showPlanModal = true;
+              this.cdr.detectChanges();
             },
             error: () => {
               if (!environment.production) {
                 console.error('Failed to load category slider info');
               }
               this.error = 'Failed to load plan information.';
+              this.cdr.detectChanges();
             },
           });
       },
@@ -98,17 +111,18 @@ export class MyArticlesComponent implements OnInit {
           console.error('Failed to load main slider info');
         }
         this.error = 'Failed to load plan information.';
+        this.cdr.detectChanges();
       },
     });
   }
 
-  // Opens modal for activating a specific plan
   openActivateModal(article: Article, planType: string): void {
     this.selectedArticleId = article.id!;
     this.selectedPlanType = planType;
 
     if (planType === 'CATEGORY_SLIDER' && !article.category?.slug) {
       this.error = 'This article does not have a category assigned.';
+      this.cdr.detectChanges();
       return;
     }
 
@@ -117,13 +131,13 @@ export class MyArticlesComponent implements OnInit {
     this.loadPlanInfo(planType);
   }
 
-  // Loads plan information for a specific plan type
   loadPlanInfo(planType: string): void {
     const article = this.articles.find((a) => a.id === this.selectedArticleId);
     const categorySlug = article?.category?.slug || null;
 
     if (!categorySlug && planType === 'CATEGORY_SLIDER') {
       this.error = 'No valid category found for this article.';
+      this.cdr.detectChanges();
       return;
     }
 
@@ -141,11 +155,11 @@ export class MyArticlesComponent implements OnInit {
           console.error('Failed to load plan information');
         }
         this.error = 'Failed to load plan information.';
+        this.cdr.detectChanges();
       },
     });
   }
 
-  // Handles plan selection and activation
   handlePlanSelection(planType: string): void {
     if (!this.selectedArticleId) return;
 
@@ -158,14 +172,24 @@ export class MyArticlesComponent implements OnInit {
 
     if (!categorySlug && planType === 'CATEGORY_SLIDER') {
       this.error = 'This article does not have a valid category.';
+      this.cdr.detectChanges();
       return;
+    }
+
+    console.log('Is Admin:', this.isAdmin);
+    console.log('Starting payment flow for plan:', planType);
+
+    // Detener cualquier intervalo existente
+    if (this.paymentCheckInterval) {
+      clearInterval(this.paymentCheckInterval);
+      this.paymentCheckInterval = null;
+      console.log('Previous payment check interval cleared');
     }
 
     const applyPlanToArticle = (response: any) => {
       const expirationAt =
         response?.expirationAt ||
         new Date(new Date().setDate(new Date().getDate() + 30)).toISOString();
-
       const newPlan = { planType, expirationAt };
 
       if (
@@ -188,97 +212,24 @@ export class MyArticlesComponent implements OnInit {
         '_',
         ' '
       )} activated successfully!`;
-
-      setTimeout(() => {
-        this.successMessage = null;
-      }, 4000);
-
+      setTimeout(() => (this.successMessage = null), 4000);
       this.cdr.detectChanges();
       this.closePlanModal();
     };
 
-    // 🔒 ADMIN NO PAGA
     if (this.isAdmin) {
+      console.log('Admin flow: activating plan without payment');
       this.paymentService
         .activatePlanAsAdmin(this.selectedArticleId, planType, categorySlug)
         .subscribe({
           next: applyPlanToArticle,
           error: () => {
-            if (!environment.production) {
+            if (!environment.production)
               console.error('Failed to activate plan as admin');
-            }
             this.error = 'Failed to activate plan as admin.';
             this.closePlanModal();
           },
         });
-      return;
-    }
-
-    // 🧪 SANDBOX O MODO DEV → simula el pago
-    if (environment.sandbox) {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const paymentId = 'sandbox-' + Date.now();
-      const txid = 'sandbox-tx-' + Date.now();
-      const headers = {
-        Authorization: `Bearer ${user.accessToken}`,
-        'Content-Type': 'application/json',
-      };
-
-      this.http
-        .post(
-          `${environment.apiUrl}/api/payments/create`,
-          {
-            paymentId,
-            planType,
-            username: user.username,
-          },
-          { headers }
-        )
-        .subscribe(() => {
-          this.http
-            .post(
-              `${environment.apiUrl}/api/payments/approve`,
-              {
-                paymentId,
-                planType,
-              },
-              { headers }
-            )
-            .subscribe(() => {
-              this.http
-                .post(
-                  `${environment.apiUrl}/api/payments/complete`,
-                  {
-                    paymentId,
-                    txid,
-                    articleId: this.selectedArticleId,
-                  },
-                  { headers }
-                )
-                .subscribe({
-                  next: (res: any) => {
-                    alert(
-                      `✅ Sandbox payment completed for ${planType.replace(
-                        '_',
-                        ' '
-                      )}!`
-                    );
-                    applyPlanToArticle(res);
-                  },
-                  error: () => {
-                    this.error = 'Failed to complete sandbox payment.';
-                    this.closePlanModal();
-                  },
-                });
-            });
-        });
-
-      return;
-    }
-
-    // ✅ PRODUCCIÓN: Pi SDK real
-    if (typeof Pi === 'undefined') {
-      alert('Pi SDK not available. Please try again later.');
       return;
     }
 
@@ -289,40 +240,98 @@ export class MyArticlesComponent implements OnInit {
       paymentId: 'pi-' + Date.now(),
     };
 
+    const headers = {
+      Authorization: `Bearer ${user.accessToken}`,
+      'Content-Type': 'application/json',
+    };
+
+    console.log('Creating payment with payload:', paymentPayload);
+
     this.http
-      .post(`${environment.apiUrl}/api/payments/create`, paymentPayload)
+      .post(`${environment.apiUrl}/api/payments/create`, paymentPayload, {
+        headers,
+      })
       .subscribe({
-        next: (payment: any) => {
+        next: async (payment: any) => {
+          const isPiBrowser = navigator.userAgent.includes('PiBrowser');
+          console.log('Is Pi Browser:', isPiBrowser);
+
+          if (!isPiBrowser || typeof Pi === 'undefined') {
+            try {
+              const qrUrl = `https://pi-browser.app/rollingpi/payment-qr?paymentId=${paymentPayload.paymentId}&plan=${planType}&articleId=${this.selectedArticleId}`;
+              const qrImageUrl = await QRCode.toDataURL(qrUrl, {
+                width: 256,
+                margin: 1,
+              });
+
+              this.qrUrl = qrUrl;
+              this.qrImageUrl = qrImageUrl;
+              console.log('QR generated:', qrUrl);
+
+              this.paymentCheckInterval = setInterval(() => {
+                this.http
+                  .get(
+                    `${environment.apiUrl}/api/payments/by-payment-id/${paymentPayload.paymentId}`,
+                    { headers }
+                  )
+                  .subscribe({
+                    next: (res: any) => {
+                      console.log(
+                        `Payment status for ${paymentPayload.paymentId}:`,
+                        res?.status || 'Unknown'
+                      );
+                      if (res && res.status === 'COMPLETED') {
+                        clearInterval(this.paymentCheckInterval);
+                        this.paymentCheckInterval = null;
+                        alert('✅ Payment completed from Pi Browser!');
+                        applyPlanToArticle(res);
+                      } else if (res && res.status) {
+                        console.log(`Payment still in status: ${res.status}`);
+                      }
+                    },
+                    error: (err) => {
+                      console.error(
+                        `Error checking payment ${paymentPayload.paymentId}:`,
+                        err
+                      );
+                      if (err.status !== 404) {
+                        clearInterval(this.paymentCheckInterval);
+                        this.paymentCheckInterval = null;
+                        this.error = 'Failed to verify payment status.';
+                        this.cdr.detectChanges();
+                      }
+                    },
+                  });
+              }, 3000);
+            } catch (error) {
+              console.error('Error generating QR:', error);
+              alert('Error generating QR. Try again.');
+              this.closePlanModal();
+            }
+            return;
+          }
+
+          console.log('Pi Browser flow: initiating payment');
           Pi.createPayment(payment, {
             onReadyForServerApproval: (paymentId: string) => {
-              const headers = {
-                Authorization: `Bearer ${user.accessToken}`,
-                'Content-Type': 'application/json',
-              };
+              console.log('Approving payment:', paymentId);
               this.http
                 .post(
                   `${environment.apiUrl}/api/payments/approve`,
-                  {
-                    paymentId,
-                    planType,
-                  },
+                  { paymentId, planType },
                   { headers }
                 )
-                .subscribe();
+                .subscribe({
+                  error: (err) =>
+                    console.error('Error approving payment:', err),
+                });
             },
             onReadyForServerCompletion: (paymentId: string, txid: string) => {
-              const headers = {
-                Authorization: `Bearer ${user.accessToken}`,
-                'Content-Type': 'application/json',
-              };
+              console.log('Completing payment:', paymentId, 'with txid:', txid);
               this.http
                 .post(
                   `${environment.apiUrl}/api/payments/complete`,
-                  {
-                    paymentId,
-                    txid,
-                    articleId: this.selectedArticleId,
-                  },
+                  { paymentId, txid, articleId: this.selectedArticleId },
                   { headers }
                 )
                 .subscribe({
@@ -350,14 +359,21 @@ export class MyArticlesComponent implements OnInit {
       });
   }
 
-  // Closes plan selection modal
   closePlanModal(): void {
+    if (this.paymentCheckInterval) {
+      clearInterval(this.paymentCheckInterval);
+      this.paymentCheckInterval = null;
+      console.log('Payment check interval cleared on modal close');
+    }
     this.showPlanModal = false;
     this.selectedArticleId = null;
     this.selectedPlanType = null;
+    this.qrImageUrl = null;
+    this.qrUrl = null;
+    this.error = null;
+    this.cdr.detectChanges();
   }
 
-  // Opens generic confirmation modal
   openConfirmationModal(
     title: string,
     message: string,
@@ -372,9 +388,9 @@ export class MyArticlesComponent implements OnInit {
       cancelLabel: 'Cancel',
       onConfirm,
     };
+    this.cdr.detectChanges();
   }
 
-  // Opens modal for deleting an article
   openDeleteModal(id: number): void {
     this.openConfirmationModal(
       'Delete Article',
@@ -384,27 +400,15 @@ export class MyArticlesComponent implements OnInit {
     );
   }
 
-  // Confirms and deletes an article
   confirmDelete(id: number): void {
     this.articleService.deleteArticleWithCleanup(id).subscribe({
       next: () => {
-        // Update the article list after deletion
         this.articles = this.articles.filter((a) => a.id !== id);
-
-        // Hide the confirmation modal
         this.confirmationModal.visible = false;
-
-        // Set success message
-
         this.successMessage = 'Article deleted successfully.';
-        setTimeout(() => {
-          this.successMessage = null;
-        }, 3000);
+        setTimeout(() => (this.successMessage = null), 3000);
         this.cdr.detectChanges();
-
-        // Ensure view updates
-        this.cdr.detectChanges(); // Manually trigger change detection after the update
-        this.cdr.markForCheck(); // Ensure Angular checks for changes on the next cycle
+        this.cdr.markForCheck();
       },
       error: () => {
         if (!environment.production) {
@@ -417,14 +421,12 @@ export class MyArticlesComponent implements OnInit {
     });
   }
 
-  // Checks if a plan has expired
   isExpired(expirationAt: string | null | undefined): boolean {
     if (!expirationAt) return false;
     const expirationDate = new Date(expirationAt);
     return expirationDate < new Date();
   }
 
-  // Checks if an article has an active plan
   hasActivePlanType(article: Article, planType: string): boolean {
     return (
       article.activePlans?.some(
@@ -440,6 +442,7 @@ export class MyArticlesComponent implements OnInit {
         this.standardPricePi = prices['STANDARD'];
         this.categoryPricePi = prices['CATEGORY_SLIDER'];
         this.mainPricePi = prices['MAIN_SLIDER'];
+        this.cdr.detectChanges();
       },
       error: () => {
         if (!environment.production) {
@@ -447,5 +450,11 @@ export class MyArticlesComponent implements OnInit {
         }
       },
     });
+  }
+
+  closeQrModal(): void {
+    this.qrImageUrl = null;
+    this.qrUrl = null;
+    this.cdr.detectChanges();
   }
 }

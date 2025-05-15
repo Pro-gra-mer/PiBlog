@@ -1,5 +1,6 @@
 package com.piblogchain.backend.models;
 
+import com.piblogchain.backend.enums.PaymentStatus;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -15,7 +16,8 @@ public class Payment {
   private String username;
   private String planType;
   private String txid;
-  private String status;
+  @Enumerated(EnumType.STRING)
+  private PaymentStatus status;
   private boolean sandbox;
   private LocalDateTime createdAt;
   private LocalDateTime completedAt;
@@ -60,11 +62,11 @@ public class Payment {
     this.txid = txid;
   }
 
-  public String getStatus() {
+  public PaymentStatus getStatus() {
     return status;
   }
 
-  public void setStatus(String status) {
+  public void setStatus(PaymentStatus status) {
     this.status = status;
   }
 

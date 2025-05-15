@@ -3,6 +3,9 @@
 
   <div *ngIf="loading" class="text-gray-500">Loading rejected articles...</div>
   <div *ngIf="error" class="text-red-500">{{ error }}</div>
+  <div *ngIf="successMessage" class="text-green-600 font-medium mb-4">
+    {{ successMessage }}
+  </div>
 
   <ul *ngIf="!loading && !error && rejected.length > 0" class="space-y-4">
     <li
