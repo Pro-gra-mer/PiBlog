@@ -79,4 +79,26 @@ public class PiNetworkValidator {
   public String getActiveProfile() {
     return activeProfile;
   }
+
+  public String extractPiId(String accessToken) {
+    if ("dev".equals(activeProfile) || "sandbox".equals(activeProfile)) {
+      // En sandbox/dev, puedes devolver un valor fijo
+      return "Myblood";
+    }
+
+    try {
+      PublicKey piPublicKey = getPiPublicKey();
+      Claims claims = Jwts.parserBuilder()
+        .setSigningKey(piPublicKey)
+        .build()
+        .parseClaimsJws(accessToken)
+        .getBody();
+
+      return claims.getSubject(); // El piId
+    } catch (Exception e) {
+      System.out.println("❌ Error extracting piId from token: " + e.getMessage());
+      return null;
+    }
+  }
+
 }

@@ -30,15 +30,15 @@ public class SessionLinkController {
   }
 
   @PostMapping("/sync")
-  public ResponseEntity<?> syncSession(@RequestBody Map<String, String> body, Principal principal) {
+  public ResponseEntity<?> syncSession(@RequestBody Map<String, String> body) {
     String code = body.get("code");
-    String piId = principal.getName();
+    String accessToken = body.get("accessToken");
 
-    if (code == null || piId == null) {
-      return ResponseEntity.badRequest().body("Code or user not found");
+    if (code == null || accessToken == null) {
+      return ResponseEntity.badRequest().body("Code or token missing");
     }
 
-    boolean success = sessionLinkService.syncSession(code, piId);
+    boolean success = sessionLinkService.syncSession(code, accessToken);
     return success ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
   }
 

@@ -4,12 +4,14 @@ import com.piblogchain.backend.models.SessionLink;
 import com.piblogchain.backend.models.User;
 import com.piblogchain.backend.repositories.SessionLinkRepository;
 import com.piblogchain.backend.repositories.UserRepository;
+import com.piblogchain.backend.utils.PiNetworkValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -19,6 +21,8 @@ public class SessionLinkService {
   private final SessionLinkRepository sessionLinkRepository;
   private final UserRepository userRepository;
   private final SimpMessagingTemplate messagingTemplate;
+  @Autowired
+  private PiNetworkValidator piNetworkValidator;
 
   @Autowired
   public SessionLinkService(
@@ -37,7 +41,10 @@ public class SessionLinkService {
     return code;
   }
 
-  public boolean syncSession(String code, String piId) {
+  public boolean syncSession(String code, String accessToken) {
+    String piId = piNetworkValidator.extractPiId(accessToken);
+    if (piId == null) return false;
+
     Optional<SessionLink> optionalLink = sessionLinkRepository.findByCode(code);
     Optional<User> optionalUser = userRepository.findByPiId(piId);
 
@@ -46,13 +53,18 @@ public class SessionLinkService {
       link.setUser(optionalUser.get());
       sessionLinkRepository.save(link);
 
-      // Enviar notificación por WebSocket al navegador
-      messagingTemplate.convertAndSend("/topic/session/" + code, optionalUser.get().getUsername());
+      User user = optionalUser.get();
+      messagingTemplate.convertAndSend("/topic/session/" + code, Map.of(
+        "username", user.getUsername(),
+        "piId", user.getPiId(),
+        "accessToken", accessToken
+      ));
 
       return true;
     }
     return false;
   }
+
 
   public Optional<User> getUserByCode(String code) {
     return sessionLinkRepository.findByCode(code).map(SessionLink::getUser);
