@@ -16,6 +16,8 @@ import { FeaturedArticlesComponent } from './components/featured-articles/featur
 import { PrivacyPolicyComponent } from './components/privacy-policy/privacy-policy.component';
 import { CookiePolicyComponent } from './components/cookie-policy/cookie-policy.component';
 import { TermsOfServiceComponent } from './components/terms-of-service/terms-of-service.component';
+import { SessionQrComponent } from './components/session-qr/session-qr.component';
+import { LoginQrComponent } from './components/login-qr/login-qr.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -60,5 +62,8 @@ export const routes: Routes = [
       { path: '', redirectTo: 'my-articles', pathMatch: 'full' },
     ],
   },
+  { path: 'login-qr', component: LoginQrComponent },
+  { path: 'session-qr', component: SessionQrComponent },
+
   { path: '**', redirectTo: '', pathMatch: 'full' },
 ];

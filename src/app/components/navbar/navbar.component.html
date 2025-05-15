@@ -39,12 +39,12 @@
         >
       </li>
       <li *ngIf="!isAuthenticated">
-        <a
-          href="#"
+        <button
           (click)="loginWithPi()"
           class="text-background hover:text-accent"
-          >Sign in</a
         >
+          Sign in
+        </button>
       </li>
 
       <li *ngIf="isAuthenticated">

@@ -58,7 +58,7 @@ export class PiAuthService {
   }
 
   // Authenticates user with Pi SDK
-  loginWithPi(): void {
+  loginWithPi(afterAuthCallback?: (accessToken: string) => void): void {
     if (typeof Pi === 'undefined') {
       if (!environment.production) {
         console.error('Failed to initialize Pi SDK');
@@ -106,6 +106,15 @@ export class PiAuthService {
 
                     this.appRef.tick();
 
+                    // ✅ Llamar al callback si fue proporcionado (modo QR)
+                    if (afterAuthCallback) {
+                      setTimeout(() => {
+                        afterAuthCallback(auth.accessToken);
+                      }, 0);
+                      return;
+                    }
+
+                    // 🔁 Redirección normal si no hay callback
                     this.getActivePlan().subscribe((planType) => {
                       const hasPlan = planType !== PromoteType.STANDARD;
 

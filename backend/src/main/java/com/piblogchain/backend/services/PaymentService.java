@@ -608,9 +608,9 @@ public class PaymentService {
 
     Map<String, Object> prices = new HashMap<>();
     prices.put("piPriceUsd", roundUp(piPrice, 4));
-    prices.put("STANDARD", roundUp(3.0 / piPrice, 2));
-    prices.put("CATEGORY_SLIDER", roundUp(20.0 / piPrice, 2));
-    prices.put("MAIN_SLIDER", roundUp(30.0 / piPrice, 2));
+    prices.put("STANDARD", roundUp(3.5 / piPrice, 2));
+    prices.put("CATEGORY_SLIDER", roundUp(25.0 / piPrice, 2));
+    prices.put("MAIN_SLIDER", roundUp(35.0 / piPrice, 2));
 
     return prices;
   }

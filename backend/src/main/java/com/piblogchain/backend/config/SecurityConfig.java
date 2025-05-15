@@ -39,11 +39,15 @@ public class SecurityConfig {
         .requestMatchers(HttpMethod.GET, "/api/articles").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/articles/{id:[\\d]+}").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/articles/category/**").permitAll()
+        .requestMatchers(HttpMethod.GET, "/api/categories/slug/**").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/articles/promoted-videos").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/articles/promoted-videos/category/**").permitAll()
         .requestMatchers(HttpMethod.GET,"/api/payments/slots").permitAll()
         .requestMatchers(HttpMethod.POST, "/api/contact").permitAll()
+        .requestMatchers(HttpMethod.POST, "/api/session-links").permitAll()
+        .requestMatchers(HttpMethod.POST, "/api/session-links/sync").permitAll()
+        .requestMatchers(HttpMethod.GET, "/api/session-links/status/**").permitAll()
         .requestMatchers("/api/price").permitAll()
 
 
@@ -100,4 +104,5 @@ public class SecurityConfig {
     source.registerCorsConfiguration("/**", configuration);
     return source;
   }
+
 }
