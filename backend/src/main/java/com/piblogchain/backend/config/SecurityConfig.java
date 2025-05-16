@@ -32,10 +32,19 @@ public class SecurityConfig {
     http
       .cors(cors -> cors.configurationSource(corsConfigurationSource()))
       .csrf(csrf -> csrf.disable())
-      .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-      .authorizeHttpRequests(auth -> auth
-        // Acceso público
-        .requestMatchers("/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+      .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+
+    // Detecta el perfil activo
+    String activeProfile = System.getProperty("spring.profiles.active", "default");
+
+    // Configura autorización
+    http.authorizeHttpRequests(auth -> {
+      // Swagger solo en no-prod
+      if (!"prod".equals(activeProfile)) {
+        auth.requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll();
+      }
+
+      auth
         .requestMatchers(HttpMethod.GET, "/api/articles").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/articles/{id:[\\d]+}").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/articles/category/**").permitAll()
@@ -49,44 +58,27 @@ public class SecurityConfig {
         .requestMatchers(HttpMethod.POST, "/api/session-links/sync").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/session-links/status/**").permitAll()
         .requestMatchers("/api/price").permitAll()
-
-
-
-        // Pagos
+        .requestMatchers(HttpMethod.GET, "/ws/**").permitAll()
         .requestMatchers("/api/payments/create", "/api/payments/approve", "/api/payments/complete").hasAnyRole("USER", "ADMIN")
         .requestMatchers(HttpMethod.POST, "/api/payments/attach-article").hasAnyRole("USER", "ADMIN")
-
-        // 👇 Esta línea debe ir ANTES de la general
         .requestMatchers(HttpMethod.GET, "/api/articles/rejected").hasAnyRole("USER", "ADMIN")
-
-        // Admin: categorías
         .requestMatchers("/api/categories/**").hasRole("ADMIN")
-
-        // Estado de artículos
         .requestMatchers(HttpMethod.GET, "/api/articles/status/**").hasAnyRole("USER", "ADMIN")
-
         .requestMatchers(HttpMethod.GET, "/api/payments/by-article/{articleId:[\\d]+}").hasAnyRole("USER", "ADMIN")
-
-
-        // ⚠️ Esta línea debe ir DESPUÉS
         .requestMatchers("/api/articles/**", "/api/upload-image").hasAnyRole("USER", "ADMIN")
-
-        // Videos e imágenes
         .requestMatchers(HttpMethod.DELETE, "/api/cleanup/**").hasAnyRole("USER", "ADMIN")
-
         .requestMatchers(HttpMethod.PUT, "/api/articles/{id:[\\d]+}/reject").hasRole("ADMIN")
+        .anyRequest().authenticated();
+    });
 
-        // Cualquier otra petición
-        .anyRequest().authenticated()
-      )
-
-
+    http
       .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
       .formLogin(form -> form.disable())
       .httpBasic(httpBasic -> httpBasic.disable());
 
     return http.build();
   }
+
 
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {

@@ -33,7 +33,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     throws ServletException, IOException {  // Añadido ServletException aquí
 
     String authorizationHeader = request.getHeader("Authorization");
-    System.out.println("📥 Authorization header: " + authorizationHeader);
+
 
     if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
       System.out.println("🚫 No se proporcionó token válido");
@@ -45,7 +45,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     System.out.println("🔑 Token extraído: " + token);
 
     if (!piNetworkValidator.validateAccessToken(token)) {
-      System.out.println("❌ Token no válido");
+
       response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid access token");
       return;
     }
@@ -84,7 +84,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       UsernamePasswordAuthenticationToken authToken =
         new UsernamePasswordAuthenticationToken(piId, null, Collections.singleton(new SimpleGrantedAuthority("ROLE_" + role)));
       SecurityContextHolder.getContext().setAuthentication(authToken);
-      System.out.println("🔒 Contexto de seguridad establecido: " + authToken);
+
     } else {
       System.out.println("⚠️ piId o role nulos, no se estableció autenticación");
     }

@@ -141,18 +141,6 @@ public class PaymentController {
     }
   }
 
-  @RestController
-  @RequestMapping("/api/price")
-  public class PiPriceController {
-
-    @Autowired
-    private PaymentService paymentService;
-
-    @GetMapping
-    public Map<String, Object> getPlanPricesInUsd() {
-      return paymentService.getPlanPricesInUsd();
-    }
-  }
 
   @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
   @GetMapping("/by-payment-id/{paymentId}")

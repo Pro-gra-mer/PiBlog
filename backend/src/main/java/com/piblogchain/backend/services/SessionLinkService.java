@@ -56,8 +56,7 @@ public class SessionLinkService {
       User user = optionalUser.get();
       messagingTemplate.convertAndSend("/topic/session/" + code, Map.of(
         "username", user.getUsername(),
-        "piId", user.getPiId(),
-        "accessToken", accessToken
+        "piId", user.getPiId()
       ));
 
       return true;

@@ -66,12 +66,6 @@ export class AdvertiseWithUsComponent {
   }
 
   checkMainSliderSlot(): void {
-    if (typeof window === 'undefined' || !window.localStorage) return;
-    const storedUser = localStorage.getItem('user');
-    if (!storedUser) return;
-
-    const user = JSON.parse(storedUser);
-    const headers = { Authorization: `Bearer ${user.accessToken}` };
     const url = `${environment.apiUrl}/api/payments/slots?promoteType=${PromoteType.MAIN_SLIDER}`;
 
     this.http
@@ -80,7 +74,7 @@ export class AdvertiseWithUsComponent {
         usedSlots: number;
         remainingSlots: number;
         totalSlots: number;
-      }>(url, { headers })
+      }>(url)
       .subscribe({
         next: (res) => {
           this.mainSliderAvailable = res.remainingSlots > 0;
@@ -98,12 +92,8 @@ export class AdvertiseWithUsComponent {
   }
 
   checkCategorySliderSlot(): void {
-    if (typeof window === 'undefined' || !window.localStorage) return;
-    const storedUser = localStorage.getItem('user');
-    if (!storedUser || !this.selectedCategory) return;
+    if (!this.selectedCategory) return;
 
-    const user = JSON.parse(storedUser);
-    const headers = { Authorization: `Bearer ${user.accessToken}` };
     const url = `${environment.apiUrl}/api/payments/slots?promoteType=${PromoteType.CATEGORY_SLIDER}&categorySlug=${this.selectedCategory}`;
 
     this.http
@@ -112,7 +102,7 @@ export class AdvertiseWithUsComponent {
         usedSlots: number;
         remainingSlots: number;
         totalSlots: number;
-      }>(url, { headers })
+      }>(url)
       .subscribe({
         next: (res) => {
           this.categorySliderAvailable = res.remainingSlots > 0;

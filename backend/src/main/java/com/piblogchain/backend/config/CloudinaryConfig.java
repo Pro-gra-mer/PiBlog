@@ -14,7 +14,7 @@ public class CloudinaryConfig {
   @Bean
   public Cloudinary cloudinary() {
     Cloudinary cloudinary = new Cloudinary(cloudinaryUrl);
-    System.out.println("Cloudinary configurado con: " + cloudinary.config.cloudName);
+
     return cloudinary;
   }
 }

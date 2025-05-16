@@ -28,8 +28,7 @@ public class PiNetworkValidator {
    * En producción se valida utilizando la clave pública de Pi Network.
    */
   public boolean validateAccessToken(String accessToken) {
-    System.out.println("🔍 Validando accessToken: " + accessToken);
-    System.out.println("🌐 Perfil activo: " + activeProfile);
+
 
     // Modo desarrollo o sandbox: aceptar token sin validación JWT
     if ("dev".equals(activeProfile) || "sandbox".equals(activeProfile)) {
@@ -44,10 +43,10 @@ public class PiNetworkValidator {
         .setSigningKey(piPublicKey)
         .build()
         .parseClaimsJws(accessToken);
-      System.out.println("✅ Token JWT válido: " + claims.getBody());
+
       return true;
     } catch (Exception e) {
-      System.out.println("❌ Error validando token como JWT: " + e.getMessage());
+      System.out.println("❌ Error validando token");
       return false;
     }
   }
@@ -96,7 +95,7 @@ public class PiNetworkValidator {
 
       return claims.getSubject(); // El piId
     } catch (Exception e) {
-      System.out.println("❌ Error extracting piId from token: " + e.getMessage());
+      System.out.println("❌ Error extracting piId");
       return null;
     }
   }
