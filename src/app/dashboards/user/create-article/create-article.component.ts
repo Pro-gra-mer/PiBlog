@@ -15,10 +15,11 @@ import { Article } from '../../../models/Article.model';
 import DOMPurify from 'dompurify';
 import { DomSanitizer } from '@angular/platform-browser';
 import { ArticleDetailComponent } from '../../../components/article-detail/article-detail.component';
-import { Category, CategoryService } from '../../../services/category.service';
+import { CategoryService } from '../../../services/category.service';
 import { PiAuthService } from '../../../services/pi-auth.service';
 import { environment } from '../../../environments/environment.dev';
 import { PromoteType } from '../../../models/PromoteType';
+import { Category } from '../../../models/Category.model';
 
 declare const cloudinary: any;
 

@@ -4,6 +4,6 @@ export interface Category {
   slug?: string;
   description?: string;
   emoji?: string;
-  headerImage?: string; // puede ser URL o nombre del archivo
+  headerImage?: string;
   createdAt?: string;
 }

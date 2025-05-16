@@ -4,9 +4,10 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { environment } from '../../environments/environment.dev';
 import { Router } from '@angular/router';
 import { PromoteType } from '../../models/PromoteType';
-import { Category, CategoryService } from '../../services/category.service';
+import { CategoryService } from '../../services/category.service';
 import { FormsModule } from '@angular/forms';
 import QRCode from 'qrcode';
+import { Category } from '../../models/Category.model';
 
 declare let Pi: any;
 

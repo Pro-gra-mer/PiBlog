@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { CategoryService, Category } from '../../services/category.service';
+import { CategoryService } from '../../services/category.service';
 import { RouterLink } from '@angular/router';
 import { environment } from '../../environments/environment.dev';
+import { Category } from '../../models/Category.model';
 
 @Component({
   selector: 'app-sidebar',

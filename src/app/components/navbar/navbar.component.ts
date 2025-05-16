@@ -8,9 +8,10 @@ import {
 } from '@angular/core';
 import { Router, RouterLink, NavigationEnd } from '@angular/router';
 import { PiAuthService } from '../../services/pi-auth.service';
-import { CategoryService, Category } from '../../services/category.service';
+import { CategoryService } from '../../services/category.service';
 import { PromoteType } from '../../models/PromoteType';
 import { environment } from '../../environments/environment.dev';
+import { Category } from '../../models/Category.model';
 
 @Component({
   selector: 'app-navbar',

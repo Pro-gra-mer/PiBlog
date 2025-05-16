@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Inject, OnInit, PLATFORM_ID } from '@angular/core';
 import { ArticleService } from '../../../services/article.service';
 import {
   NavigationEnd,
@@ -6,7 +6,7 @@ import {
   RouterLink,
   RouterModule,
 } from '@angular/router';
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { filter } from 'rxjs';
 import { PiAuthService } from '../../../services/pi-auth.service';
 import { environment } from '../../../environments/environment.dev';
@@ -27,7 +27,8 @@ export class UserDashboardComponent implements OnInit {
   constructor(
     private articleService: ArticleService,
     private router: Router,
-    private piAuthService: PiAuthService
+    private piAuthService: PiAuthService,
+    @Inject(PLATFORM_ID) private platformId: Object
   ) {
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
@@ -48,8 +49,10 @@ export class UserDashboardComponent implements OnInit {
 
   // Checks if user has rejected articles
   checkRejectedArticles(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+
     const user = localStorage.getItem('user');
-    if (!user) return; // 🔒 Evita llamada si no hay usuario logueado
+    if (!user) return;
 
     this.articleService.getUserRejectedArticles().subscribe({
       next: (articles) => {
