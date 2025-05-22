@@ -35,11 +35,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     String authorizationHeader = request.getHeader("Authorization");
 
 
+    String path = request.getRequestURI();
+    boolean isProtectedPath = !path.startsWith("/api/categories")
+      && !path.startsWith("/api/articles")
+      && !path.startsWith("/auth/pi-login")
+      && !path.startsWith("/api/price")
+      && !path.startsWith("/api/payments/slots")
+      && !path.startsWith("/api/session-links")
+      && !path.startsWith("/api/contact")
+      && !path.startsWith("/swagger-ui")
+      && !path.startsWith("/v3/api-docs")
+      && !path.startsWith("/ws");
+
     if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-      System.out.println("🚫 No se proporcionó token válido");
+      if (isProtectedPath) {
+        System.out.println("🚫 Token requerido pero no proporcionado. Path: " + path);
+      }
       chain.doFilter(request, response);
       return;
     }
+
 
     String token = authorizationHeader.substring(7);
     System.out.println("🔑 Token extraído: " + token);

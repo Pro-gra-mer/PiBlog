@@ -1,0 +1,15 @@
+
+# Imagen base JDK
+FROM eclipse-temurin:21-jdk
+
+# Establece un volumen temporal
+VOLUME /tmp
+target/
+.git
+.gitignore
+*.md
+../Dockerfile
+docker-compose.yml
+.env
+.idea/
+.vscode/

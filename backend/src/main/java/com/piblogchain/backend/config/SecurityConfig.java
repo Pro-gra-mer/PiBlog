@@ -45,7 +45,9 @@ public class SecurityConfig {
       }
 
       auth
+        .requestMatchers(HttpMethod.POST, "/auth/pi-login").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/articles").permitAll()
+        .requestMatchers(HttpMethod.GET, "/api/articles/featured").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/articles/{id:[\\d]+}").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/articles/category/**").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/categories/slug/**").permitAll()
